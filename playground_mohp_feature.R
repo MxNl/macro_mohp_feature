@@ -1,4 +1,4 @@
-
+targets::tar_visnetwork(label = "time")
 
 tar_read(centroids_stream_divide_distance) %>% 
   ggplot() +
@@ -14,7 +14,7 @@ tar_read(centroids_stream_divide_distance) %>%
           colour = "black")
 
 
-tar_read(centroids_stream_divide_distance) %>% 
+tar_read(centroids_lateral_position) %>% 
   stars::st_rasterize() %>% 
   plot()
 
