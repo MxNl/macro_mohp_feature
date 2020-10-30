@@ -1,3 +1,9 @@
+library(targets)
+library(tidyverse)
+
+
+
+
 targets::tar_visnetwork(label = "time")
 
 tar_read(centroids_stream_divide_distance) %>% 
@@ -14,11 +20,25 @@ tar_read(centroids_stream_divide_distance) %>%
           colour = "black")
 
 
-tar_read(centroids_lateral_position) %>% 
-  stars::st_rasterize() %>% 
+test <- tar_read(centroids_lateral_position) %>% 
+  sf::st_transform(crs = 32632) %>%
+  fasterize::fasterize(raster = raster::raster(., res = 100),
+                       field = "lateral_position")
+  # raster::projectRaster(crs = "+init=epsg:25832")
+  raster::plot(test)
+  raster::plot(tar_read(river_network_by_streamorder) %>% sf::st_transform(crs = sf::st_crs(test)), add = TRUE)
+
+# stars::st_rasterize()
+  # stars::write_stars("output/test.tiff")
+  # raster::as.raster() %>% 
+  # raster::writeRaster("output/test.tif")
   plot()
 
-
+raster::raster("output/test.tiff") %>% 
+  
+  ggplot() +
+  geom_raster()
+  
 
 segment_colours <- 
   tar_read(thiessen_catchments) %>% 
