@@ -9,8 +9,6 @@ source("R/config.R")
 
 options(tidyverse.quiet = TRUE)
 tar_option_set(packages = c("rmarkdown",
-                            "leaflet",
-                            "leafgl",
                             "raster",
                             "rgdal",
                             "lwgeom",
@@ -127,7 +125,7 @@ targets <- list(
   ),
   
   tar_target(
-    centroids_lateral_position,
+    grid_lateral_position,
     calculate_lateral_position_centroids(
       centroids_stream_distance,
       centroids_divide_distance,
@@ -136,7 +134,7 @@ targets <- list(
   ),
   
   tar_target(
-    centroids_stream_divide_distance,
+    grid_stream_divide_distance,
     calculate_stream_divide_distance_centroids(
       centroids_stream_distance,
       centroids_divide_distance,
@@ -150,4 +148,4 @@ targets <- list(
 tar_pipeline(targets)
 
 
-# targets::tar_make_future(workers = future::availableCores())
+# targets::tar_make_future(workers = future::availableCores(), garbage_collection = TRUE)

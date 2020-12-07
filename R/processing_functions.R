@@ -164,6 +164,11 @@ calculate_divide_distance_centroids <-
 
 calculate_lateral_position_centroids <- 
   function(stream_distance_centroids, divide_distance_centroids, grid) {
+    ###### test
+    # stream_distance_centroids <- tar_read(centroids_stream_distance)
+    # divide_distance_centroids <- tar_read(centroids_divide_distance)
+    ###
+    
     stream_distance_centroids %>% 
       st_join(divide_distance_centroids) %>%
       mutate(lateral_position = distance_stream / (distance_stream + distance_divide),
