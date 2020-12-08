@@ -2,13 +2,47 @@ library(targets)
 library(raster)
 library(sf)
 library(stars)
+library(furrr)
 library(tidyverse)
 
 studyarea_subset_plots <- tar_read(studyarea_subset_plots)
+studyarea <- tar_read(studyarea)
+river_networks_clean <- tar_read(river_networks_clean)
+streamorders <- tar_read(streamorders)
+thiessen_catchments <- tar_read(thiessen_catchments)
+river_network_by_streamorder <- tar_read(river_network_by_streamorder)
+thiessen_catchments_centroids <- tar_read(thiessen_catchments_centroids)
 centroids_stream_distance <- tar_read(centroids_stream_distance)
 centroids_divide_distance <- tar_read(centroids_divide_distance)
-centroids_lateral_position <- tar_read(centroids_lateral_position)
-centroids_stream_divide_distance <- tar_read(centroids_stream_divide_distance)
+grid_lateral_position <- tar_read(grid_lateral_position)
+grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
+
+grid_lateral_position
+
+tar_read(streamorders) %>% 
+  as.vector() %>% 
+  as.numeric() %>% 
+  future_map(
+    ~stream_order_filter(
+      river_network = river_networks_clean,
+      stream_order = .x
+    )
+  )
+
+streamorders %>% 
+  as.vector() %>% 
+  as.numeric() %>% 
+  future_map(
+    ~stream_order_filter(
+      river_network = river_networks_clean,
+      stream_order = .x
+    )
+  )
+
+
+studyarea %>% 
+  ggplot() +
+  geom_sf()
 
 centroids_lateral_position %>% 
   slice(1:1E5) %>% 
@@ -85,6 +119,15 @@ test_intersection <-
   tar_read(centroids_lateral_position) %>% 
   st_intersection(tar_read(studyarea_subset_plots)) %>% 
   sf::st_transform(crs = 32632)
+
+
+grid_lateral_position[[1]] %>% 
+  sfpolygon_to_raster %>% 
+  writeRaster(str_c("output_data/", "mohp_germany_", "order", 1, "_", CELLSIZE, "m_res", ".tif"))
+  
+  fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
+                       field = "lateral_position") %>% 
+  raster::plot()
 
 test_raster <- 
   test_intersection %>% 

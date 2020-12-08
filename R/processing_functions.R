@@ -66,13 +66,13 @@ clean_river_networks <-
     
     river_networks_clean %>% 
       return()
-    
   }
 
 stream_order_filter <- 
   function(river_network, stream_order) {
     river_network %>% 
-      filter(strahler %in% 1:stream_order)
+      mutate(strahler = as.numeric(strahler)) %>% 
+      filter(strahler >= stream_order)
   }
 
 make_grid <- 
@@ -102,7 +102,6 @@ make_thiessen_catchments_centroids <-
         st_nearest_feature(river_network) %>%
         as.character(),
         .before = 1)
-    
   }
 
 centroids_to_grid <- 
@@ -140,7 +139,7 @@ calculate_stream_distance_centroids <-
   }
 
 calculate_divide_distance_centroids <-
-  function(centroids, river_network, catchments) {
+  function(centroids, catchments) {
     catchment_watershed <-
       catchments %>%
       st_cast("MULTILINESTRING")
@@ -162,28 +161,64 @@ calculate_divide_distance_centroids <-
       return()
   }
 
-calculate_lateral_position_centroids <- 
-  function(stream_distance_centroids, divide_distance_centroids, grid) {
+
+generate_filepaths <- 
+  function(stream_order, abbreviation){
+    filepath <- 
+      str_c("output_data/", 
+            "mohp_germany_",
+            abbreviation,
+            "_", 
+            "order", 
+            stream_order, 
+            "_", 
+            CELLSIZE, 
+            "m_res", 
+            ".tiff")
+    
+    return(filepath)
+  }
+
+calculate_lateral_position_grid <- 
+  function(stream_distance_centroids, divide_distance_centroids, filepath, grid, field_name) {
     ###### test
     # stream_distance_centroids <- tar_read(centroids_stream_distance)
     # divide_distance_centroids <- tar_read(centroids_divide_distance)
     ###
     
-    stream_distance_centroids %>% 
-      st_join(divide_distance_centroids) %>%
+    divide_distance_centroids %>% 
+      st_drop_geometry() %>% 
+      as_tibble() %>% 
+      bind_cols(stream_distance_centroids, .) %>%
       mutate(lateral_position = distance_stream / (distance_stream + distance_divide),
              .before = 1) %>% 
       select(-contains("distance")) %>% 
-      centroids_to_grid(grid)
+      centroids_to_grid(grid) %>% 
+      sfpolygon_to_raster(field_name) %>% 
+      writeRaster(filepath,
+                  overwrite = TRUE)
+    
+    return(file_path)
   }
 
-calculate_stream_divide_distance_centroids <- 
-  function(stream_distance_centroids, divide_distance_centroids, grid) {
-    stream_distance_centroids %>% 
-      st_join(divide_distance_centroids) %>%
+calculate_stream_divide_distance_grid <- 
+  function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name) {
+    divide_distance_centroids %>% 
+      st_drop_geometry() %>% 
+      as_tibble() %>% 
+      bind_cols(stream_distance_centroids, .) %>% 
       mutate(stream_divide_distance = distance_stream + distance_divide,
              .before = 1) %>% 
       select(-contains("distance_")) %>% 
       centroids_to_grid(grid)
+      # sfpolygon_to_raster(field_name)
+      # writeRaster(str_c("output_data/", "mohp_germany_", "dsd_", "order", stream_order, "_", CELLSIZE, "m_res", ".tiff"),
+      #             overwrite = TRUE)
   }
 
+
+sfpolygon_to_raster <- function(sf_polygon, field_name) {
+  sf_polygon %>% 
+    fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
+                         field = field_name)
+}

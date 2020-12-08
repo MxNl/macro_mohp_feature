@@ -12,9 +12,12 @@ tar_option_set(packages = c("rmarkdown",
                             "raster",
                             "rgdal",
                             "lwgeom",
+                            "fasterize",
                             "sf",
                             "furrr",
-                            "tidyverse"))
+                            "tarchetypes",
+                            "tidyverse"),
+               memory = "transient")
 
 
 plan(multisession)
@@ -23,7 +26,7 @@ plan(multisession)
 # Define targets
 targets <- list(
 
-
+  
   # Import ------------------------------------------------------------------
 
   tar_target(
@@ -73,16 +76,29 @@ targets <- list(
   ),
 
   tar_target(
+    streamorders,
+    river_networks_clean %>% 
+      as_tibble() %>% 
+      distinct(strahler) %>% 
+      pull(strahler)
+  ),
+  
+  tar_target(
     river_network_by_streamorder,
-    stream_order_filter(
-      river_networks_clean,
-      stream_order = 6
-    )
+    streamorders %>% 
+      as.vector() %>% 
+      as.numeric() %>% 
+      future_map(
+        ~stream_order_filter(
+        river_network = river_networks_clean,
+        stream_order = .x
+        )
+      )
   ),
 
   tar_target(
     base_grid,
-    make_grid(river_network_by_streamorder)
+    make_grid(river_network_by_streamorder[[1]])
   ),
 
   tar_target(
@@ -92,53 +108,79 @@ targets <- list(
 
   tar_target(
     thiessen_catchments_centroids,
-    make_thiessen_catchments_centroids(
-      river_network_by_streamorder,
-      base_grid,
-      base_grid_centroids
-    )
+    river_network_by_streamorder %>% 
+      future_map(
+        ~make_thiessen_catchments_centroids(
+        .x,
+        base_grid,
+        base_grid_centroids
+        )
+      )
   ),
   
   tar_target(
     thiessen_catchments,
-    make_thiessen_catchments(
-      base_grid,
-      thiessen_catchments_centroids
+    thiessen_catchments_centroids %>% 
+      future_map(
+        ~make_thiessen_catchments(
+        base_grid,
+        .x
+        )
     )
   ),
   
   tar_target(
     centroids_stream_distance,
-    calculate_stream_distance_centroids(
+    future_map2(
       thiessen_catchments_centroids,
-      river_network_by_streamorder
+      river_network_by_streamorder,
+      calculate_stream_distance_centroids
     )
   ),
   
   tar_target(
     centroids_divide_distance,
-    calculate_divide_distance_centroids(
+    future_map2(
       thiessen_catchments_centroids,
-      river_network_by_streamorder,
-      thiessen_catchments
+      thiessen_catchments,
+      calculate_divide_distance_centroids
     )
+  ),
+  
+  tar_target(
+    files_lateral_position,
+    generate_filepaths(
+      streamorders,
+      "lp"
+      )
   ),
   
   tar_target(
     grid_lateral_position,
-    calculate_lateral_position_centroids(
-      centroids_stream_distance,
-      centroids_divide_distance,
-      base_grid
-    )
+    future_pmap(
+      list(
+        centroids_stream_distance,
+        centroids_divide_distance,
+        files_lateral_position  
+      ),
+      calculate_lateral_position_grid,
+      grid = base_grid,
+      field_name = "lateral_position"
+    ),
+    pattern = map(files_lateral_position)
   ),
   
   tar_target(
     grid_stream_divide_distance,
-    calculate_stream_divide_distance_centroids(
-      centroids_stream_distance,
-      centroids_divide_distance,
-      base_grid
+    future_pmap(
+      list(
+        centroids_stream_distance,
+        centroids_divide_distance,
+        streamorders  
+      ),
+      calculate_stream_divide_distance_grid,
+      grid = base_grid,
+      field_name = "distance_stream_divide"
     )
   )
   
