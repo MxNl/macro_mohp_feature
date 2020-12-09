@@ -3,19 +3,36 @@ library(raster)
 library(sf)
 library(stars)
 library(furrr)
+library(tarchetypes)
 library(tidyverse)
 
 studyarea_subset_plots <- tar_read(studyarea_subset_plots)
 studyarea <- tar_read(studyarea)
 river_networks_clean <- tar_read(river_networks_clean)
 streamorders <- tar_read(streamorders)
+base_grid <- tar_read(base_grid)
 thiessen_catchments <- tar_read(thiessen_catchments)
 river_network_by_streamorder <- tar_read(river_network_by_streamorder)
 thiessen_catchments_centroids <- tar_read(thiessen_catchments_centroids)
 centroids_stream_distance <- tar_read(centroids_stream_distance)
 centroids_divide_distance <- tar_read(centroids_divide_distance)
+centroids_divide_distance <- tar_read(centroids_divide_distance)
+filepaths_lateral_position <- tar_read(filepaths_lateral_position)
 grid_lateral_position <- tar_read(grid_lateral_position)
 grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
+
+grid_stream_divide_distance[[1]] %>% 
+  sfpolygon_to_raster("test")
+
+grid_stream_divide_distance[[1]] %>% 
+  pull(stream_divide_distance) %>% 
+  range()
+
+grid_stream_divide_distance[[1]] %>% 
+  # mutate(stream_divide_distance = stream_divide_distance/1E5) %>% 
+  stars::st_rasterize() %>% 
+  write_stars("asda.tiff")
+
 
 grid_lateral_position
 

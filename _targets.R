@@ -7,12 +7,14 @@ source("R/plot_functions.R")
 source("R/processing_functions.R")
 source("R/config.R")
 
-options(tidyverse.quiet = TRUE)
+options(tidyverse.quiet = TRUE,
+        future.globals.maxSize= 1500*1024^2)
 tar_option_set(packages = c("rmarkdown",
                             "raster",
                             "rgdal",
                             "lwgeom",
                             "fasterize",
+                            "stars",
                             "sf",
                             "furrr",
                             "tarchetypes",
@@ -66,7 +68,7 @@ targets <- list(
     river_networks_clip,
     clip_river_networks(
       river_networks,
-      studyarea_subset_plots
+      studyarea
     )
   ),
 
@@ -147,13 +149,13 @@ targets <- list(
     )
   ),
   
-  tar_target(
-    files_lateral_position,
-    generate_filepaths(
-      streamorders,
-      "lp"
-      )
-  ),
+  # tar_target(
+  #   files_lateral_position,
+  #   generate_filepaths(
+  #     streamorders,
+  #     "lp"
+  #     )
+  # ),
   
   tar_target(
     grid_lateral_position,
@@ -161,13 +163,12 @@ targets <- list(
       list(
         centroids_stream_distance,
         centroids_divide_distance,
-        files_lateral_position  
+        streamorders  
       ),
       calculate_lateral_position_grid,
       grid = base_grid,
       field_name = "lateral_position"
-    ),
-    pattern = map(files_lateral_position)
+    )
   ),
   
   tar_target(

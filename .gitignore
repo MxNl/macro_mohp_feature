@@ -7,3 +7,4 @@ _targets
 maps_interactive
 data_processed
 test*
+output_data

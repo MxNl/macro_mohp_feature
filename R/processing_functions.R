@@ -180,11 +180,23 @@ generate_filepaths <-
   }
 
 calculate_lateral_position_grid <- 
-  function(stream_distance_centroids, divide_distance_centroids, filepath, grid, field_name) {
+  function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name) {
     ###### test
     # stream_distance_centroids <- tar_read(centroids_stream_distance)
     # divide_distance_centroids <- tar_read(centroids_divide_distance)
     ###
+    
+    filepath <- 
+      str_c("output_data/", 
+            "mohp_germany_",
+            "lp",
+            "_", 
+            "order", 
+            stream_order, 
+            "_", 
+            CELLSIZE, 
+            "m_res", 
+            ".tiff")
     
     divide_distance_centroids %>% 
       st_drop_geometry() %>% 
@@ -194,15 +206,30 @@ calculate_lateral_position_grid <-
              .before = 1) %>% 
       select(-contains("distance")) %>% 
       centroids_to_grid(grid) %>% 
-      sfpolygon_to_raster(field_name) %>% 
-      writeRaster(filepath,
-                  overwrite = TRUE)
+      st_rasterize() %>% 
+      write_stars(filepath)
+      # sfpolygon_to_raster(field_name) %>% 
+      # writeRaster(filepath,
+      #             overwrite = TRUE)
     
-    return(file_path)
+    # return(file_path)
   }
 
 calculate_stream_divide_distance_grid <- 
   function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name) {
+    
+    filepath <- 
+      str_c("output_data/", 
+            "mohp_germany_",
+            "dsd",
+            "_", 
+            "order", 
+            stream_order, 
+            "_", 
+            CELLSIZE, 
+            "m_res", 
+            ".tiff")
+    
     divide_distance_centroids %>% 
       st_drop_geometry() %>% 
       as_tibble() %>% 
@@ -210,7 +237,9 @@ calculate_stream_divide_distance_grid <-
       mutate(stream_divide_distance = distance_stream + distance_divide,
              .before = 1) %>% 
       select(-contains("distance_")) %>% 
-      centroids_to_grid(grid)
+      centroids_to_grid(grid) %>% 
+      st_rasterize() %>% 
+      write_stars(filepath)
       # sfpolygon_to_raster(field_name)
       # writeRaster(str_c("output_data/", "mohp_germany_", "dsd_", "order", stream_order, "_", CELLSIZE, "m_res", ".tiff"),
       #             overwrite = TRUE)
