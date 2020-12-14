@@ -68,7 +68,7 @@ targets <- list(
     river_networks_clip,
     clip_river_networks(
       river_networks,
-      studyarea
+      studyarea_subset_plots
     )
   ),
 

@@ -3,6 +3,7 @@ library(raster)
 library(sf)
 library(stars)
 library(furrr)
+library(patchwork)
 library(tarchetypes)
 library(tidyverse)
 
@@ -20,6 +21,191 @@ centroids_divide_distance <- tar_read(centroids_divide_distance)
 filepaths_lateral_position <- tar_read(filepaths_lateral_position)
 grid_lateral_position <- tar_read(grid_lateral_position)
 grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
+
+
+testplot <-
+  ggplot() +
+  geom_sf(
+    data = thiessen_catchments[[1]],
+    colour = "white",
+    fill = "grey70"
+  ) +
+  geom_sf(
+    data = river_network_by_streamorder[[1]],
+    aes(colour = as.factor(strahler))
+  )
+
+testplot %>% 
+  plotly::ggplotly()
+
+river_network_by_streamorder[[1]] <- 
+  river_network_by_streamorder[[1]] %>% 
+  mutate(segment_id = 1:n())
+
+segment_colours <- 
+  river_network_by_streamorder[[1]] %>%
+  # distinct(nearest_feature) %>% 
+  nrow() %>% 
+  hues::iwanthue(lmin = 40,
+                 cmax = 70)
+
+testplot1 <- 
+  river_network_by_streamorder[[1]] %>% 
+  ggplot() +
+  geom_sf(
+    data = river_network_by_streamorder[[1]],
+    aes(colour = as.factor(strahler)),
+    size = 2
+  ) +
+  theme(legend.position = "none") +
+  labs(title = "Farbecode repräsentiert Strahler order")
+
+testplot2 <- 
+  river_network_by_streamorder[[1]] %>% 
+  ggplot() +
+  geom_sf(aes(colour = as.character(segment_id)),
+          size = 2) +
+  scale_colour_manual(values = segment_colours) +
+  theme(legend.position = "none") +
+  labs(title = "Farbecode repräsentiert Features/Liniensegmente")
+
+testplot1 + testplot2
+
+
+
+
+
+
+river_network_by_streamorder[[1]] %>% 
+  mutate(test = river_network_by_streamorder[[1]] %>% 
+  st_touches(sparse = FALSE))
+
+test <- river_network_by_streamorder[[1]] %>% 
+  st_touches()
+
+key <- 
+  test %>% 
+  map(as.vector) %>% 
+  # imap(~c(.x, .y)) %>% 
+  map(sort) %>% 
+  map(as.character) %>% 
+  map(str_c, collapse = "") %>% 
+  unlist()
+
+lines_dissolved <- 
+  river_network_by_streamorder[[1]] %>% 
+  mutate(key = key, .before = 2) %>% 
+  mutate(key = str_c(key, strahler)) %>% 
+  group_by(key) %>% 
+  summarise()
+
+segment_colours <- 
+  lines_dissolved %>%
+  # distinct(nearest_feature) %>% 
+  nrow() %>% 
+  hues::iwanthue(lmin = 40,
+                 cmax = 70)
+
+testplot3 <-
+  lines_dissolved %>%  
+  ggplot() +
+  geom_sf(aes(colour = as.character(key)),
+          size = 2) +
+  scale_colour_manual(values = segment_colours) +
+  theme(legend.position = "none") +
+  labs(title = "Farbecode repräsentiert Features/Liniensegmente")
+
+
+testplot3 + testplot2
+
+river_network_by_streamorder[[1]] %>% 
+  st_touches(sparse = FALSE) %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = everything()) %>% 
+  filter(value == TRUE) %>% 
+  mutate(name = as.numeric(str_sub(name, 2L))) %>% 
+  mutate(name2 = 1:n(), .before = 1)
+
+
+river_network_by_streamorder[[1]] %>% 
+  st_intersects(river_network_by_streamorder[[1]])
+
+
+lines_dissolved <- 
+  river_network_by_streamorder[[1]] %>% 
+  group_by(strahler) %>% 
+  summarise()
+
+lines_singlefeature <- 
+  river_network_by_streamorder[[1]] %>% 
+  # group_by(strahler) %>% 
+  summarise()
+
+river_network_by_streamorder[[1]] %>%
+  group_by(strahler) %>%
+  summarise() %>%
+  st_line_merge()
+
+st_union(lines_dissolved, lines_singlefeature, by_feature = TRUE, is_coverage = TRUE)
+
+st_line_merge()
+lwgeom::st_split()
+st_combine()
+st_intersection()
+st_union()
+st_collection_extract()
+
+
+
+lines_dissolved %>% 
+  st_line_merge()
+
+
+river_networks_dissolved <- 
+  river_networks_merge %>%
+  group_by(strahler) %>%
+  summarise() %>%
+  st_line_merge()
+
+result_intersection <- 
+  lines_singlefeature %>%
+  st_intersection(lines_dissolved %>% 
+                    # select(-strahler) %>%
+                    st_cast("MULTILINESTRING"))
+
+result_intersection_points <-
+  result_intersection %>% 
+  filter(st_is(., "POINT")) %>% 
+  distinct(geometry)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
+            st_linestring(rbind(c(0,0),c(10,0))))
+st_line_sample(ls, density = 1)
+
+
+
+lwgeom::st_split(lines_singlefeature, lines_dissolved)
+
+lines_singlefeature %>% 
+  st_intersection(lines_dissolved)
+
+testplot1 + testplot2
+
+testplot %>% 
+  plotly
 
 grid_stream_divide_distance[[1]] %>% 
   sfpolygon_to_raster("test")
@@ -168,7 +354,8 @@ raster::raster("output/test.tiff") %>%
 
 segment_colours <- 
   tar_read(thiessen_catchments) %>% 
-  distinct(nearest_feature) %>% 
+  pluck(1) %>% 
+  # distinct(nearest_feature) %>% 
   nrow() %>% 
   hues::iwanthue(lmin = 40,
                  cmax = 70)
