@@ -68,6 +68,147 @@ clean_river_networks <-
       return()
   }
 
+
+merge_same_strahler_segments <-
+  function(sf_lines) {
+    ###### Test
+    # sf_lines <- river_network
+    ###
+    
+    adjacent_segments_list <-
+      sf_lines %>%
+      st_touches()
+    
+    adjacent_segments_list <-
+      adjacent_segments_list %>%
+      map(as.vector) %>%
+      # imap(add_index) %>%
+      map(sort)
+    
+    adjacent_strahler_list <-
+      adjacent_segments_list %>%
+      map(~ extract_strahler_by_index(sf_lines, .))
+    
+    segment_strahler_list <-
+      sf_lines %>%
+      rowwise() %>%
+      group_split() %>%
+      imap(~ extract_strahler_by_index(sf_lines, .y))
+    
+    segments_to_merge <-
+      list(
+        seq_along(adjacent_segments_list),
+        adjacent_segments_list,
+        adjacent_strahler_list,
+        segment_strahler_list
+      ) %>%
+      pmap(determine_segments_to_merge)
+    
+    segments_to_merge <-
+      segments_to_merge %>%
+      discard(isFALSE) %>%
+      list_to_long_df() %>%
+      lump() %>%
+      distinct(id, combined_group)
+    
+    merged_lines <- sf_lines %>%
+      mutate(id = 1:n()) %>%
+      left_join(segments_to_merge,
+                by = "id"
+      ) %>%
+      mutate(combined_group = as.character(combined_group)) %>%
+      mutate(combined_group = if_else(is.na(combined_group),
+                                      str_c("nogroup_", id),
+                                      combined_group
+      )) %>%
+      select(-id) %>%
+      group_by(combined_group) %>%
+      summarise()
+  }
+
+
+list_to_long_df <-
+  function(list) {
+    long_format <- 
+      tibble(id_a = rep(seq_along(list), lengths(list)), 
+             id = unlist(list))
+    return(long_format)
+  }
+
+
+extract_strahler_by_index <- 
+  function(sf_lines, index_vector) {
+    sf_lines %>% 
+      as_tibble() %>% 
+      slice(index_vector) %>% 
+      pull(strahler)
+  }
+
+determine_segments_to_merge <-
+  function(index_vector,
+           adjacent_segments_list,
+           adjacent_strahler,
+           segment_strahler) {
+    ##### Test
+    # index <- sample(1:162, 1)
+    # adjacent_strahler <- adjacent_strahler_list[[index]]
+    # segment_strahler <- segment_strahler_list[[index]]
+    ###
+    
+    if ((segment_strahler %>% is_empty())){
+      FALSE
+    }
+    else if (segment_strahler == max(adjacent_strahler, na.rm = TRUE)) {
+      adjacent_segments_list %>%
+        # pluck(index) %>%
+        magrittr::extract(adjacent_strahler == segment_strahler) %>%
+        c(index_vector) %>%
+        sort()
+    } else {
+      FALSE
+    }
+  }
+
+linked_rows <- function(data){
+  ## helper function
+  ## returns a _function_ to compare two rows of data
+  ##  based on group membership.
+  
+  ## Use Vectorize so it works even on vectors of indices
+  Vectorize(function(i, j) {
+    ## numeric: 1= i and j have overlapping group membership
+    common <- vapply(names(data), function(name)
+      data[i, name] == data[j, name],
+      FUN.VALUE=FALSE)
+    as.numeric(any(common))
+  })
+}
+
+lump_links <- function(A) {
+  A <- A %*% A
+  A[A > 0] <- 1
+  A
+}
+
+lump <- function(df) {
+  rows <- 1:nrow(df)
+  A <- outer(rows, rows, linked_rows(df))
+  
+  oldA <- 0
+  while (any(oldA != A)) {
+    oldA <- A
+    A <- lump_links(A)
+  }
+  df$combined_group <- cutree(hclust(as.dist(1 - A)), h = 0)
+  df
+}
+
+
+
+
+
+
+
 stream_order_filter <- 
   function(river_network, stream_order) {
     river_network %>% 

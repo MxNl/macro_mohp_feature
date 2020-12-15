@@ -76,10 +76,15 @@ targets <- list(
     river_networks_clean,
     clean_river_networks(river_networks_clip)
   ),
+  
+  tar_target(
+    river_networks_strahler_merge,
+    merge_same_strahler_segments(river_networks_clean)
+  ),
 
   tar_target(
     streamorders,
-    river_networks_clean %>% 
+    river_networks_strahler_merge %>% 
       as_tibble() %>% 
       distinct(strahler) %>% 
       pull(strahler)
@@ -92,7 +97,7 @@ targets <- list(
       as.numeric() %>% 
       future_map(
         ~stream_order_filter(
-        river_network = river_networks_clean,
+        river_network = river_networks_strahler_merge,
         stream_order = .x
         )
       )
