@@ -72,7 +72,7 @@ clean_river_networks <-
 merge_same_strahler_segments <-
   function(sf_lines) {
     ###### Test
-    # sf_lines <- river_network
+    # sf_lines <- river_networks_clean
     ###
     
     adjacent_segments_list <-
@@ -87,7 +87,7 @@ merge_same_strahler_segments <-
     
     adjacent_strahler_list <-
       adjacent_segments_list %>%
-      map(~ extract_strahler_by_index(sf_lines, .))
+      map(~extract_strahler_by_index(sf_lines, .))
     
     segment_strahler_list <-
       sf_lines %>%
@@ -111,7 +111,8 @@ merge_same_strahler_segments <-
       lump() %>%
       distinct(id, combined_group)
     
-    merged_lines <- sf_lines %>%
+    merged_lines <- 
+      sf_lines %>%
       mutate(id = 1:n()) %>%
       left_join(segments_to_merge,
                 by = "id"
@@ -123,7 +124,9 @@ merge_same_strahler_segments <-
       )) %>%
       select(-id) %>%
       group_by(combined_group) %>%
-      summarise()
+      summarise(strahler = first(strahler))
+    
+    return(merged_lines)
   }
 
 
@@ -141,7 +144,8 @@ extract_strahler_by_index <-
     sf_lines %>% 
       as_tibble() %>% 
       slice(index_vector) %>% 
-      pull(strahler)
+      pull(strahler) %>% 
+      as.numeric()
   }
 
 determine_segments_to_merge <-
@@ -348,7 +352,8 @@ calculate_lateral_position_grid <-
       select(-contains("distance")) %>% 
       centroids_to_grid(grid) %>% 
       st_rasterize() %>% 
-      write_stars(filepath)
+      write_stars(filepath, 
+                  overwrite = TRUE)
       # sfpolygon_to_raster(field_name) %>% 
       # writeRaster(filepath,
       #             overwrite = TRUE)
@@ -379,8 +384,10 @@ calculate_stream_divide_distance_grid <-
              .before = 1) %>% 
       select(-contains("distance_")) %>% 
       centroids_to_grid(grid) %>% 
-      st_rasterize() %>% 
-      write_stars(filepath)
+      st_rasterize() %>%
+      write_stars(filepath, 
+                  overwrite = TRUE)
+    
       # sfpolygon_to_raster(field_name)
       # writeRaster(str_c("output_data/", "mohp_germany_", "dsd_", "order", stream_order, "_", CELLSIZE, "m_res", ".tiff"),
       #             overwrite = TRUE)
