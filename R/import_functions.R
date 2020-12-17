@@ -10,12 +10,12 @@ read_river_networks <-
     ##### Test
     # filepath <- tar_read(filepath_river_networks)
     ####
-    files <-
-      filepath %>%
-      list.files(recursive = TRUE) %>%
-      keep(str_detect(., ".gdb$")) %>%
-      keep(!str_detect(., "public|Documentation")) %>%
-      str_replace("/gdb", "")
+    # files <-
+    #   filepath %>%
+    #   list.files(recursive = TRUE) %>%
+    #   keep(str_detect(., ".gdb$")) %>%
+    #   keep(!str_detect(., "public|Documentation")) %>%
+    #   str_replace("/gdb", "")
 
     files <-
       filepath %>%

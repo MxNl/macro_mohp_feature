@@ -9,6 +9,7 @@ library(tidyverse)
 
 studyarea_subset_plots <- tar_read(studyarea_subset_plots)
 studyarea <- tar_read(studyarea)
+river_networks_clip <- tar_read(river_networks_clip)
 river_networks_clean <- tar_read(river_networks_clean)
 river_networks_strahler_merge <- tar_read(river_networks_strahler_merge)
 streamorders <- tar_read(streamorders)
@@ -22,7 +23,20 @@ centroids_divide_distance <- tar_read(centroids_divide_distance)
 filepaths_lateral_position <- tar_read(filepaths_lateral_position)
 grid_lateral_position <- tar_read(grid_lateral_position)
 grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
+tar_read(test_processed_river_network_plot)
+tar_read(test_catchments_plot)
 
+
+tar_read(river_networks_strahler_merge) %>% 
+  plot_test_processed_river_network(tar_read(studyarea_subset_plots))
+
+
+river_networks_strahler_merge %>% 
+    st_as_sf() %>%
+    mutate(id = as.character(1:n())) %>%
+    ggplot() +
+    geom_sf(aes(colour = id))
+  ggplot()
 
 testplot <-
   ggplot() +

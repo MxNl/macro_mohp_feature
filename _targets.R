@@ -9,7 +9,9 @@ source("R/config.R")
 
 options(tidyverse.quiet = TRUE,
         future.globals.maxSize= 1500*1024^2)
-tar_option_set(packages = c("rmarkdown",
+tar_option_set(packages = c(
+                            "igraph",
+                            "rmarkdown",
                             "raster",
                             "rgdal",
                             "lwgeom",
@@ -27,10 +29,10 @@ plan(multisession)
 
 # Define targets
 targets <- list(
-
+  
   
   # Import ------------------------------------------------------------------
-
+  
   tar_target(
     filepath_studyarea,
     "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/germany_buffer/time_invariant/shape/self_processed/data/buffer_germany_point6.shp",
@@ -40,7 +42,7 @@ targets <- list(
     studyarea,
     read_studyarea(filepath_studyarea)
   ),
-
+  
   tar_target(
     filepath_studyarea_subset_plots,
     "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/arbitrary/pipeline_test_studyarea/macro_datapreparation_pipeline_test_studyarea.shp",
@@ -50,7 +52,7 @@ targets <- list(
     studyarea_subset_plots,
     read_studyarea(filepath_studyarea_subset_plots)
   ),
-
+  
   tar_target(
     filepath_river_networks,
     "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data/"
@@ -59,11 +61,11 @@ targets <- list(
     river_networks,
     read_river_networks(filepath_river_networks)
   ),
-
-
-
+  
+  
+  
   # Preprocessing -----------------------------------------------------------
-
+  
   tar_target(
     river_networks_clip,
     clip_river_networks(
@@ -71,23 +73,25 @@ targets <- list(
       studyarea_subset_plots
     )
   ),
-
+  
   tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_clip)
+    clean_river_networks(river_networks_clip, n_longest_rivers = 4)
   ),
   
   tar_target(
     river_networks_strahler_merge,
     merge_same_strahler_segments(river_networks_clean)
   ),
-
+  
   tar_target(
     streamorders,
     river_networks_strahler_merge %>% 
       as_tibble() %>% 
       distinct(strahler) %>% 
-      pull(strahler)
+      pull(strahler) %>% 
+      as.numeric() %>%
+      sort()
   ),
   
   tar_target(
@@ -97,30 +101,30 @@ targets <- list(
       as.numeric() %>% 
       future_map(
         ~stream_order_filter(
-        river_network = river_networks_strahler_merge,
-        stream_order = .x
+          river_network = river_networks_strahler_merge,
+          stream_order = .x
         )
       )
   ),
-
+  
   tar_target(
     base_grid,
     make_grid(river_network_by_streamorder[[1]])
   ),
-
+  
   tar_target(
     base_grid_centroids,
     make_grid_centroids(base_grid)
   ),
-
+  
   tar_target(
     thiessen_catchments_centroids,
     river_network_by_streamorder %>% 
       future_map(
         ~make_thiessen_catchments_centroids(
-        .x,
-        base_grid,
-        base_grid_centroids
+          .x,
+          base_grid,
+          base_grid_centroids
         )
       )
   ),
@@ -130,10 +134,10 @@ targets <- list(
     thiessen_catchments_centroids %>% 
       future_map(
         ~make_thiessen_catchments(
-        base_grid,
-        .x
+          base_grid,
+          .x
         )
-    )
+      )
   ),
   
   tar_target(
@@ -188,6 +192,20 @@ targets <- list(
       grid = base_grid,
       field_name = "distance_stream_divide"
     )
+  ),
+  
+
+  # Visualization -----------------------------------------------------------
+
+  tar_target(
+    test_processed_river_network_plot,
+    plot_test_processed_river_network(river_networks_strahler_merge,
+                                      studyarea_subset_plots)
+  ),
+
+  tar_target(
+    test_catchments_plot,
+    plot_test_catchments(river_network_by_streamorder, thiessen_catchments, streamorders, studyarea_subset_plots)
   )
   
   
@@ -197,3 +215,4 @@ tar_pipeline(targets)
 
 
 # targets::tar_make_future(workers = future::availableCores(), garbage_collection = TRUE)
+# targets::tar_visnetwork(label = c("time", "size"), targets_only = TRUE)
