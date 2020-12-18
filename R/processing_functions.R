@@ -16,40 +16,66 @@ clip_river_networks <-
   }
 
 clean_river_networks <- 
-  function(river_network, n_longest_rivers) {
+  function(river_network, studyarea) {
     #### Test
     # river_network <- tar_read(river_networks_clip)
+    # studyarea <- tar_read(studyarea_outline)
     ###
     
     river_network <- 
       river_network %>% 
       keep_relevant_columns %>%
       remove_invalid_streamorder_values() %>% 
-      remove_disconnected_line_segments(n_longest_rivers)
+      remove_disconnected_line_segments(studyarea)
     
-    }
+  }
+
+determine_studyarea_outline <-
+  function(studyarea, coastline){
+    ### Test
+    # coastline <- tar_read(coastline)
+    # studyarea <- tar_read(studyarea_subset_plots)
+    ###
+
+    studyarea_outline <-
+      studyarea %>%
+      st_difference(coastline) %>% 
+      st_cast("POLYGON")
+    
+    studyarea_outline <- 
+      studyarea_outline %>% 
+      mutate(area = as.numeric(st_area(geometry))) %>% 
+      arrange(-area) %>% 
+      slice(1) %>% 
+      select(geometry)
+  }
+
+st_envelope <- 
+  function(x) {
+    st_as_sfc(st_bbox(x))
+  }
 
 remove_disconnected_line_segments <- 
-  function(river_network, n_longest_rivers) {
+  function(river_network, studyarea) {
     ### Test
-    # river_network <- 
-    #   tar_read(river_networks_clip) %>% 
+    # studyarea <- tar_read(studyarea_outline)
+    # river_network <- tar_read(river_networks_clip)
     #   clean_river_networks()
     # n_longest_rivers <- 3
     ###
     
-    river_network_test <- 
-      river_network %>% 
-      select(-strahler) %>% 
-      st_cast("LINESTRING") %>% 
+    river_network_test <-
+      river_network %>%
+      select(-strahler) %>%
+      st_cast("LINESTRING") %>%
       st_geometry()
-    
-    river_network_components <- 
-      river_network_test %>% 
-      st_touches() %>% 
-      igraph::graph.adjlist() %>% 
+
+    river_network_components <-
+      river_network_test %>%
+      st_touches() %>%
+      igraph::graph.adjlist() %>%
       igraph::components()
-    
+
     membership_lines <-
       do.call(
         st_sfc,
@@ -60,41 +86,44 @@ remove_disconnected_line_segments <-
             st_multilinestring(river_network_test[i])
           }
         )
-      )
+      ) %>% 
+      st_as_sf()
     
-    river_network <- 
-      river_network %>% 
-      keep_n_longest_river_networks(membership_lines,
-                                    n_longest_rivers)
+    st_crs(membership_lines) <- 
+      st_crs(river_network_test)
+
+    river_network <-
+      river_network %>%
+      drop_isolated_line_segments(membership_lines,
+                                  studyarea)
     
     river_network %>% 
       return()
   }
 
-keep_n_longest_river_networks <- 
-  function(river_network, merged_river_network, n_longest_rivers) {
+drop_isolated_line_segments <- 
+  function(river_network, merged_river_network, studyarea) {
     ### Test
-    # river_network <- tar_read(river_networks_clip) %>% 
-    #   clean_river_networks()
+    # river_network <- tar_read(river_networks_clip)
     # merged_river_network <- membership_lines
+    # studyarea <- tar_read(studyarea_outline)
     ###
     
-    merged_river_network <- 
+    isolated_line_segments <-
       merged_river_network %>% 
-      st_as_sf() %>% 
-      mutate(length = st_length(.))
+      st_intersects(st_cast(studyarea, "LINESTRING")) %>% 
+      map(as.vector) %>%
+      map(sort) %>% 
+      map(is_empty) %>% 
+      unlist()
     
-    merged_river_network <- 
-      merged_river_network %>% 
-      dplyr::arrange(-length) %>% 
-      slice(1:n_longest_rivers) %>% 
-      select(-length)
-    
-    st_crs(merged_river_network) <- 
-      st_crs(river_network)
+    # ggplot() +
+    #   geom_sf(data = studyarea) +
+    #   geom_sf(data = river_network)
     
     river_network <- 
       merged_river_network %>% 
+      filter(!isolated_line_segments) %>% 
       st_intersection(river_network)
     
     river_network %>% 
@@ -124,48 +153,48 @@ remove_invalid_streamorder_values <-
 #     # river_networks <- tar_read(river_networks_clip)
 #     # studyarea <- tar_read(filepath_studyarea_subset_plots)
 #     #####
-#     
-#     river_networks_merge <- 
-#       river_networks %>% 
+# 
+#     river_networks_merge <-
+#       river_networks %>%
 #       select(strahler) %>%
 #       filter(strahler != -9999)
-#     
-#     river_networks_dissolved <- 
+# 
+#     river_networks_dissolved <-
 #       river_networks_merge %>%
 #       group_by(strahler) %>%
 #       summarise() %>%
 #       st_line_merge()
-#     
-#     result_intersection <- 
-#       river_networks_merge %>% 
+# 
+#     result_intersection <-
+#       river_networks_merge %>%
 #       select(-strahler) %>%
-#       st_intersection(river_networks_dissolved %>% 
+#       st_intersection(river_networks_dissolved %>%
 #                         # select(-strahler) %>%
 #                         st_cast("MULTILINESTRING"))
-#     
+# 
 #     result_intersection_points <-
-#       result_intersection %>% 
-#       filter(st_is(., "POINT")) %>% 
+#       result_intersection %>%
+#       filter(st_is(., "POINT")) %>%
 #       distinct(geometry)
-#     
-#     river_networks_clean <- 
-#       river_networks_dissolved %>% 
-#       st_cast("MULTILINESTRING") %>% 
-#       st_union() %>% 
-#       lwgeom::st_split(st_combine(result_intersection_points)) %>% 
-#       st_collection_extract("LINESTRING") %>% 
-#       st_as_sf() %>% 
-#       st_cast("MULTILINESTRING") %>% 
+# 
+#     river_networks_clean <-
+#       river_networks_dissolved %>%
+#       st_cast("MULTILINESTRING") %>%
+#       st_union() %>%
+#       lwgeom::st_split(st_combine(result_intersection_points)) %>%
+#       st_collection_extract("LINESTRING") %>%
+#       st_as_sf() %>%
+#       st_cast("MULTILINESTRING") %>%
 #       rename(geometry = x)
-#     
-#     river_networks_clean <- 
-#       river_networks_clean %>% 
-#       st_intersection(river_networks_dissolved) %>% 
-#       filter(st_is(., "MULTILINESTRING")) %>%  
-#       distinct(geometry, strahler) %>% 
+# 
+#     river_networks_clean <-
+#       river_networks_clean %>%
+#       st_intersection(river_networks_dissolved) %>%
+#       filter(st_is(., "MULTILINESTRING")) %>%
+#       distinct(geometry, strahler) %>%
 #       mutate(strahler = as.factor(strahler))
-#     
-#     river_networks_clean %>% 
+# 
+#     river_networks_clean %>%
 #       return()
 #   }
 
@@ -443,7 +472,7 @@ calculate_lateral_position_grid <-
             stream_order, 
             "_", 
             CELLSIZE, 
-            "m_res", 
+            "m", 
             ".tiff")
     
     # unlink(filepath)
@@ -478,7 +507,7 @@ calculate_stream_divide_distance_grid <-
             stream_order, 
             "_", 
             CELLSIZE, 
-            "m_res", 
+            "m", 
             ".tiff")
     
     # unlink(filepath)

@@ -72,21 +72,35 @@ targets <- list(
     read_river_networks(filepath_river_networks)
   ),
   
+  tar_target(
+    filepath_coastline,
+    "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
+  ),
+  tar_target(
+    coastline,
+    read_coastline(filepath_coastline)
+  ),
+  
   
   
   # Preprocessing -----------------------------------------------------------
   
   tar_target(
+    studyarea_outline,
+    determine_studyarea_outline(studyarea_subset_plots, coastline)
+  ),
+  
+  tar_target(
     river_networks_clip,
     clip_river_networks(
       river_networks,
-      studyarea_subset_plots
+      studyarea_outline
     )
   ),
   
   tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_clip, n_longest_rivers = 4)
+    clean_river_networks(river_networks_clip, studyarea_outline)
   ),
   
   tar_target(

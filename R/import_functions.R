@@ -10,12 +10,6 @@ read_river_networks <-
     ##### Test
     # filepath <- tar_read(filepath_river_networks)
     ####
-    # files <-
-    #   filepath %>%
-    #   list.files(recursive = TRUE) %>%
-    #   keep(str_detect(., ".gdb$")) %>%
-    #   keep(!str_detect(., "public|Documentation")) %>%
-    #   str_replace("/gdb", "")
 
     files <-
       filepath %>%
@@ -41,4 +35,16 @@ read_river_networks <-
       st_transform(crs = CRS_REFERENCE)
 
     return(river_networks)
+  }
+
+read_coastline <-
+  function(filepath) {
+
+    coastline <- 
+      filepath %>% 
+      read_sf() %>% 
+      summarise() %>% 
+      st_transform(CRS_REFERENCE)
+
+    return(coastline)
   }

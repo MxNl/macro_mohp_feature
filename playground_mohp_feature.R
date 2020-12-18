@@ -27,6 +27,10 @@ tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 
 
+# tar_read(coastline) %>% 
+#   # slice(1:5) %>% 
+#   st_union()
+
 tar_read(river_networks_strahler_merge) %>% 
   plot_test_processed_river_network(tar_read(studyarea_subset_plots))
 
