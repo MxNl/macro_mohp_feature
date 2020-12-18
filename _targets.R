@@ -4,6 +4,7 @@ library(future)
 
 source("R/import_functions.R")
 source("R/plot_functions.R")
+source("R/directory_functions.R")
 source("R/processing_functions.R")
 source("R/config.R")
 
@@ -22,6 +23,15 @@ tar_option_set(packages = c(
                             "tarchetypes",
                             "tidyverse"),
                memory = "transient")
+
+
+
+directory_output_data <- create_directory("output_data/")
+
+directory_lateral_position <- create_directory(directory_output_data, "lateral_position/")
+
+directory_stream_divide_distance <- create_directory(directory_output_data, "stream_divide_distance/")
+
 
 
 plan(multisession)
@@ -176,7 +186,8 @@ targets <- list(
       ),
       calculate_lateral_position_grid,
       grid = base_grid,
-      field_name = "lateral_position"
+      field_name = "lateral_position",
+      directory = directory_lateral_position
     )
   ),
   
@@ -190,7 +201,8 @@ targets <- list(
       ),
       calculate_stream_divide_distance_grid,
       grid = base_grid,
-      field_name = "distance_stream_divide"
+      field_name = "distance_stream_divide",
+      directory = directory_stream_divide_distance
     )
   ),
   

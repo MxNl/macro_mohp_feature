@@ -428,14 +428,14 @@ generate_filepaths <-
   }
 
 calculate_lateral_position_grid <- 
-  function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name) {
+  function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name, directory) {
     ###### test
     # stream_distance_centroids <- tar_read(centroids_stream_distance)
     # divide_distance_centroids <- tar_read(centroids_divide_distance)
     ###
-    
+
     filepath <- 
-      str_c("output_data/", 
+      str_c(directory, 
             "mohp_germany_",
             "lp",
             "_", 
@@ -445,6 +445,8 @@ calculate_lateral_position_grid <-
             CELLSIZE, 
             "m_res", 
             ".tiff")
+    
+    # unlink(filepath)
     
     divide_distance_centroids %>% 
       st_drop_geometry() %>% 
@@ -465,10 +467,10 @@ calculate_lateral_position_grid <-
   }
 
 calculate_stream_divide_distance_grid <- 
-  function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name) {
+  function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name, directory) {
     
     filepath <- 
-      str_c("output_data/", 
+      str_c(directory, 
             "mohp_germany_",
             "dsd",
             "_", 
@@ -478,6 +480,8 @@ calculate_stream_divide_distance_grid <-
             CELLSIZE, 
             "m_res", 
             ".tiff")
+    
+    # unlink(filepath)
     
     divide_distance_centroids %>% 
       st_drop_geometry() %>% 
