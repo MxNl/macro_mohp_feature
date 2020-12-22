@@ -26,6 +26,24 @@ grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 
+river_networks_clean %>% 
+  as_tibble() %>% 
+  distinct(feature_id) %>% 
+  pull(feature_id)
+
+river_networks_clean <- 
+  river_networks_clean %>% 
+  st_cast("MULTILINESTRING") %>%
+  rename(geometry = x)
+
+river_networks_clean %>% 
+  ggplot() +
+  geom_sf(aes(colour = feature_id))
+
+st_distance(
+  filter(river_networks_clean, feature_id == 2) %>% summarise(),
+  filter(river_networks_clean, feature_id == 12) %>% summarise()
+  )
 
 # tar_read(coastline) %>% 
 #   # slice(1:5) %>% 

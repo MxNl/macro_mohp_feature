@@ -59,9 +59,10 @@ remove_disconnected_line_segments <-
   function(river_network, studyarea) {
     ### Test
     # studyarea <- tar_read(studyarea_outline)
-    # river_network <- tar_read(river_networks_clip)
-    #   clean_river_networks()
-    # n_longest_rivers <- 3
+    # river_network <-
+    #   tar_read(river_networks_clip) %>% 
+    #   keep_relevant_columns %>%
+    #   remove_invalid_streamorder_values()
     ###
     
     river_network_test <-
@@ -121,14 +122,33 @@ drop_isolated_line_segments <-
     #   geom_sf(data = studyarea) +
     #   geom_sf(data = river_network)
     
+    merged_river_network <- 
+      merged_river_network %>% 
+      add_feature_index_column()
+    
     river_network <- 
       merged_river_network %>% 
       filter(!isolated_line_segments) %>% 
       st_intersection(river_network)
     
+    # river_network <- 
+    #   river_network %>% 
+      # st_cast("MULTILINESTRING") %>% 
+      # rename(geometry = x)
+    
     river_network %>% 
       return()
   }
+
+
+add_feature_index_column <- 
+  function(sf_object) {
+    sf_object %>% 
+      mutate(feature_id = as.character(1:n()),
+             .before = 1)
+  }
+
+
 
 keep_relevant_columns <- 
   function(river_network, 
@@ -212,7 +232,6 @@ merge_same_strahler_segments <-
     adjacent_segments_list <-
       adjacent_segments_list %>%
       map(as.vector) %>%
-      # imap(add_index) %>%
       map(sort)
     
     adjacent_strahler_list <-
