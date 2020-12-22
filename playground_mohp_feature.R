@@ -26,6 +26,60 @@ grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 
+
+st_layers("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite")
+st_read("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite",
+        layer = "c_tr")
+
+values <-
+  tibble(
+    output_function = rlang::syms("calculate_lateral_position_grid"),
+    streamorders = 1:6,
+    # centroids_stream_distance = rlang::syms("centroids_stream_distance"),
+    # centroids_divide_distance = rlang::syms("centroids_divide_distance"),
+    grid =  rlang::syms("base_grid"),
+    field_name = "lateral_position",
+    data_source = str_c(field_name, "_", streamorders)
+  )
+
+
+
+
+targets_output <- 
+  tar_map(
+    
+    # tar_target(
+    #   files_lateral_position,
+    #   generate_filepaths(
+    #     streamorders,
+    #     "lp"
+    #   ),
+    #   format = "file"
+    # ),
+    values = values,
+    names = streamorders,
+    tar_target(
+      lateral_position,
+      # list(
+      #   centroids_stream_distance,
+      #   centroids_divide_distance,
+      #   streamorders  
+      # ),
+      output_function(
+        centroids_stream_distance,
+        centroids_divide_distance,
+        streamorders,
+        grid,
+        field_name
+      ),
+      format = "file"
+    )
+  )
+
+
+
+
+
 river_networks_clean %>% 
   as_tibble() %>% 
   distinct(feature_id) %>% 
