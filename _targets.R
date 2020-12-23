@@ -9,7 +9,8 @@ source("R/processing_functions.R")
 source("R/config.R")
 
 options(tidyverse.quiet = TRUE,
-        future.globals.maxSize= 1500*1024^2)
+        future.globals.maxSize= 4E5*1024^2)
+
 tar_option_set(packages = c(
                             "igraph",
                             "rmarkdown",
@@ -22,7 +23,8 @@ tar_option_set(packages = c(
                             "furrr",
                             "tarchetypes",
                             "tidyverse"),
-               memory = "transient")
+               memory = "transient",
+               garbage_collection = TRUE)
 
 
 
@@ -104,9 +106,28 @@ targets <- list(
   ),
   
   tar_target(
-    river_networks_strahler_merge,
-    merge_same_strahler_segments(river_networks_clean)
+    river_networks_split,
+    split_river_network(river_networks_clean)
   ),
+  
+  # tar_target(
+  #   index,
+  #   river_networks_split %>%
+  #     seq_along()
+  # ),
+  
+  tar_target(
+    river_networks_strahler_merge,
+    river_networks_split %>% 
+      future_map(merge_same_strahler_segments) %>%
+      reduce(bind_rows)
+  ),
+  
+  # tar_target(
+  #   test,
+  #   river_networks_strahler_merge %>% ggplot() + geom_sf(),
+  #   priority = 1
+  # ),
   
   tar_target(
     streamorders,
@@ -117,6 +138,16 @@ targets <- list(
       as.numeric() %>%
       sort()
   ),
+  # 
+  # tar_target(
+  #   streamorders,
+  #   tar_read(river_networks_strahler_merge) %>% 
+  #     as_tibble() %>% 
+  #     distinct(strahler) %>% 
+  #     pull(strahler) %>% 
+  #     as.numeric() %>%
+  #     sort()
+  # ),
   
   tar_target(
     river_network_by_streamorder,
@@ -240,5 +271,5 @@ targets <- list(
 tar_pipeline(targets)
 
 
-# targets::tar_make_future(workers = future::availableCores(), garbage_collection = TRUE)
+# targets::tar_make_future(workers = future::availableCores())
 # targets::tar_visnetwork(label = c("time", "size"), targets_only = TRUE)

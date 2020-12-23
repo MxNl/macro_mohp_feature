@@ -26,6 +26,19 @@ grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 
+river_networks_strahler_merge %>% 
+  st_sf()
+
+tar_read(river_networks_split) %>% 
+  bind_rows()
+
+river_networks_strahler_merge %>% 
+  as_tibble() %>% 
+  distinct(strahler) %>% 
+  pull(strahler) %>% 
+  as.numeric() %>%
+  sort()
+
 
 st_layers("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite")
 st_read("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite",
@@ -41,8 +54,6 @@ values <-
     field_name = "lateral_position",
     data_source = str_c(field_name, "_", streamorders)
   )
-
-
 
 
 targets_output <- 
@@ -76,8 +87,13 @@ targets_output <-
     )
   )
 
-
-
+tar_pattern(
+  map(x),
+  x = 5,
+  y = 1
+)
+targets::tar_make_future(workers = future::availableCores())
+tar_read(unique_feature_ids)
 
 
 river_networks_clean %>% 
@@ -90,7 +106,7 @@ river_networks_clean <-
   st_cast("MULTILINESTRING") %>%
   rename(geometry = x)
 
-river_networks_clean %>% 
+river_networks_strahler_merge %>% 
   ggplot() +
   geom_sf(aes(colour = feature_id))
 

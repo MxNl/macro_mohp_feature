@@ -26,8 +26,16 @@ clean_river_networks <-
       river_network %>% 
       keep_relevant_columns %>%
       remove_invalid_streamorder_values() %>% 
-      remove_disconnected_line_segments(studyarea)
-    
+      remove_disconnected_line_segments(studyarea) %>% 
+      st_zm()
+  }
+
+split_river_network <-
+  function(river_network) {
+    river_network %>%
+      # st_cast("GEOMETRY") %>%
+      group_by(feature_id) %>%
+      group_split()
   }
 
 determine_studyarea_outline <-
@@ -218,32 +226,44 @@ remove_invalid_streamorder_values <-
 #       return()
 #   }
 
+get_unique_feature_ids <- 
+  function(river_network) {
+    river_network %>% 
+      as_tibble() %>% 
+      distinct(feature_id) %>% 
+      pull(feature_id)
+  }
+
 
 merge_same_strahler_segments <-
-  function(sf_lines) {
+  function(sf_lines, index) {
     ###### Test
-    # sf_lines <- river_networks_clean
+    # sf_lines <- tar_read(river_networks_clean)
     ###
-    
+
+    # sf_lines <-
+    #   sf_lines %>%
+    #   pluck(index)
+
     adjacent_segments_list <-
       sf_lines %>%
       st_touches()
-    
+
     adjacent_segments_list <-
       adjacent_segments_list %>%
       map(as.vector) %>%
       map(sort)
-    
+
     adjacent_strahler_list <-
       adjacent_segments_list %>%
-      map(~extract_strahler_by_index(sf_lines, .))
-    
+      map(~ extract_strahler_by_index(sf_lines, .))
+
     segment_strahler_list <-
       sf_lines %>%
       rowwise() %>%
       group_split() %>%
       imap(~ extract_strahler_by_index(sf_lines, .y))
-    
+
     segments_to_merge <-
       list(
         seq_along(adjacent_segments_list),
@@ -252,32 +272,43 @@ merge_same_strahler_segments <-
         segment_strahler_list
       ) %>%
       pmap(determine_segments_to_merge)
-    
+
+    # Drop empty list elements
     segments_to_merge <-
       segments_to_merge %>%
-      discard(isFALSE) %>%
-      list_to_long_df() %>%
-      lump() %>%
-      distinct(id, combined_group)
-    
-    merged_lines <- 
-      sf_lines %>%
-      mutate(id = 1:n()) %>%
-      left_join(segments_to_merge,
-                by = "id"
-      ) %>%
-      mutate(combined_group = as.character(combined_group)) %>%
-      mutate(combined_group = if_else(is.na(combined_group),
-                                      str_c("nogroup_", id),
-                                      combined_group
-      )) %>%
-      select(-id) %>%
-      group_by(combined_group) %>%
-      summarise(strahler = first(strahler)) %>% 
-      select(-combined_group) %>% 
-      rename(geometry = x)
-    
-    return(merged_lines)
+      discard(isFALSE)
+
+    if (is_empty(segments_to_merge)) {
+      sf_lines <- 
+        sf_lines %>%
+        rename(geometry = x)
+    } else {
+      segments_to_merge <-
+        segments_to_merge %>%
+        list_to_long_df() %>%
+        lump() %>%
+        distinct(id, combined_group)
+
+      sf_lines <-
+        sf_lines %>%
+        mutate(id = 1:n()) %>%
+        left_join(segments_to_merge,
+          by = "id"
+        ) %>%
+        mutate(combined_group = as.character(combined_group)) %>%
+        mutate(combined_group = if_else(is.na(combined_group),
+          str_c("nogroup_", id),
+          combined_group
+        )) %>%
+        select(-id) %>%
+        group_by(combined_group) %>%
+        summarise(feature_id = first(feature_id),
+                  strahler = first(strahler)) %>%
+        select(-combined_group) %>%
+        rename(geometry = x)
+    }
+
+    return(sf_lines)
   }
 
 
