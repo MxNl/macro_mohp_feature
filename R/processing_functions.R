@@ -26,7 +26,7 @@ clean_river_networks <-
       river_network %>% 
       keep_relevant_columns %>%
       remove_invalid_streamorder_values() %>% 
-      dissolve_line_features_between_junctions() %>% 
+      # dissolve_line_features_between_junctions() %>% 
       remove_disconnected_line_segments(studyarea) %>% 
       st_zm()
   }
