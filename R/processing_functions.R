@@ -24,17 +24,17 @@ clean_river_networks <-
     
     river_network <- 
       river_network %>% 
-      keep_relevant_columns %>%
+      keep_relevant_columns() %>%
       remove_invalid_streamorder_values() %>% 
-      remove_disconnected_line_segments(studyarea) %>% 
-      st_zm()
+      st_zm() %>% 
+      remove_disconnected_line_segments(studyarea)
   }
 
 split_river_network <-
   function(river_network) {
     river_network %>%
       # st_cast("GEOMETRY") %>%
-      group_by(feature_id) %>%
+      group_by(connected_feature_id) %>%
       group_split()
   }
 
@@ -68,9 +68,10 @@ remove_disconnected_line_segments <-
     ### Test
     # studyarea <- tar_read(studyarea_outline)
     # river_network <-
-    #   tar_read(river_networks_clip) %>% 
-    #   keep_relevant_columns %>%
-    #   remove_invalid_streamorder_values()
+    #   tar_read(river_networks_clip) %>%
+    #   keep_relevant_columns() %>%
+    #   remove_invalid_streamorder_values() %>% 
+    #   st_zm()
     ###
     
     river_network_test <-
@@ -106,14 +107,17 @@ remove_disconnected_line_segments <-
       drop_isolated_line_segments(membership_lines,
                                   studyarea)
     
-    river_network %>% 
-      return()
+    return(river_network)
   }
 
 drop_isolated_line_segments <- 
   function(river_network, merged_river_network, studyarea) {
     ### Test
-    # river_network <- tar_read(river_networks_clip)
+    # river_network <-
+    #   tar_read(river_networks_clip) %>%
+    #   keep_relevant_columns() %>%
+    #   remove_invalid_streamorder_values() %>%
+    #   st_zm()
     # merged_river_network <- membership_lines
     # studyarea <- tar_read(studyarea_outline)
     ###
@@ -125,24 +129,35 @@ drop_isolated_line_segments <-
       map(sort) %>% 
       map(is_empty) %>% 
       unlist()
-    
-    # ggplot() +
-    #   geom_sf(data = studyarea) +
-    #   geom_sf(data = river_network)
-    
+
     merged_river_network <- 
       merged_river_network %>% 
       add_feature_index_column()
     
-    river_network <- 
+    merged_river_network <- 
       merged_river_network %>% 
-      filter(!isolated_line_segments) %>% 
-      st_intersection(river_network)
+      filter(!isolated_line_segments)
     
-    # river_network <- 
-    #   river_network %>% 
-      # st_cast("MULTILINESTRING") %>% 
-      # rename(geometry = x)
+    river_network <- 
+      river_network %>%
+      add_feature_index_column() %>% 
+      st_join(merged_river_network, left = FALSE, .predicate = st_touches)
+ 
+    merged_river_network <- 
+      merged_river_network %>% 
+      summarise()
+    
+    river_network <-
+      river_network %>% 
+      st_filter(merged_river_network) %>% 
+        group_by(feature_id.x) %>% 
+        arrange(feature_id.y) %>% 
+        slice(1) %>% 
+        ungroup() %>% 
+        rename(feature_id = feature_id.x,
+               connected_feature_id = feature_id.y) %>% 
+        relocate(connected_feature_id, .after = feature_id)
+      # filter(st_intersects(., river_network_test, sparse = FALSE)[,1])
     
     river_network %>% 
       return()
@@ -231,81 +246,37 @@ get_unique_feature_ids <-
 
 
 merge_same_strahler_segments <-
-  function(sf_lines, index) {
+  function(sf_lines, query) {
     ###### Test
     # sf_lines <- tar_read(river_networks_clean)
+    # query <- tar_read(linemerge_query)
     ###
 
     # sf_lines <-
     #   sf_lines %>%
-    #   pluck(index)
-
-    adjacent_segments_list <-
-      sf_lines %>%
-      st_touches()
-
-    adjacent_segments_list <-
-      adjacent_segments_list %>%
-      map(as.vector) %>%
-      map(sort)
-
-    adjacent_strahler_list <-
-      adjacent_segments_list %>%
-      map(~ extract_strahler_by_index(sf_lines, .))
-
-    segment_strahler_list <-
-      sf_lines %>%
-      rowwise() %>%
-      group_split() %>%
-      imap(~ extract_strahler_by_index(sf_lines, .y))
-
-    segments_to_merge <-
-      list(
-        seq_along(adjacent_segments_list),
-        adjacent_segments_list,
-        adjacent_strahler_list,
-        segment_strahler_list
-      ) %>%
-      pmap(determine_segments_to_merge)
-
-    # Drop empty list elements
-    segments_to_merge <-
-      segments_to_merge %>%
-      discard(isFALSE)
-
-    if (is_empty(segments_to_merge)) {
-      sf_lines <- 
-        sf_lines %>%
-        rename(geometry = x)
-    } else {
-      segments_to_merge <-
-        segments_to_merge %>%
-        list_to_long_df() %>%
-        lump() %>%
-        distinct(id, combined_group)
-
-      sf_lines <-
-        sf_lines %>%
-        mutate(id = 1:n()) %>%
-        left_join(segments_to_merge,
-          by = "id"
-        ) %>%
-        mutate(combined_group = as.character(combined_group)) %>%
-        mutate(combined_group = if_else(is.na(combined_group),
-          str_c("nogroup_", id),
-          combined_group
-        )) %>%
-        select(-id) %>%
-        group_by(combined_group) %>%
-        summarise(feature_id = first(feature_id),
-                  strahler = first(strahler)) %>%
-        select(-combined_group) %>%
-        rename(geometry = x)
-    }
-
-    return(sf_lines)
+    #   pluck(2)
+    
+    connection <- 
+      connect_to_database()
+    
+    sf_lines %>% 
+      st_cast("LINESTRING") %>% 
+      write_to_table(
+        connection = connection,
+        table_name = "lines"
+        )
+    
+    sf_lines_merged <- 
+      connection %>% 
+      run_query_linemerge_by_streamorder(query) %>% 
+      prepare_lines()
+    
+    return(sf_lines_merged)
   }
 
+# sf_lines_merged %>% 
+#   ggplot() +
+#   geom_sf(aes(colour = feature_id))
 
 list_to_long_df <-
   function(list) {
@@ -365,24 +336,6 @@ linked_rows <- function(data){
   })
 }
 
-lump_links <- function(A) {
-  A <- A %*% A
-  A[A > 0] <- 1
-  A
-}
-
-lump <- function(df) {
-  rows <- 1:nrow(df)
-  A <- outer(rows, rows, linked_rows(df))
-  
-  oldA <- 0
-  while (any(oldA != A)) {
-    oldA <- A
-    A <- lump_links(A)
-  }
-  df$combined_group <- cutree(hclust(as.dist(1 - A)), h = 0)
-  df
-}
 
 
 
@@ -537,7 +490,7 @@ calculate_lateral_position_grid <-
       # writeRaster(filepath,
       #             overwrite = TRUE)
     
-    # return(file_path)
+    return(filepath)
   }
 
 calculate_stream_divide_distance_grid <- 
@@ -573,7 +526,7 @@ calculate_stream_divide_distance_grid <-
       # writeRaster(str_c("output_data/", "mohp_germany_", "dsd_", "order", stream_order, "_", CELLSIZE, "m_res", ".tiff"),
       #             overwrite = TRUE)
     
-    # return(file_path)
+    return(filepath)
   }
 
 

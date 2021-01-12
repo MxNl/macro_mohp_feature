@@ -16,7 +16,7 @@ plot_test_processed_river_network <-
       river_network %>% 
       ggplot() +
       geom_sf(aes(colour = strahler),
-              size = 2) +
+              size = 1) +
       theme(legend.position = "none") +
       labs(title = "Colour represents streamorder after Strahler")
     
@@ -24,7 +24,7 @@ plot_test_processed_river_network <-
       river_network %>% 
       ggplot() +
       geom_sf(aes(colour = id),
-              size = 2) +
+              size = 1) +
       scale_colour_manual(values = segment_colours) +
       theme(legend.position = "none") +
       labs(title = "Colour represents line features")
@@ -83,6 +83,53 @@ plot_test_single_catchment <-
       theme_void() +
       theme(legend.position = "none") +
       scale_x_continuous(guide = guide_axis(check.overlap = TRUE))
+  }
+
+
+generate_discrete_colour_values <- 
+  function(x, var){
+    x %>% 
+      pull({{ var }}) %>% 
+      unique() %>% 
+      length() %>% 
+      hues::iwanthue()
+  }
+
+plot_lines_coloured_by_categorical_attribute <-
+  function(x, var) {
+    plot <-
+      x %>%
+      ggplot() +
+      geom_sf(aes(colour = {{ var }}),
+              size = 1
+      ) +
+      scale_colour_manual(values = generate_discrete_colour_values(x, {{ var }})) +
+      theme(
+        legend.position = "none",
+        legend.direction = "horizontal"
+      )
+    
+    return(plot)
+  }
+
+
+plot_before_vs_after <- 
+  function(x, y){
+    
+    # x <- tar_read(sf_lines)
+    # y <- tar_read(line_merge_by_streamorder)
+    
+    plot_lines_by_feature_id_before <- 
+      x %>% 
+      plot_lines_coloured_by_categorical_attribute(feature_id)
+    
+    plot_lines_by_feature_id_after <- 
+      y %>% 
+      plot_lines_coloured_by_categorical_attribute(feature_id)
+    
+    plot <- plot_lines_by_feature_id_before | plot_lines_by_feature_id_after
+    
+    return(plot)
   }
 
 

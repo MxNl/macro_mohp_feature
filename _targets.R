@@ -6,6 +6,7 @@ source("R/import_functions.R")
 source("R/plot_functions.R")
 source("R/directory_functions.R")
 source("R/processing_functions.R")
+source("R/database_functions.R")
 source("R/config.R")
 
 options(tidyverse.quiet = TRUE,
@@ -26,14 +27,6 @@ tar_option_set(packages = c(
                             "tidyverse"),
                memory = "transient",
                garbage_collection = TRUE)
-
-
-
-directory_output_data <- create_directory("output_data/")
-
-directory_lateral_position <- create_directory(directory_output_data, "lateral_position/")
-
-directory_stream_divide_distance <- create_directory(directory_output_data, "stream_divide_distance/")
 
 
 
@@ -84,6 +77,16 @@ targets <- list(
     read_coastline(filepath_coastline)
   ),
   
+  tar_target(
+    filepath_linemerge_query,
+    "sql/linemerge_query.sql",
+    format = "file"
+  ),
+  tar_target(
+    linemerge_query,
+    read_file(filepath_linemerge_query)
+  ),
+  
   
   
   # Preprocessing -----------------------------------------------------------
@@ -106,22 +109,15 @@ targets <- list(
     clean_river_networks(river_networks_clip, studyarea_outline)
   ),
   
-  tar_target(
-    river_networks_split,
-    split_river_network(river_networks_clean)
-  ),
-  
   # tar_target(
-  #   index,
-  #   river_networks_split %>%
-  #     seq_along()
+  #   river_networks_split,
+  #   split_river_network(river_networks_clean)
   # ),
   
   tar_target(
     river_networks_strahler_merge,
-    river_networks_split %>% 
-      future_map(merge_same_strahler_segments) %>%
-      reduce(bind_rows)
+    river_networks_clean %>% 
+      merge_same_strahler_segments(linemerge_query)
   ),
   
   # tar_target(
@@ -211,10 +207,25 @@ targets <- list(
   #     "lp"
   #     )
   # ),
+
+  tar_target(
+    directory_output_data, 
+    create_directory_and_return_path("output_data/")
+  ),
+  tar_target(
+    directory_lateral_position, 
+    create_directory_and_return_path(directory_output_data,
+                     "lateral_position/")
+  ),
+  tar_target(
+    directory_stream_divide_distance, 
+    create_directory_and_return_path(directory_output_data,
+                     "stream_divide_distance/")
+  ),
   
   tar_target(
     grid_lateral_position,
-    future_pmap(
+    future_pmap_chr(
       list(
         centroids_stream_distance,
         centroids_divide_distance,
@@ -224,12 +235,13 @@ targets <- list(
       grid = base_grid,
       field_name = "lateral_position",
       directory = directory_lateral_position
-    )
+    ),
+    format = "file"
   ),
   
   tar_target(
     grid_stream_divide_distance,
-    future_pmap(
+    future_pmap_chr(
       list(
         centroids_stream_distance,
         centroids_divide_distance,
@@ -239,7 +251,8 @@ targets <- list(
       grid = base_grid,
       field_name = "distance_stream_divide",
       directory = directory_stream_divide_distance
-    )
+    ),
+    format = "file"
   ),
   
 
@@ -260,7 +273,3 @@ targets <- list(
 )
 
 tar_pipeline(targets)
-
-
-# targets::tar_make_future(workers = future::availableCores())
-# targets::tar_visnetwork(label = c("time", "size"), targets_only = TRUE)

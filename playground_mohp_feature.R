@@ -11,6 +11,7 @@ studyarea_subset_plots <- tar_read(studyarea_subset_plots)
 studyarea <- tar_read(studyarea)
 river_networks_clip <- tar_read(river_networks_clip)
 river_networks_clean <- tar_read(river_networks_clean)
+river_networks_split <- tar_read(river_networks_split)
 river_networks_strahler_merge <- tar_read(river_networks_strahler_merge)
 streamorders <- tar_read(streamorders)
 base_grid <- tar_read(base_grid)
@@ -25,12 +26,33 @@ grid_lateral_position <- tar_read(grid_lateral_position)
 grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
+tar_read(grid_lateral_position)
+
+plot_before_vs_after(tar_read(river_networks_clean), tar_read(river_networks_strahler_merge))
+
+log(1:6)+1
+
+
+plot_b <- 
+  tar_read(river_networks_strahler_merge) %>% 
+  ggplot() +
+  geom_sf(aes(colour = feature_id, size = log(as.numeric(strahler)+1))) +
+  scale_colour_manual(values = generate_discrete_colour_values(tar_read(river_networks_strahler_merge), feature_id)) +
+  theme(legend.position = "none") +
+  labs(title = "Colour represents line features")
+
+
+
 
 river_networks_strahler_merge %>% 
   st_sf()
 
 tar_read(river_networks_split) %>% 
   bind_rows()
+
+sf_lines %>% 
+  st_cast("MULTILINESTRING")
+
 
 river_networks_strahler_merge %>% 
   as_tibble() %>% 
