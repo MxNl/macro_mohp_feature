@@ -17,6 +17,7 @@ tar_option_set(packages = c(
                             "raster",
                             "rgdal",
                             "lwgeom",
+                            "patchwork",
                             "fasterize",
                             "stars",
                             "sf",
@@ -138,17 +139,7 @@ targets <- list(
       as.numeric() %>%
       sort()
   ),
-  # 
-  # tar_target(
-  #   streamorders,
-  #   tar_read(river_networks_strahler_merge) %>% 
-  #     as_tibble() %>% 
-  #     distinct(strahler) %>% 
-  #     pull(strahler) %>% 
-  #     as.numeric() %>%
-  #     sort()
-  # ),
-  
+
   tar_target(
     river_network_by_streamorder,
     streamorders %>% 

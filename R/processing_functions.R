@@ -26,7 +26,6 @@ clean_river_networks <-
       river_network %>% 
       keep_relevant_columns %>%
       remove_invalid_streamorder_values() %>% 
-      # dissolve_line_features_between_junctions() %>% 
       remove_disconnected_line_segments(studyarea) %>% 
       st_zm()
   }
@@ -573,6 +572,8 @@ calculate_stream_divide_distance_grid <-
       # sfpolygon_to_raster(field_name)
       # writeRaster(str_c("output_data/", "mohp_germany_", "dsd_", "order", stream_order, "_", CELLSIZE, "m_res", ".tiff"),
       #             overwrite = TRUE)
+    
+    # return(file_path)
   }
 
 

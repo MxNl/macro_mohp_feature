@@ -1,8 +1,6 @@
 plot_test_processed_river_network <- 
   function(river_network, test_studyarea) {
-    
-    library(patchwork)
-    
+
     river_network <- 
       river_network %>%
       st_intersection(test_studyarea) %>% 

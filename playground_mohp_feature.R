@@ -39,6 +39,10 @@ river_networks_strahler_merge %>%
   as.numeric() %>%
   sort()
 
+base_grid %>% 
+  ggplot() +
+  geom_sf()
+
 
 st_layers("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite")
 st_read("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite",
