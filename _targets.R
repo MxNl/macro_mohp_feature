@@ -211,19 +211,16 @@ targets <- list(
   tar_target(
     directory_output_data, 
     create_directory_and_return_path("output_data/"),
-    format = "file"
   ),
   tar_target(
     directory_lateral_position, 
     create_directory_and_return_path(directory_output_data,
-                     "lateral_position/"),
-    format = "file"
+                     "lateral_position/")
   ),
   tar_target(
     directory_stream_divide_distance, 
     create_directory_and_return_path(directory_output_data,
-                     "stream_divide_distance/"),
-    format = "file"
+                     "stream_divide_distance/")
   ),
   
   tar_target(
@@ -271,6 +268,4 @@ targets <- list(
     test_catchments_plot,
     plot_test_catchments(river_network_by_streamorder, thiessen_catchments, streamorders, studyarea_subset_plots)
   )
-  
-  
 )
