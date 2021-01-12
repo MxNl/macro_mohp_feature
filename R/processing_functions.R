@@ -457,8 +457,12 @@ generate_filepaths <-
 calculate_lateral_position_grid <- 
   function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name, directory) {
     ###### test
-    # stream_distance_centroids <- tar_read(centroids_stream_distance)
-    # divide_distance_centroids <- tar_read(centroids_divide_distance)
+    # stream_distance_centroids <- tar_read(centroids_stream_distance) %>% pluck(3)
+    # divide_distance_centroids <- tar_read(centroids_divide_distance) %>% pluck(3)
+    # stream_order <- tar_read(streamorders) %>% pluck(3)
+    # grid <- tar_read(base_grid)
+    # field_name <- "lateral_position"
+    # directory <- tar_read(directory_lateral_position)
     ###
 
     filepath <- 
@@ -473,7 +477,8 @@ calculate_lateral_position_grid <-
             "m", 
             ".tiff")
     
-    # unlink(filepath)
+    unlink(filepath)
+
     
     divide_distance_centroids %>% 
       st_drop_geometry() %>% 
@@ -508,7 +513,7 @@ calculate_stream_divide_distance_grid <-
             "m", 
             ".tiff")
     
-    # unlink(filepath)
+    unlink(filepath)
     
     divide_distance_centroids %>% 
       st_drop_geometry() %>% 
