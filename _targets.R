@@ -18,6 +18,7 @@ tar_option_set(packages = c(
                             "raster",
                             "rgdal",
                             "lwgeom",
+                            "assertr",
                             "patchwork",
                             "fasterize",
                             "stars",
@@ -78,6 +79,26 @@ targets <- list(
   ),
   
   tar_target(
+    filepath_canals_to_reclassify,
+    "qgis/line_features_to_reclassify",
+    format = "file"
+  ),
+  tar_target(
+    features_ids_to_reclassify,
+    get_feature_ids_to_reclassify(filepath_canals_to_reclassify)
+  ),
+  
+  tar_target(
+    filepath_create_table_brackets_query,
+    "sql/filter_brackets.sql",
+    format = "file"
+  ),
+  tar_target(
+    create_table_brackets_query,
+    read_file(filepath_create_table_brackets_query)
+  ),
+  
+  tar_target(
     filepath_linemerge_query,
     "sql/linemerge_query.sql",
     format = "file"
@@ -105,8 +126,18 @@ targets <- list(
   ),
   
   tar_target(
+    river_networks_only_rivers,
+    reclassify_relevant_canals_and_ditchs_and_drop_others(
+      river_networks_clip,
+      features_ids_to_reclassify
+    )
+  ),
+  
+  tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_clip, studyarea_outline)
+    clean_river_networks(
+      river_networks_only_rivers, 
+      studyarea_outline)
   ),
   
   # tar_target(
@@ -116,8 +147,13 @@ targets <- list(
   
   tar_target(
     river_networks_strahler_merge,
-    river_networks_clean %>% 
-      merge_same_strahler_segments(linemerge_query)
+    merge_same_strahler_segments(
+      river_networks_clean,
+      list(
+        create_table_brackets_query,
+        linemerge_query
+        )
+    )
   ),
   
   # tar_target(

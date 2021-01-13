@@ -15,6 +15,18 @@ clip_river_networks <-
     return(river_networks)
   }
 
+reclassify_relevant_canals_and_ditchs_and_drop_others <- 
+  function(river_network, id_to_reclassify) {
+    ##### Test
+    # river_network <- tar_read(river_networks_clip)
+    # id_to_reclassify <- tar_read(features_ids_to_reclassify)
+    ####
+    river_network %>% 
+      mutate(dfdd = if_else(dfdd %in% id_to_reclassify, "BH140", dfdd)) %>% 
+      filter(dfdd == "BH140")
+  }
+
+
 clean_river_networks <- 
   function(river_network, studyarea) {
     #### Test
@@ -246,29 +258,33 @@ get_unique_feature_ids <-
 
 
 merge_same_strahler_segments <-
-  function(sf_lines, query) {
+  function(sf_lines, query_list) {
     ###### Test
     # sf_lines <- tar_read(river_networks_clean)
-    # query <- tar_read(linemerge_query)
+    # query_list <- 
+    #   list(
+    #     tar_read(create_table_brackets_query),
+    #     tar_read(linemerge_query)
+    #   )
     ###
 
-    # sf_lines <-
-    #   sf_lines %>%
-    #   pluck(2)
-    
     connection <- 
       connect_to_database()
     
     sf_lines %>% 
       st_cast("LINESTRING") %>% 
+      select(-connected_feature_id) %>% 
       write_to_table(
         connection = connection,
         table_name = "lines"
         )
     
+    connection %>% 
+      run_query_create_table_brackets(query_list[[1]])
+    
     sf_lines_merged <- 
       connection %>% 
-      run_query_linemerge_by_streamorder(query) %>% 
+      run_query_linemerge_by_streamorder(query_list[[2]]) %>% 
       prepare_lines()
     
     return(sf_lines_merged)

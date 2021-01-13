@@ -48,3 +48,20 @@ read_coastline <-
 
     return(coastline)
   }
+
+
+get_feature_ids_to_reclassify <- 
+  function(filepath) {
+    filepath %>% 
+      list.files() %>% 
+      magrittr::extract(str_detect(., ".shp$")) %>% 
+      str_c(filepath, "/", .) %>% 
+      map_df(st_read) %>% 
+      # imap_dfr(add_source_id) %>% 
+      # reduce(bind_rows) %>% 
+      as_tibble() %>% 
+      janitor::clean_names() %>% 
+      verify(nrow(.) == length(unique(.$inspire_id))) %>% 
+      pull(inspire_id) %>% 
+      as.character()
+  }

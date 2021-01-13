@@ -4,6 +4,7 @@ library(sf)
 library(stars)
 library(furrr)
 library(patchwork)
+library(assertr)
 library(tarchetypes)
 library(tidyverse)
 
@@ -527,3 +528,32 @@ polygon %>%
   ggplot() +
   geom_sf() +
   geom_sf(data = point)
+
+
+
+# features_to_reclassify <- 
+#   features_to_reclassify %>% 
+  # mutate(unique_feature_id = str_c(source_id, objectid, sep = "_"),
+  #        .before = 1) %>% 
+  
+
+add_source_id <- 
+  function(x, index) {
+    x %>% 
+      mutate(source_id = as.character(index),
+             .before = 1)
+  }
+
+
+cyls <- 4
+mtcars %>%
+  # filter(cyl == cyls) %>%
+  group_by(vs) %>%
+  do({
+    assert_that(
+      length(na.omit(.$mpg)) > 1,
+      msg = "I cannot grok the data"
+    )
+    .
+  }) %>%
+  summarize(z = max(density(mpg)$y))

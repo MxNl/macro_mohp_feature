@@ -14,6 +14,12 @@ connect_to_database <-
     )
   }
 
+run_query_create_table_brackets <- 
+  function(con, query_as_string) {
+    
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS brackets")
+    DBI::dbExecute(con, query_as_string)
+  }
 
 run_query_linemerge_by_streamorder <- 
   function(con, query_as_string) {
