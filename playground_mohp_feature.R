@@ -29,10 +29,47 @@ tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 
+
+
+tar_read(river_networks_dissolved_brackets) %>% 
+  st_cast("LINESTRING") %>% 
+  add_feature_index_column() %>% 
+  # dissolve_line_features_between_junctions() %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>%
+  plotly::ggplotly()
+
+tar_read(river_networks_dissolved_brackets) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>%
+  plotly::ggplotly()
+
+
+strahler_error <- 
+  tar_read(river_networks_clip) %>% 
+  filter(abs(strahler) >= 10 & dfdd == "BH140") %>% 
+  select(strahler)
+
+
+tar_read(river_networks_clip) %>% 
+  filter(dfdd == "BH140") %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = strahler_error, colour = "red")
+
+tar_read(river_networks_only_rivers) %>% 
+  mutate(strahler = as.character(strahler)) %>% 
+  # distinct(strahler)
+  plot_lines_coloured_by_categorical_attribute(strahler) +
+  geom_sf(data = tar_read(studyarea_subset_plots), fill = NA) +
+  theme(legend.position = "bottom")
+  
 plot_before_vs_after(tar_read(river_networks_clean), tar_read(river_networks_strahler_merge))
 
 log(1:6)+1
 
+
+tar_read(river_networks_strahler_merge) %>% 
+  ggplot() +
+  geom_sf()
 
 plot_b <- 
   tar_read(river_networks_strahler_merge) %>% 
@@ -557,3 +594,33 @@ mtcars %>%
     .
   }) %>%
   summarize(z = max(density(mpg)$y))
+
+
+
+
+
+
+
+
+tar_read(river_networks_clean) %>% 
+  dissolve_line_features_between_junctions() %>% 
+  add_feature_index_column() %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
+  
+
+
+
+
+tar_read(river_networks_dissolved) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
+  plotly::ggplotly()
+
+tar_read(river_networks_dissolved) %>% 
+  filter(feature_id %in% c(80, 12, 83, 81)) %>% 
+  st_touches()
+
+
+{tar_read(river_networks_dissolved) %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = split_points, size = 3)} %>% plotly::ggplotly()

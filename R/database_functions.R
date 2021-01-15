@@ -1,6 +1,7 @@
 write_to_table <- 
   function(data, connection, table_name, append = FALSE) {
-    st_write(data, dsn = connection, layer = table_name, append = append)
+    st_write(data, dsn = connection, layer = table_name, 
+             append = append)
   }
 
 connect_to_database <- 
@@ -17,7 +18,7 @@ connect_to_database <-
 run_query_create_table_brackets <- 
   function(con, query_as_string) {
     
-    DBI::dbExecute(con, "DROP TABLE IF EXISTS brackets")
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS brackets_to_drop")
     DBI::dbExecute(con, query_as_string)
   }
 
@@ -33,7 +34,7 @@ prepare_lines <-
     x %>% 
       query_result_as_sf() %>% 
       select(-old_id) %>% 
-      add_feature_id()
+      add_feature_index_column()
     
   }
 

@@ -15,15 +15,45 @@ clip_river_networks <-
     return(river_networks)
   }
 
-reclassify_relevant_canals_and_ditchs_and_drop_others <- 
+reclassify_relevant_canals_and_ditches_and_drop_others <- 
   function(river_network, id_to_reclassify) {
     ##### Test
     # river_network <- tar_read(river_networks_clip)
     # id_to_reclassify <- tar_read(features_ids_to_reclassify)
     ####
     river_network %>% 
-      mutate(dfdd = if_else(dfdd %in% id_to_reclassify, "BH140", dfdd)) %>% 
+      mutate(dfdd = if_else(inspire_id %in% id_to_reclassify, "BH140", dfdd)) %>% 
       filter(dfdd == "BH140")
+  }
+
+
+impute_line_features_with_invalid_strahler_value <- 
+  function(river_network) {
+    ### Test
+    # river_network <- tar_read(river_networks_only_rivers)
+    ###
+    features_with_invalid_strahler <- 
+      river_network %>% 
+      filter(strahler %in% INVALID_STRAHLER_VALUES)
+    
+    valid_strahler <-
+      features_with_invalid_strahler %>% 
+      select(strahler, inspire_id) %>% 
+      st_join(select(river_network, strahler), .predicate = st_touches) %>%
+      as_tibble() %>%
+      mutate(geometry = as.character(geometry)) %>%
+      filter(!(strahler.y %in% INVALID_STRAHLER_VALUES)) %>% 
+      group_by(geometry, strahler.y) %>% 
+      summarise(n = n(), inspire_id = unique(inspire_id)) %>% 
+      arrange(n) %>% 
+      slice(1) %>% 
+      ungroup() %>% 
+      select(inspire_id, strahler.y)
+    
+    river_network %>% 
+      left_join(valid_strahler, by = "inspire_id") %>% 
+      mutate(strahler = if_else(is.na(strahler.y), strahler, strahler.y)) %>% 
+      select(-strahler.y)
   }
 
 
@@ -177,9 +207,9 @@ drop_isolated_line_segments <-
 
 
 add_feature_index_column <- 
-  function(sf_object) {
+  function(sf_object, column_name = "feature_id") {
     sf_object %>% 
-      mutate(feature_id = as.character(1:n()),
+      mutate(!!column_name := as.character(1:n()),
              .before = 1)
   }
 
@@ -209,43 +239,193 @@ dissolve_line_features_between_junctions <-
     # studyarea <- tar_read(filepath_studyarea_subset_plots)
     #####
 
-    river_networks_dissolved <-
+    startpoints <- 
       river_networks %>%
+      st_cast("LINESTRING") %>% 
+      lwgeom::st_startpoint() %>% 
+      st_as_sf()
+    
+    endpoints <- 
+      river_networks %>% 
+      st_cast("LINESTRING") %>% 
+      lwgeom::st_endpoint() %>% 
+      st_as_sf()
+    
+    start_end_points <- 
+      startpoints %>% 
+      bind_rows(endpoints)
+    
+    
+    split_points <-
+      start_end_points %>% 
+      st_intersects(start_end_points) %>% 
+      map(as_vector) %>%
+      map_dbl(length) %>% 
+      magrittr::is_greater_than(2) %>% 
+      filter(start_end_points, .) %>% 
+      distinct(x)
+    
+    lines_merged <- 
+      river_networks %>% 
       group_by(strahler) %>%
       summarise() %>%
-      st_line_merge()
+      st_line_merge() %>% 
+      st_cast("MULTILINESTRING")
+    
+    lines_merged$geometry %>% 
+      lwgeom::st_split(split_points$x) %>% 
+      st_collection_extract("LINESTRING") %>% 
+      st_as_sf() %>% 
+      add_feature_index_column() %>%
+      st_join(river_networks, join = st_contains) %>% 
+      rename(feature_id = feature_id.x,
+             geometry = x) %>% 
+      group_by(feature_id) %>% 
+      summarise(connected_feature_id = unique(connected_feature_id ),
+                strahler = unique(strahler )) %>% 
+      add_feature_index_column()
+  }
 
-    result_intersection <-
-      river_networks %>%
-      select(-strahler) %>%
-      st_intersection(river_networks_dissolved %>%
-                        # select(-strahler) %>%
-                        st_cast("MULTILINESTRING"))
 
-    result_intersection_points <-
-      result_intersection %>%
-      filter(st_is(., "POINT")) %>%
-      distinct(geometry)
+dissolve_line_features_with_brackets <- 
+  function(river_networks) {
+    ##### Test
+    # river_networks <- tar_read(river_networks_dissolved)
+    #####
+    
+    startpoints <- 
+      river_networks %>% 
+      get_startpoints()
+    
+    endpoints <-
+      river_networks %>% 
+      get_endpoints()
+    
+    start_end_points <-
+      startpoints %>% 
+      merge_start_and_end_points(endpoints)
+    
+    bracket_pairs <-
+      river_networks %>% 
+      get_bracket_pairs(start_end_points)
+    
+    
+    split_points <-
+      start_end_points %>% 
+      left_join(bracket_pairs, by = "feature_id") %>% 
+      drop_na(merge_id)
+    
+    river_networks %>%
+      # filter(feature_id %in% %>%  c(107, 114, 105, 108)) %>% 
+      st_join(split_points) %>% 
+      st_cast("MULTILINESTRING") %>% 
+      mutate(merge_id = if_else(is.na(merge_id), str_c("NA_", row_number()), merge_id)) %>% 
+      group_by(merge_id) %>% 
+      summarise() %>% 
+      st_join(river_networks, join = st_contains) %>% 
+      group_by(merge_id) %>% 
+      summarise(connected_feature_id = unique(connected_feature_id ),
+                strahler = unique(strahler )) %>% 
+      select(-merge_id) %>% 
+      add_feature_index_column()
+  }
 
-    river_networks_clean <-
-      river_networks_dissolved %>%
-      st_cast("MULTILINESTRING") %>%
-      st_union() %>%
-      lwgeom::st_split(st_combine(result_intersection_points)) %>%
-      st_collection_extract("LINESTRING") %>%
-      st_as_sf() %>%
-      st_cast("MULTILINESTRING") %>%
-      rename(geometry = x)
 
-    river_networks_clean <-
-      river_networks_clean %>%
-      st_intersection(river_networks_dissolved) %>%
-      filter(st_is(., "MULTILINESTRING")) %>%
-      distinct(geometry, strahler) %>%
-      mutate(strahler = as.factor(strahler))
+drop_shorter_bracket_line_features <- 
+  function(river_networks) {
+    ##### Test
+    # river_networks <- tar_read(river_networks_dissolved_junctions)
+    #####
+    
+    startpoints <- 
+      river_networks %>% 
+      get_startpoints()
 
-    river_networks_clean %>%
-      return()
+    endpoints <-
+      river_networks %>% 
+      get_endpoints()
+    
+    start_end_points <-
+      startpoints %>% 
+      merge_start_and_end_points(endpoints)
+    
+    bracket_pairs <-
+      start_end_points %>% 
+      st_join(
+        river_networks
+      ) %>% 
+      as_tibble() %>%
+      mutate(x = as.character(x)) %>%
+      group_by(feature_id.y) %>%
+      filter(n() > 1) %>% 
+      arrange(feature_id.x) %>% 
+      mutate(start_end_id = str_c("point_", 1:n())) %>% 
+      ungroup() %>% 
+      pivot_wider(id_cols = "feature_id.y", names_from = "start_end_id", values_from = "feature_id.x") %>% 
+      group_by(point_1, point_2) %>% 
+      filter(n() > 1) %>% 
+      mutate(bracketpair_id = str_c(feature_id.y, collapse = "")) %>% 
+      ungroup() %>% 
+      rename(feature_id = feature_id.y) %>% 
+      select(feature_id, bracketpair_id)
+    
+    river_networks %>% 
+      left_join(bracket_pairs, by = "feature_id") %>% 
+      mutate(length = if_else(!is.na(bracketpair_id), st_length(geometry), NA_real_)) %>% 
+      mutate(bracketpair_id = if_else(is.na(bracketpair_id), str_c("NA_", row_number()), bracketpair_id)) %>% 
+      group_by(bracketpair_id) %>% 
+      arrange(length) %>% 
+      slice(1) %>% 
+      ungroup() %>% 
+      select(connected_feature_id, strahler) %>% 
+      add_feature_index_column()
+  }
+
+get_startpoints <- 
+  function(river_networks) {
+    river_networks %>% 
+      st_cast("LINESTRING") %>% 
+      lwgeom::st_startpoint() %>% 
+      st_as_sf()
+  }
+
+get_endpoints <- 
+  function(river_networks) {
+    river_networks %>% 
+      st_cast("LINESTRING") %>% 
+      lwgeom::st_endpoint() %>% 
+      st_as_sf()
+  }
+
+merge_start_and_end_points <- 
+  function(startpoints, endpoints) {
+    startpoints %>% 
+      bind_rows(endpoints) %>% 
+      distinct(x) %>%
+      add_feature_index_column()
+  }
+
+get_bracket_pairs <-
+  function(rivernetworks, start_end_points) {
+    start_end_points %>% 
+      st_join(
+        river_networks
+      ) %>% 
+      as_tibble() %>%
+      mutate(x = as.character(x)) %>%
+      group_by(feature_id.y) %>%
+      filter(n() > 1) %>% 
+      arrange(feature_id.x) %>% 
+      mutate(start_end_id = str_c("point_", 1:n())) %>% 
+      ungroup() %>% 
+      pivot_wider(id_cols = "feature_id.y", names_from = "start_end_id", values_from = "feature_id.x") %>% 
+      group_by(point_1, point_2) %>% 
+      filter(n() > 1) %>% 
+      distinct(point_1, point_2) %>% 
+      ungroup() %>% 
+      add_feature_index_column("merge_id") %>% 
+      pivot_longer(cols = -"merge_id", values_to = "feature_id") %>% 
+      select(-name)
   }
 
 get_unique_feature_ids <- 
@@ -258,10 +438,10 @@ get_unique_feature_ids <-
 
 
 merge_same_strahler_segments <-
-  function(sf_lines, query_list) {
+  function(sf_lines, query) {
     ###### Test
-    # sf_lines <- tar_read(river_networks_clean)
-    # query_list <- 
+    # sf_lines <- tar_read(river_networks_dissolved_junctions)
+    # query_list <-
     #   list(
     #     tar_read(create_table_brackets_query),
     #     tar_read(linemerge_query)
@@ -276,18 +456,15 @@ merge_same_strahler_segments <-
       select(-connected_feature_id) %>% 
       write_to_table(
         connection = connection,
-        table_name = "lines"
+        table_name = "lines_raw"
         )
     
+    # connection %>% 
+    #   run_query_create_table_brackets(query_list[[1]])
+    
     connection %>% 
-      run_query_create_table_brackets(query_list[[1]])
-    
-    sf_lines_merged <- 
-      connection %>% 
-      run_query_linemerge_by_streamorder(query_list[[2]]) %>% 
+      run_query_linemerge_by_streamorder(query) %>% 
       prepare_lines()
-    
-    return(sf_lines_merged)
   }
 
 # sf_lines_merged %>% 

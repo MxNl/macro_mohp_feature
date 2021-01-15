@@ -14,6 +14,8 @@ options(tidyverse.quiet = TRUE,
 
 tar_option_set(packages = c(
                             "igraph",
+                            "DBI",
+                            "RPostgres",
                             "rmarkdown",
                             "raster",
                             "rgdal",
@@ -127,32 +129,60 @@ targets <- list(
   
   tar_target(
     river_networks_only_rivers,
-    reclassify_relevant_canals_and_ditchs_and_drop_others(
+    reclassify_relevant_canals_and_ditches_and_drop_others(
       river_networks_clip,
       features_ids_to_reclassify
+    )
+  ),
+
+  tar_target(
+    river_networks_valid_strahler,
+    impute_line_features_with_invalid_strahler_value(
+      river_networks_only_rivers
     )
   ),
   
   tar_target(
     river_networks_clean,
     clean_river_networks(
-      river_networks_only_rivers, 
+      river_networks_valid_strahler, 
       studyarea_outline)
   ),
+  
+  tar_target(
+    river_networks_dissolved_junctions,
+    dissolve_line_features_between_junctions(
+      river_networks_clean)
+  ),
+  
+  tar_target(
+    river_networks_without_brackets,
+    drop_shorter_bracket_line_features(
+      river_networks_dissolved_junctions)
+  ),
+  
+  # tar_target(
+  #   river_networks_dissolved_brackets,
+  #   dissolve_line_features_with_brackets(
+  #     river_networks_dissolved_junctions)
+  # ),
   
   # tar_target(
   #   river_networks_split,
   #   split_river_network(river_networks_clean)
   # ),
   
+  # tar_target(
+  #   initiate_table,
+  #   connect_to_database() %>% 
+  #     DBI::dbExistsTable("lines_raw")
+  # ),
+  
   tar_target(
     river_networks_strahler_merge,
     merge_same_strahler_segments(
-      river_networks_clean,
-      list(
-        create_table_brackets_query,
-        linemerge_query
-        )
+      river_networks_without_brackets,
+      linemerge_query
     )
   ),
   

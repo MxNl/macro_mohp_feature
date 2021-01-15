@@ -1,5 +1,5 @@
---DROP TABLE IF EXISTS brackets;
-CREATE TABLE brackets AS (
+--DROP TABLE IF EXISTS brackets_to_drop;
+CREATE TABLE brackets_to_drop AS (
 	WITH pairs AS (
 		SELECT
 			l.feature_id,
@@ -8,7 +8,7 @@ CREATE TABLE brackets AS (
 			r.feature_id AS r_feature_id,
 			r.geometry AS r_geometry,
 			r.strahler AS r_strahler
-		FROM lines AS l CROSS JOIN lines AS r
+		FROM lines_raw AS l CROSS JOIN lines_raw AS r
 		WHERE
 			l.feature_id != r.feature_id
 			AND

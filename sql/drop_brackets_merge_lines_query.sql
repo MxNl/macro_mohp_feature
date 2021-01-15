@@ -1,4 +1,14 @@
-WITH collected AS (
+WITH filtered_brackets AS (
+	SELECT 
+		* 
+	FROM lines_raw
+	WHERE
+		feature_id NOT IN (
+			SELECT 
+				bracket_feature_id
+			FROM brackets_to_drop
+		)
+), collected AS (
 	SELECT strahler, ST_Collect(geometry) AS geometry
 	FROM lines_raw GROUP BY strahler
 ), local_linestrings AS (
