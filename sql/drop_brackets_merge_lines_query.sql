@@ -9,7 +9,8 @@ WITH filtered_brackets AS (
 			FROM brackets_to_drop
 		)
 ), collected AS (
-	SELECT strahler, ST_Collect(geometry) AS geometry
+	SELECT strahler, 
+	ST_Collect(geometry) AS geometry
 	FROM lines_raw GROUP BY strahler
 ), local_linestrings AS (
 	SELECT strahler, (ST_Dump(ST_LineMerge(geometry))).geom AS geometry FROM collected

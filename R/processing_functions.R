@@ -57,25 +57,33 @@ impute_line_features_with_invalid_strahler_value <-
   }
 
 
-clean_river_networks <- 
+clean_river_networks <-
   function(river_network, studyarea) {
     #### Test
     # river_network <- tar_read(river_networks_clip)
     # studyarea <- tar_read(studyarea_outline)
     ###
-    
-    river_network <- 
-      river_network %>% 
+
+    river_network <-
+      river_network %>%
       keep_relevant_columns() %>%
-      remove_invalid_streamorder_values() %>% 
-      st_zm() %>% 
-      remove_disconnected_line_segments(studyarea)
+      remove_invalid_streamorder_values() %>%
+      st_zm() %>%
+      add_feature_index_column()
+
+    river_network %>%
+      st_cast("LINESTRING") %>%
+      initiate_database(
+        connect_to_database(),
+        "lines_clean"
+      )
+
+    return(river_network)
   }
 
 split_river_network <-
   function(river_network) {
     river_network %>%
-      # st_cast("GEOMETRY") %>%
       group_by(connected_feature_id) %>%
       group_split()
   }
@@ -235,7 +243,7 @@ remove_invalid_streamorder_values <-
 dissolve_line_features_between_junctions <-
   function(river_networks) {
     ###### Test
-    # river_networks <- tar_read(river_networks_clip)
+    # river_networks <- tar_read(river_networks_clean)
     # studyarea <- tar_read(filepath_studyarea_subset_plots)
     #####
 
@@ -281,8 +289,10 @@ dissolve_line_features_between_junctions <-
       rename(feature_id = feature_id.x,
              geometry = x) %>% 
       group_by(feature_id) %>% 
-      summarise(connected_feature_id = unique(connected_feature_id ),
-                strahler = unique(strahler )) %>% 
+      summarise(
+        # connected_feature_id = unique(connected_feature_id),
+        strahler = unique(strahler )
+        ) %>% 
       add_feature_index_column()
   }
 
@@ -377,7 +387,9 @@ drop_shorter_bracket_line_features <-
       arrange(length) %>% 
       slice(1) %>% 
       ungroup() %>% 
-      select(connected_feature_id, strahler) %>% 
+      select(
+        # connected_feature_id, 
+        strahler) %>% 
       add_feature_index_column()
   }
 
@@ -435,6 +447,52 @@ get_unique_feature_ids <-
       distinct(feature_id) %>% 
       pull(feature_id)
   }
+
+
+drop_disconnected_river_networks <-
+  function(river_networks, studyarea, connection, query) {
+    ### Test
+    # river_networks <- tar_read(river_networks_clean)
+    # studyarea <- tar_read(studyarea_outline)
+    # connection <- connect_to_database()
+    # query <- read_file("sql/get_connected_id.sql")
+    ####
+    
+    connection %>%
+      run_query_connected(query)
+
+    river_network <-
+      connection %>%
+      get_table_from_postgress("connected_id") %>% 
+      query_result_as_sf()
+    
+    river_network <- 
+      river_network %>%
+      filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1] |
+               st_touches(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1]) %>% 
+      select(-connected_id) %>%
+      st_join(river_networks) %>% 
+      relocate(geometry, .after = last_col()) %>% 
+      add_feature_index_column() %>% 
+      ungroup()
+    
+    river_network %>% 
+      initiate_database(
+        connect_to_database(),
+        "lines_connected"
+      )
+    
+    return(river_network)
+  }
+
+
+
+run_query_connected <- 
+  function(connection, query) {
+    DBI::dbExecute(connection, "DROP TABLE IF EXISTS connected_id")
+    DBI::dbExecute(connection, query)
+  }
+
 
 
 merge_same_strahler_segments <-

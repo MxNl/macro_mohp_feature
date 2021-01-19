@@ -110,6 +110,17 @@ targets <- list(
     read_file(filepath_linemerge_query)
   ),
   
+  tar_target(
+    filepath_connected_query,
+    "sql/get_connected_id.sql",
+    format = "file"
+  ),
+  tar_target(
+    connected_query,
+    read_file(filepath_connected_query),
+    priority = 1
+  ),
+  
   
   
   # Preprocessing -----------------------------------------------------------
@@ -150,9 +161,18 @@ targets <- list(
   ),
   
   tar_target(
+    river_networks_only_connected,
+    drop_disconnected_river_networks(
+      river_networks_clean, 
+      studyarea_outline, 
+      connect_to_database(),
+      connected_query)
+  ),
+  
+  tar_target(
     river_networks_dissolved_junctions,
     dissolve_line_features_between_junctions(
-      river_networks_clean)
+      river_networks_only_connected)
   ),
   
   tar_target(
@@ -160,23 +180,6 @@ targets <- list(
     drop_shorter_bracket_line_features(
       river_networks_dissolved_junctions)
   ),
-  
-  # tar_target(
-  #   river_networks_dissolved_brackets,
-  #   dissolve_line_features_with_brackets(
-  #     river_networks_dissolved_junctions)
-  # ),
-  
-  # tar_target(
-  #   river_networks_split,
-  #   split_river_network(river_networks_clean)
-  # ),
-  
-  # tar_target(
-  #   initiate_table,
-  #   connect_to_database() %>% 
-  #     DBI::dbExistsTable("lines_raw")
-  # ),
   
   tar_target(
     river_networks_strahler_merge,

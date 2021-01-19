@@ -95,8 +95,10 @@ generate_discrete_colour_values <-
       hues::iwanthue()
   }
 
+
 plot_lines_coloured_by_categorical_attribute <-
   function(x, var) {
+    
     plot <-
       x %>%
       ggplot() +

@@ -1,375 +1,640 @@
-library(corrr)
-library(sf)
-library(leaflet)
-library(leafgl)
-library(raster)
-library(rgdal)
 library(targets)
+library(raster)
+library(sf)
+library(stars)
+library(furrr)
+library(patchwork)
+library(assertr)
+library(tarchetypes)
 library(tidyverse)
 
-studyarea <- tar_read(studyarea)
 studyarea_subset_plots <- tar_read(studyarea_subset_plots)
-grid_studyarea <- tar_read(grid_studyarea)
-grid_studyarea_centroids <- tar_read(grid_studyarea_centroids)
-before_preprocessing_overview_map <- tar_read(before_preprocessing_overview_map)
-back_vals_2005 <- tar_read(back_vals_2005)
-back_vals_2005_clean_sf <- tar_read(back_vals_2005_clean_sf)
-back_vals_2005_filter_sf <- tar_read(back_vals_2005_filter_sf)
-feature_lulc_raw <- tar_read(feature_lulc_raw)
-feature_lulc <- tar_read(feature_lulc)
-feature_gw_recharge_raw <- tar_read(feature_gw_recharge_raw)
-feature_gw_recharge <- tar_read(feature_gw_recharge)
-feature_hydrounits_raw <- tar_read(feature_hydrounits_raw)
-feature_hydrounits <- tar_read(feature_hydrounits)
-feature_geology_raw <- tar_read(feature_geology_raw)
-feature_geology <- tar_read(feature_geology)
-feature_soilunits_raw <- tar_read(feature_soilunits_raw)
-feature_soilunits <- tar_read(feature_soilunits)
-feature_hydrogeology_raw <- tar_read(feature_hydrogeology_raw)
-feature_hydrogeology_kf <- tar_read(feature_hydrogeology_kf)
-feature_seepage_raw <- tar_read(feature_seepage_raw)
-feature_seepage <- tar_read(feature_seepage)
-feature_precipitation <- tar_read(feature_precipitation)
-feature_humus_raw <- tar_read(feature_humus_raw)
-influential_polygons <- tar_read(influential_polygons)
-back_vals_2005_influential_polygons <- tar_read(back_vals_2005_influential_polygons)
-interactive_schematic_lulc_feature_extraction_map <- tar_read(interactive_schematic_lulc_feature_extraction_map)
-interactive_schematic_hydrounits_feature_extraction_map <- tar_read(interactive_schematic_hydrounits_feature_extraction_map)
-interactive_correlation_plot <- tar_read(interactive_correlation_plot)
-schematic_feature_extraction_plot <- tar_read(schematic_feature_extraction_plot)
-all_features_model <- tar_read(all_features_model)
-all_data_model <- tar_read(all_data_model)
-all_data_model_wo_orientations <- tar_read(all_data_model_wo_orientations)
-
-
-tar_read(feature_temperature_raw) %>% 
-  plot()
-
-studyarea_subset_plots %>% 
-  st_buffer(dist = -5*INFLUENTIAL_RADIUS) %>%
-  ggplot() + 
-    geom_sf()
-
-
-back_vals_2005 %>% 
-  select(contains("ca")) %>% 
-  ggplot() +
-  aes(CA_mgL) +
-  geom_histogram() +
-  scale_y_log10()
-
-
-back_vals_2005 %>% 
-  select(contains("na_")) %>% 
-  filter(NA_mgL < 0)
-
-
-tar_meta() %>% 
-  arrange(-seconds) %>% 
-  select(name, seconds)
-
-"feature_soilunits" %>% 
-  tar_read("feature_soilunits")
-
-
-result <- all_data_model %>% 
-  pivot_longer(cols = -c("station_id", "ca_mg_l", "x_coord", "y_coord"),
-               names_to = c("name_feature", "name_class", "orientation"),
-               names_pattern = "(.*)_(.*)_(.*)") %>% 
-  group_by(name_feature, orientation) %>% 
-  summarise(number_na = sum(is.na(value)))
-
-
-make_interactive_schematic_map(
-  feature_lulc_raw,
-  back_vals_2005_influential_polygons,
-  back_vals_2005_filter_sf,
-  studyarea_subset_plots,
-  "lulc_class"
-)
-
-
-
-
-
-
-
-
-
-
-
-schematic_feature_extraction_plot
-make_schematic_feature_extraction_plot(
-  feature_lulc_raw,
-  back_vals_2005_filter_sf,
-  influential_polygons
-)
-
-
-make_interactive_schematic_map(
-    feature_hydrounits_raw,
-    grid_studyarea_centroids,
-    back_vals_2005_influential_polygons,
-    back_vals_2005_filter_sf,
-    studyarea_subset_plots,
-    "r_name"
-)
-
-
-
-
-
-studyarea %>% 
-  st_geometry() %>% 
-  ggplot() +
-  geom_sf()
-
-studyarea %>% 
-  st_geometry()
-
-here::here("J:/NUTZER/Noelscher.M/Studierende/Daten/digital_elevation_model/germany/time_invariant/gridded_grid/eudem_slope/data/EUD_CP-SLOP_4500035000-AA/EUD_CP-SLOP_4500035000-AA.tif")
-
-here::set_here("J:/NUTZER/Noelscher.M/Studierende/Daten/")
-
-here::dr_here()
-
-here::here("EUD_CP-SLOP_4500035000-AA.tif")
-
-studyarea %>% 
-  ggplot() +
-  geom_sf()
-
-test <- "J:/NUTZER/Noelscher.M/Studierende/Daten/digital_elevation_model/germany/time_invariant/gridded_grid/eudem_slope/data/EUD_CP-SLOP_4500035000-AA/EUD_CP-SLOP_4500035000-AA.tif" %>% 
-  raster()
-
-test <- acos(test/250)*180/pi
-
-test %>% 
-  plot()
-
-
-tibble(x = 0L:250L) %>% 
-  mutate(y = acos(x/250)*180/pi) %>% 
-  ggplot(aes(x, y)) +
-  geom_line()
-
-all_data_model %>% 
-  select(ca_mg_l, contains("_45"), -contains(c("soil", "geology"))) %>% 
-  cor() %>% 
-  round(1) %>% 
-  ggcorrplot::ggcorrplot()
-
-
-feature_hydrogeology_raw %>% 
-  select(kf_bez) %>% 
-  st_drop_geometry() %>% 
-  as_tibble() %>% 
-  distinct(kf_bez)
-
-
-
-feature_humus_raw %>% 
-  st_drop_geometry() %>%
-  distinct(gehalt)
-
-
-feature_soilunits %>% 
-  mutate(test = 0) %>% 
-  # select_if(~ !is.numeric(.) || sum(.) != 0)
-  select(where(~ !is.numeric(.) || sum(.) != 0))
-
-test <- "J:/NUTZER/Noelscher.M/Studierende/Daten/hydrogeological_map/germany/time_invariant/shape/huek200_bgr_topocheck_test/data/huek200_topo_test.shp" %>% 
-  st_read() %>% 
-  st_transform(crs = CRS_REFERENCE)
-
-test %>% 
-  st_make_valid() %>% 
-  st_intersection(st_buffer(studyarea, STUDYAREA_BUFFER)) %>% 
-  janitor::clean_names() %>% 
-  st_sf()
-
-
-feature_soilunits_raw %>% 
-  ggplot() +
-  geom_sf(aes(fill = symbol))
-
-make_interactive_schematic_map(
-  feature_soilunits_raw,
-  grid_studyarea_centroids,
-  back_vals_2005_influential_polygons,
-  back_vals_2005_filter_sf,
-  studyarea,
-  "symbol"
-)
-
-feature_hydrounits_raw %>% 
-  ggplot(aes(fill = r_name)) +
-  geom_sf()
-
-feature_hydrounits %>% 
-  select(where(is.numeric)) %>%
-  mutate(sum = rowSums(.)) %>% 
-  select(sum) %>% 
-  filter(sum < 8)
-
-rasf::is_raster(feature_gw_recharge)
-
-back_vals_2005_filter_sf %>% 
-  # filter(al_mg_l == "NaN")
-  mutate(across(where(is.numeric), na_if, "NaN"))
-
-back_vals_2005_clean_sf %>% 
-  filter_background_values(studyarea)
-
-
-back_vals_2005 %>% 
-  mutate(station_id = str_c(!!sym(STATION_ID[1]), !!sym(STATION_ID[2]), sep = "_")) %>% 
-  select(contains("id"))
-  # janitor::get_dupes(stprj_id, stat_id)
-  distinct(stprj_id, stat_id)
-
-  df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
-  df %>% replace_na(y, "unknown")
-  
-  
-back_vals_2005 %>% 
-  select(Lage) %>% 
-  group_by(Lage) %>% 
-  count()
-
-back_vals_2005_clean_sf %>% 
-  as_tibble() %>% 
-  janitor::get_dupes(station_id) %>% 
-  distinct(station_id)
-  
-back_vals_2005_clean_sf %>% 
-  pull(stprj_stat_smp_id) %>% 
-  unique() %>% 
-  length()
-
-back_vals_2005_clean_sf %>% 
-  st_drop_geometry() %>% 
-  mlr::summarizeColumns()
-
-test <- back_vals_2005_clean_sf %>% 
-  st_drop_geometry() %>% 
-  group_by(station_id) %>% 
-  distinct(sample_depth) %>% 
-  count() %>% 
-  ungroup() %>% 
-  arrange(-n)
-
-
-tibble(date = seq.Date(as.Date("1900-01-01"), length.out = 5, by = "days")) %>% 
-  sample_n(n()) %>% 
-  add_row(date = NA,
-          .before = 3) %>% 
-  arrange(desc(date))
-
-
-
-back_vals_2005_clean_sf %>% 
-  st_coordinates() %>% 
-  as_tibble() %>% 
-  distinct(X, Y)
-
-
-back_vals_2005_clean_sf %>% 
-  filter(station_id == 55)
-
-tar_visnetwork()
-
-back_vals_2005 %>% 
-  janitor::clean_names() %>% 
-  select(ag_mg_l:zn_mg_l) %>% 
-  names() %>% 
-  paste0(collapse = "', '")
-
-
-back_vals_2005 %>% 
-  distinct(x, y)
-
-back_vals_2005 %>% 
-  distinct(s_name)
-
-
-filepath <- "J:/NUTZER/Noelscher.M/Studierende/Daten/soil_humus_content/germany/time_invariant/shape/humus_content/data/humus1000_ob_v20.shp"
-
-
-test_humus <- filepath %>%
-  read_and_intersect_feature_vector(studyarea)
-
-
-test_humus %>% 
-  mutate(gehalt = str_replace_all(gehalt, "ä", "ae")) %>%
-  st_write("J:/NUTZER/Noelscher.M/Studierende/Daten/soil_humus_content/germany/time_invariant/shape/humus_content/data/humus1000_ob_v20_no_umlaute.shp")
-
-test_humus %>% mutate(gehalt = as.character(gehalt)) %>% 
-  mutate(gehalt = str_replace_all(gehalt, "Gewaesserflaechen", "0")) %>% 
-  mutate(gehalt = str_replace_all(gehalt, "nicht bestimmt", "0")) %>% 
-  mutate(gehalt = str_replace_all(gehalt, "%|<| ", "")) %>%
-  mutate(gehalt = str_replace_all(gehalt, ">30", "30-100")) %>% 
-  mutate(gehalt = str_replace_all(gehalt, ",", ".")) %>% 
-  mutate(gehalt = str_replace_all(gehalt, "Abbauflächen|Gewaesserflaechen|nicht bestimmt|Stadtkernbereiche|Wattflächen", "0")) %>% 
-  rowwise() %>% 
-  mutate(gehalt = str_c(word(gehalt, 1, sep = "-"), "+abs(", gehalt, ")/2")) %>%
-  mutate(gehalt = eval(parse(text = gehalt))) %>%
-  ungroup() %>% 
-  st_as_sf() %>% 
-  as_tibble() %>% 
-  distinct(gehalt)
-
-
-"J:/NUTZER/Noelscher.M/Studierende/Daten/groundwater_recharge/germany/nearly_time_invariant/raster/bgr/data/GWN1000__3034_v1_raster1.tif" %>% 
-  raster::raster() %>% 
-  raster::projectRaster(crs = CRS(str_c("EPSG:", CRS_REFERENCE)))
-
-INFLUENTIAL_ORIENTATIONS %>% 
-  make_multiple_circle_segments(sf_point, .) %>% 
-  ggplot() +
-  geom_sf(fill = "white",
-          alpha = .6) +
-  facet_wrap(~orientation)
-
-
-
-
-
-back_vals_2005_filter_sf %>%
-  sample_n(5) %>% 
-  translate_multiple_influential_polygons(influential_polygons, .) %>% 
-  ggplot() +
-  geom_sf(aes(fill = orientation),
-          colour = NA) +
-  geom_sf(data = studyarea,
-          fill = NA) +
-  facet_wrap(~ orientation)
-
-
-
-test <- "J:/NUTZER/Noelscher.M/Studierende/Daten/groundwater_recharge/germany/nearly_time_invariant/raster/bgr/data/GWN1000__3034_v1_raster1.tif" %>%
-  raster::raster() %>%
-  raster::projectRaster(crs = crs(studyarea))
-
-test_test <- test > -Inf
-
-test_test <- test_test %>% 
-  rasterToPolygons(dissolve = TRUE)
-
-a <- test_test %>% 
-  st_as_sf() %>% 
-  ggplot() +
-  geom_sf() +
-  geom_sf(data = test_test_b,
-          colour = "red")
-
-a %>% 
+studyarea <- tar_read(studyarea)
+river_networks_clip <- tar_read(river_networks_clip)
+river_networks_clean <- tar_read(river_networks_clean)
+river_networks_split <- tar_read(river_networks_split)
+river_networks_strahler_merge <- tar_read(river_networks_strahler_merge)
+streamorders <- tar_read(streamorders)
+base_grid <- tar_read(base_grid)
+thiessen_catchments <- tar_read(thiessen_catchments)
+river_network_by_streamorder <- tar_read(river_network_by_streamorder)
+thiessen_catchments_centroids <- tar_read(thiessen_catchments_centroids)
+centroids_stream_distance <- tar_read(centroids_stream_distance)
+centroids_divide_distance <- tar_read(centroids_divide_distance)
+centroids_divide_distance <- tar_read(centroids_divide_distance)
+filepaths_lateral_position <- tar_read(filepaths_lateral_position)
+grid_lateral_position <- tar_read(grid_lateral_position)
+grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
+tar_read(test_processed_river_network_plot)
+tar_read(test_catchments_plot)
+tar_read(grid_lateral_position)
+
+tar_read(river_networks_only_connected)
+
+
+connection <- 
+  connect_to_database()
+
+tar_read(river_networks_clean) %>% 
+  st_cast("LINESTRING") %>% 
+  write_to_table(
+    connection = connection,
+    table_name = "test_lines_clean"
+  )
+
+
+
+
+tar_read(river_networks_dissolved_brackets) %>% 
+  st_cast("LINESTRING") %>% 
+  add_feature_index_column() %>% 
+  # dissolve_line_features_between_junctions() %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>%
   plotly::ggplotly()
 
-test_test_b <-
-  feature_humus_raw %>% 
-  st_union()
+tar_read(river_networks_dissolved_brackets) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>%
+  plotly::ggplotly()
 
-test_test %>% 
-  st_as_sf() %>% 
-  st_intersection(test_test_b)
+
+strahler_error <- 
+  tar_read(river_networks_clip) %>% 
+  filter(abs(strahler) >= 10 & dfdd == "BH140") %>% 
+  select(strahler)
+
+
+tar_read(river_networks_clip) %>% 
+  filter(dfdd == "BH140") %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = strahler_error, colour = "red")
+
+tar_read(river_networks_only_rivers) %>% 
+  mutate(strahler = as.character(strahler)) %>% 
+  # distinct(strahler)
+  plot_lines_coloured_by_categorical_attribute(strahler) +
+  geom_sf(data = tar_read(studyarea_subset_plots), fill = NA) +
+  theme(legend.position = "bottom")
+  
+plot_before_vs_after(tar_read(river_networks_clean), tar_read(river_networks_strahler_merge))
+
+log(1:6)+1
+
+
+tar_read(river_networks_strahler_merge) %>% 
+  ggplot() +
+  geom_sf()
+
+plot_b <- 
+  tar_read(river_networks_strahler_merge) %>% 
+  ggplot() +
+  geom_sf(aes(colour = feature_id, size = log(as.numeric(strahler)+1))) +
+  scale_colour_manual(values = generate_discrete_colour_values(tar_read(river_networks_strahler_merge), feature_id)) +
+  theme(legend.position = "none") +
+  labs(title = "Colour represents line features")
+
+
+
+
+river_networks_strahler_merge %>% 
+  st_sf()
+
+tar_read(river_networks_split) %>% 
+  bind_rows()
+
+sf_lines %>% 
+  st_cast("MULTILINESTRING")
+
+
+river_networks_strahler_merge %>% 
+  as_tibble() %>% 
+  distinct(strahler) %>% 
+  pull(strahler) %>% 
+  as.numeric() %>%
+  sort()
+
+base_grid %>% 
+  ggplot() +
+  geom_sf()
+
+
+st_layers("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite")
+st_read("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/european_catchments_and_rivers_network_system_(ecrins)/data/EcrRiv.sqlite",
+        layer = "c_tr")
+
+values <-
+  tibble(
+    output_function = rlang::syms("calculate_lateral_position_grid"),
+    streamorders = 1:6,
+    # centroids_stream_distance = rlang::syms("centroids_stream_distance"),
+    # centroids_divide_distance = rlang::syms("centroids_divide_distance"),
+    grid =  rlang::syms("base_grid"),
+    field_name = "lateral_position",
+    data_source = str_c(field_name, "_", streamorders)
+  )
+
+
+targets_output <- 
+  tar_map(
+    
+    # tar_target(
+    #   files_lateral_position,
+    #   generate_filepaths(
+    #     streamorders,
+    #     "lp"
+    #   ),
+    #   format = "file"
+    # ),
+    values = values,
+    names = streamorders,
+    tar_target(
+      lateral_position,
+      # list(
+      #   centroids_stream_distance,
+      #   centroids_divide_distance,
+      #   streamorders  
+      # ),
+      output_function(
+        centroids_stream_distance,
+        centroids_divide_distance,
+        streamorders,
+        grid,
+        field_name
+      ),
+      format = "file"
+    )
+  )
+
+tar_pattern(
+  map(x),
+  x = 5,
+  y = 1
+)
+targets::tar_make_future(workers = future::availableCores())
+tar_read(unique_feature_ids)
+
+
+river_networks_clean %>% 
+  as_tibble() %>% 
+  distinct(feature_id) %>% 
+  pull(feature_id)
+
+river_networks_clean <- 
+  river_networks_clean %>% 
+  st_cast("MULTILINESTRING") %>%
+  rename(geometry = x)
+
+river_networks_strahler_merge %>% 
+  ggplot() +
+  geom_sf(aes(colour = feature_id))
+
+st_distance(
+  filter(river_networks_clean, feature_id == 2) %>% summarise(),
+  filter(river_networks_clean, feature_id == 12) %>% summarise()
+  )
+
+# tar_read(coastline) %>% 
+#   # slice(1:5) %>% 
+#   st_union()
+
+tar_read(river_networks_strahler_merge) %>% 
+  plot_test_processed_river_network(tar_read(studyarea_subset_plots))
+
+
+river_networks_strahler_merge %>% 
+    st_as_sf() %>%
+    mutate(id = as.character(1:n())) %>%
+    ggplot() +
+    geom_sf(aes(colour = id))
+  ggplot()
+
+testplot <-
+  ggplot() +
+  geom_sf(
+    data = thiessen_catchments[[1]],
+    colour = "white",
+    fill = "grey70"
+  ) +
+  geom_sf(
+    data = river_network_by_streamorder[[1]],
+    aes(colour = as.factor(strahler))
+  )
+
+testplot %>% 
+  plotly::ggplotly()
+
+river_network_by_streamorder[[1]] <- 
+  river_network_by_streamorder[[1]] %>% 
+  mutate(segment_id = 1:n())
+
+segment_colours <- 
+  river_network_by_streamorder[[1]] %>%
+  # distinct(nearest_feature) %>% 
+  nrow() %>% 
+  hues::iwanthue(lmin = 40,
+                 cmax = 70)
+
+testplot1 <- 
+  river_network_by_streamorder[[1]] %>% 
+  ggplot() +
+  geom_sf(
+    data = river_network_by_streamorder[[1]],
+    aes(colour = as.factor(strahler)),
+    size = 2
+  ) +
+  theme(legend.position = "none") +
+  labs(title = "Farbecode repräsentiert Strahler order")
+
+testplot2 <- 
+  river_network_by_streamorder[[1]] %>% 
+  ggplot() +
+  geom_sf(aes(colour = as.character(segment_id)),
+          size = 2) +
+  scale_colour_manual(values = segment_colours) +
+  theme(legend.position = "none") +
+  labs(title = "Farbecode repräsentiert Features/Liniensegmente")
+
+testplot1 + testplot2
+
+
+
+
+
+
+river_network_by_streamorder[[1]] %>% 
+  mutate(test = river_network_by_streamorder[[1]] %>% 
+  st_touches(sparse = FALSE))
+
+test <- river_network_by_streamorder[[1]] %>% 
+  st_touches()
+
+key <- 
+  test %>% 
+  map(as.vector) %>% 
+  # imap(~c(.x, .y)) %>% 
+  map(sort) %>% 
+  map(as.character) %>% 
+  map(str_c, collapse = "") %>% 
+  unlist()
+
+lines_dissolved <- 
+  river_network_by_streamorder[[1]] %>% 
+  mutate(key = key, .before = 2) %>% 
+  mutate(key = str_c(key, strahler)) %>% 
+  group_by(key) %>% 
+  summarise()
+
+segment_colours <- 
+  lines_dissolved %>%
+  # distinct(nearest_feature) %>% 
+  nrow() %>% 
+  hues::iwanthue(lmin = 40,
+                 cmax = 70)
+
+testplot3 <-
+  lines_dissolved %>%  
+  ggplot() +
+  geom_sf(aes(colour = as.character(key)),
+          size = 2) +
+  scale_colour_manual(values = segment_colours) +
+  theme(legend.position = "none") +
+  labs(title = "Farbecode repräsentiert Features/Liniensegmente")
+
+
+testplot3 + testplot2
+
+river_network_by_streamorder[[1]] %>% 
+  st_touches(sparse = FALSE) %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = everything()) %>% 
+  filter(value == TRUE) %>% 
+  mutate(name = as.numeric(str_sub(name, 2L))) %>% 
+  mutate(name2 = 1:n(), .before = 1)
+
+
+river_network_by_streamorder[[1]] %>% 
+  st_intersects(river_network_by_streamorder[[1]])
+
+
+lines_dissolved <- 
+  river_network_by_streamorder[[1]] %>% 
+  group_by(strahler) %>% 
+  summarise()
+
+lines_singlefeature <- 
+  river_network_by_streamorder[[1]] %>% 
+  # group_by(strahler) %>% 
+  summarise()
+
+river_network_by_streamorder[[1]] %>%
+  group_by(strahler) %>%
+  summarise() %>%
+  st_line_merge()
+
+st_union(lines_dissolved, lines_singlefeature, by_feature = TRUE, is_coverage = TRUE)
+
+st_line_merge()
+lwgeom::st_split()
+st_combine()
+st_intersection()
+st_union()
+st_collection_extract()
+
+
+
+lines_dissolved %>% 
+  st_line_merge()
+
+
+river_networks_dissolved <- 
+  river_networks_merge %>%
+  group_by(strahler) %>%
+  summarise() %>%
+  st_line_merge()
+
+result_intersection <- 
+  lines_singlefeature %>%
+  st_intersection(lines_dissolved %>% 
+                    # select(-strahler) %>%
+                    st_cast("MULTILINESTRING"))
+
+result_intersection_points <-
+  result_intersection %>% 
+  filter(st_is(., "POINT")) %>% 
+  distinct(geometry)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ls = st_sfc(st_linestring(rbind(c(0,0),c(0,1))),
+            st_linestring(rbind(c(0,0),c(10,0))))
+st_line_sample(ls, density = 1)
+
+
+
+lwgeom::st_split(lines_singlefeature, lines_dissolved)
+
+lines_singlefeature %>% 
+  st_intersection(lines_dissolved)
+
+testplot1 + testplot2
+
+testplot %>% 
+  plotly
+
+grid_stream_divide_distance[[1]] %>% 
+  sfpolygon_to_raster("test")
+
+grid_stream_divide_distance[[1]] %>% 
+  pull(stream_divide_distance) %>% 
+  range()
+
+grid_stream_divide_distance[[1]] %>% 
+  # mutate(stream_divide_distance = stream_divide_distance/1E5) %>% 
+  stars::st_rasterize() %>% 
+  write_stars("asda.tiff")
+
+
+grid_lateral_position
+
+tar_read(streamorders) %>% 
+  as.vector() %>% 
+  as.numeric() %>% 
+  future_map(
+    ~stream_order_filter(
+      river_network = river_networks_clean,
+      stream_order = .x
+    )
+  )
+
+streamorders %>% 
+  as.vector() %>% 
+  as.numeric() %>% 
+  future_map(
+    ~stream_order_filter(
+      river_network = river_networks_clean,
+      stream_order = .x
+    )
+  )
+
+
+studyarea %>% 
+  ggplot() +
+  geom_sf()
+
+centroids_lateral_position %>% 
+  slice(1:1E5) %>% 
+  ggplot() +
+  geom_sf(aes(fill = lateral_position))
+
+centroids_stream_divide_distance %>% 
+  pull(stream_divide_distance) %>% 
+  range()
+
+centroids_stream_divide_distance %>% 
+  select(stream_divide_distance) %>% 
+  ggplot() +
+  geom_histogram(aes(stream_divide_distance))
+
+
+test_plot <- centroids_lateral_position %>% 
+  st_intersection(studyarea_subset_plots) %>% 
+  ggplot() +
+  geom_sf(aes(fill = lateral_position),
+          colour = NA) +
+  scale_fill_viridis_c()
+
+test_plot
+
+test_plot <- centroids_stream_divide_distance %>% 
+  st_intersection(studyarea_subset_plots) %>% 
+  ggplot() +
+  geom_sf(aes(fill = stream_divide_distance),
+          colour = NA) +
+  scale_fill_viridis_c()
+
+test_plot
+
+test <- centroids_lateral_position %>% 
+  st_intersection(studyarea_subset_plots) %>% 
+  st_rasterize()
+
+test %>%
+  write_stars("test.tiff")
+
+
+rivers <- tar_read(river_network_by_streamorder)
+
+rivers %>% 
+  as_tibble() %>% 
+  distinct(strahler)
+
+rivers %>% 
+  filter(strahler == 6) %>% 
+  ggplot() +
+  geom_sf()
+
+360E3 * 1E6 / 300^2
+
+targets::tar_visnetwork(label = c("time", "size"), targets_only = TRUE)
+
+tar_read(centroids_stream_divide_distance) %>% 
+  st_intersection(tar_read(studyarea_subset_plots)) %>% 
+  ggplot() +
+  geom_sf(aes(fill = stream_divide_distance),
+          colour = NA) +
+  scale_fill_viridis_c(option = "inferno", direction = -1) +
+  # scale_fill_gradientn(colours = c("royalblue", "purple", "magenta3", "orange", "cornsilk")) +
+  geom_sf(data = tar_read(thiessen_catchments),
+          fill = NA,
+          colour = "white") +
+  geom_sf(data = tar_read(river_network_by_streamorder),
+          fill = NA,
+          colour = "black")
+
+
+test_intersection <- 
+  tar_read(centroids_lateral_position) %>% 
+  st_intersection(tar_read(studyarea_subset_plots)) %>% 
+  sf::st_transform(crs = 32632)
+
+
+grid_lateral_position[[1]] %>% 
+  sfpolygon_to_raster %>% 
+  writeRaster(str_c("output_data/", "mohp_germany_", "order", 1, "_", CELLSIZE, "m_res", ".tif"))
+  
+  fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
+                       field = "lateral_position") %>% 
+  raster::plot()
+
+test_raster <- 
+  test_intersection %>% 
+  fasterize::fasterize(raster = raster::raster(., res = 100),
+                       field = "lateral_position")
+  # raster::projectRaster(crs = "+init=epsg:25832")
+  raster::plot(test_raster)
+  raster::plot(tar_read(river_network_by_streamorder) %>% sf::st_transform(crs = sf::st_crs(test)), add = TRUE)
+
+# stars::st_rasterize()
+  # stars::write_stars("output/test.tiff")
+  # raster::as.raster() %>% 
+  # raster::writeRaster("output/test.tif")
+  plot()
+
+raster::raster("output/test.tiff") %>% 
+  
+  ggplot() +
+  geom_raster()
+  
+
+segment_colours <- 
+  tar_read(thiessen_catchments) %>% 
+  pluck(1) %>% 
+  # distinct(nearest_feature) %>% 
+  nrow() %>% 
+  hues::iwanthue(lmin = 40,
+                 cmax = 70)
+
+tar_read(thiessen_catchments) %>% 
+  mutate(id = as.character(1:n())) %>% 
+  ggplot() +
+  # geom_sf(aes(fill = id),
+  #         colour = "white") +
+  # scale_fill_manual(values = segment_colours) +
+  geom_sf(data = tar_read(river_network_by_streamorder) %>% mutate(strahler = as.numeric(strahler)/2),
+          aes(size = strahler),
+          lineend = "round",
+          linejoin = "round") +
+  scale_size_identity() +
+  theme(legend.position = "none")
+
+
+
+polygon <- 
+  tibble(x = 1,
+         y = 1) %>% 
+  st_as_sf(coords = c("x", "y")) %>% 
+  st_buffer(2) %>% 
+  st_cast("MULTILINESTRING")
+
+point <- 
+  tibble(x = 1.5,
+         y = 2) %>% 
+  st_as_sf(coords = c("x", "y"))
+
+st_distance(polygon, point, by_element = TRUE)
+
+
+polygon %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = point)
+
+
+
+# features_to_reclassify <- 
+#   features_to_reclassify %>% 
+  # mutate(unique_feature_id = str_c(source_id, objectid, sep = "_"),
+  #        .before = 1) %>% 
+  
+
+add_source_id <- 
+  function(x, index) {
+    x %>% 
+      mutate(source_id = as.character(index),
+             .before = 1)
+  }
+
+
+cyls <- 4
+mtcars %>%
+  # filter(cyl == cyls) %>%
+  group_by(vs) %>%
+  do({
+    assert_that(
+      length(na.omit(.$mpg)) > 1,
+      msg = "I cannot grok the data"
+    )
+    .
+  }) %>%
+  summarize(z = max(density(mpg)$y))
+
+
+
+
+
+
+
+
+tar_read(river_networks_clean) %>% 
+  dissolve_line_features_between_junctions() %>% 
+  add_feature_index_column() %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
+  
+
+
+
+
+tar_read(river_networks_dissolved) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
+  plotly::ggplotly()
+
+tar_read(river_networks_dissolved) %>% 
+  filter(feature_id %in% c(80, 12, 83, 81)) %>% 
+  st_touches()
+
+
+{tar_read(river_networks_dissolved) %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = split_points, size = 3)} %>% plotly::ggplotly()

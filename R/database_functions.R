@@ -15,11 +15,22 @@ connect_to_database <-
     )
   }
 
+initiate_database <- 
+  function(river_networks, connection, table_name) {
+    river_networks %>% 
+      write_to_table(
+        connection = connection,
+        table_name = table_name
+      )
+    
+    return(river_networks)
+  }
+
 run_query_create_table_brackets <- 
-  function(con, query_as_string) {
+  function(con, query) {
     
     DBI::dbExecute(con, "DROP TABLE IF EXISTS brackets_to_drop")
-    DBI::dbExecute(con, query_as_string)
+    DBI::dbExecute(con, query)
   }
 
 run_query_linemerge_by_streamorder <- 
@@ -55,10 +66,23 @@ convert_pq_geomentry <-
       pull(geometry)
   }
 
-add_feature_id <- 
-  function(x) {
-    x %>% 
-      mutate(feature_id = 1:n(),
-             .before = 1) %>% 
-      mutate(feature_id = as.character(feature_id))
+# add_feature_id <- 
+#   function(x) {
+#     x %>% 
+#       mutate(feature_id = 1:n(),
+#              .before = 1) %>% 
+#       mutate(feature_id = as.character(feature_id))
+#   }
+
+get_table_from_postgress <-
+  function(connection, table_name) {
+    DBI::dbGetQuery(connection, glue::glue("SELECT * FROM {table_name}"))
+  }
+
+hash_of_table <- 
+  function(connection,
+           table_name) {
+    connection %>% 
+      get_table_from_postgress(table_name) %>% 
+      digest::digest()
   }
