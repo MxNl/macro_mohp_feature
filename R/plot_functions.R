@@ -106,6 +106,7 @@ plot_lines_coloured_by_categorical_attribute <-
               size = 1
       ) +
       scale_colour_manual(values = generate_discrete_colour_values(x, {{ var }})) +
+      theme_void() +
       theme(
         legend.position = "none",
         legend.direction = "horizontal"

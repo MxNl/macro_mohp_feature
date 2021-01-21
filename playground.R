@@ -25,11 +25,42 @@ centroids_divide_distance <- tar_read(centroids_divide_distance)
 filepaths_lateral_position <- tar_read(filepaths_lateral_position)
 grid_lateral_position <- tar_read(grid_lateral_position)
 grid_stream_divide_distance <- tar_read(grid_stream_divide_distance)
+tar_read(plot_subset_all_steps)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 
-tar_read(river_networks_only_connected)
+tar_read(river_networks_only_connected) %>% 
+  as_tibble() %>% 
+  mutate(geometry = as.character(geometry)) %>% 
+  distinct(geometry)
+tar_read(river_networks_clean)
+
+
+tar_read(river_networks_strahler_merge) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
+  plotly::ggplotly()
+
+list(
+  tar_read("river_networks_clip"),
+  tar_read(river_networks_only_rivers),
+  tar_read(river_networks_valid_strahler),
+  tar_read(river_networks_clean),
+  tar_read(river_networks_only_connected),
+  tar_read(river_networks_dissolved_junctions),
+  tar_read(river_networks_without_brackets),
+  tar_read(river_networks_dissolved_junctions2)
+) %>%
+  map(plot_lines_coloured_by_categorical_attribute, feature_id) %>% 
+  pluck(1) %>% 
+  list() %>% 
+  cowplot::plot_grid(plotlist = .)
+
+
+test <- 
+  get_table_from_postgress(connect_to_database(), "dc_segments") %>%
+  query_result_as_sf() %>%
+  add_feature_index_column()
 
 
 connection <- 

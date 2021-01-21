@@ -9,7 +9,8 @@ clip_river_networks <-
       river_networks <-
         river_networks %>%
         st_intersection(studyarea, .x) %>% 
-        st_cast("MULTILINESTRING")
+        st_cast("MULTILINESTRING") %>% 
+        add_feature_index_column()
     }
 
     return(river_networks)
@@ -23,7 +24,8 @@ reclassify_relevant_canals_and_ditches_and_drop_others <-
     ####
     river_network %>% 
       mutate(dfdd = if_else(inspire_id %in% id_to_reclassify, "BH140", dfdd)) %>% 
-      filter(dfdd == "BH140")
+      filter(dfdd == "BH140") %>% 
+      add_feature_index_column()
   }
 
 
@@ -53,12 +55,13 @@ impute_line_features_with_invalid_strahler_value <-
     river_network %>% 
       left_join(valid_strahler, by = "inspire_id") %>% 
       mutate(strahler = if_else(is.na(strahler.y), strahler, strahler.y)) %>% 
-      select(-strahler.y)
+      select(-strahler.y) %>% 
+      add_feature_index_column()
   }
 
 
 clean_river_networks <-
-  function(river_network, studyarea) {
+  function(river_network) {
     #### Test
     # river_network <- tar_read(river_networks_clip)
     # studyarea <- tar_read(studyarea_outline)
@@ -243,8 +246,8 @@ remove_invalid_streamorder_values <-
 dissolve_line_features_between_junctions <-
   function(river_networks) {
     ###### Test
-    # river_networks <- tar_read(river_networks_clean)
-    # studyarea <- tar_read(filepath_studyarea_subset_plots)
+    # river_networks <- tar_read(river_networks_only_connected)
+    # studyarea <- tar_read(studyarea_outline)
     #####
 
     startpoints <- 
@@ -266,7 +269,7 @@ dissolve_line_features_between_junctions <-
     
     split_points <-
       start_end_points %>% 
-      st_intersects(start_end_points) %>% 
+      st_intersects(river_networks) %>% 
       map(as_vector) %>%
       map_dbl(length) %>% 
       magrittr::is_greater_than(2) %>% 
@@ -300,7 +303,7 @@ dissolve_line_features_between_junctions <-
 dissolve_line_features_with_brackets <- 
   function(river_networks) {
     ##### Test
-    # river_networks <- tar_read(river_networks_dissolved)
+    # river_networks <- tar_read(river_networks_dissolved_junctions)
     #####
     
     startpoints <- 
@@ -334,8 +337,7 @@ dissolve_line_features_with_brackets <-
       summarise() %>% 
       st_join(river_networks, join = st_contains) %>% 
       group_by(merge_id) %>% 
-      summarise(connected_feature_id = unique(connected_feature_id ),
-                strahler = unique(strahler )) %>% 
+      summarise(strahler = unique(strahler )) %>% 
       select(-merge_id) %>% 
       add_feature_index_column()
   }
@@ -468,13 +470,10 @@ drop_disconnected_river_networks <-
     
     river_network <- 
       river_network %>%
-      filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1] |
-               st_touches(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1]) %>% 
+      filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1]) %>% 
       select(-connected_id) %>%
-      st_join(river_networks) %>% 
-      relocate(geometry, .after = last_col()) %>% 
-      add_feature_index_column() %>% 
-      ungroup()
+      st_intersection(river_networks) %>%
+      add_feature_index_column()
     
     river_network %>% 
       initiate_database(
@@ -498,20 +497,15 @@ run_query_connected <-
 merge_same_strahler_segments <-
   function(sf_lines, query) {
     ###### Test
-    # sf_lines <- tar_read(river_networks_dissolved_junctions)
-    # query_list <-
-    #   list(
-    #     tar_read(create_table_brackets_query),
-    #     tar_read(linemerge_query)
-    #   )
+    # sf_lines <- tar_read(river_networks_dissolved_junctions2)
+    # query <- tar_read(linemerge_query)
     ###
 
     connection <- 
       connect_to_database()
     
     sf_lines %>% 
-      st_cast("LINESTRING") %>% 
-      select(-connected_feature_id) %>% 
+      st_cast("LINESTRING") %>%
       write_to_table(
         connection = connection,
         table_name = "lines_raw"

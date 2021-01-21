@@ -17,6 +17,8 @@ connect_to_database <-
 
 initiate_database <- 
   function(river_networks, connection, table_name) {
+    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name}"))
+    
     river_networks %>% 
       write_to_table(
         connection = connection,

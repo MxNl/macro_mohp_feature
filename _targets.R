@@ -117,8 +117,7 @@ targets <- list(
   ),
   tar_target(
     connected_query,
-    read_file(filepath_connected_query),
-    priority = 1
+    read_file(filepath_connected_query)
   ),
   
   
@@ -182,9 +181,15 @@ targets <- list(
   ),
   
   tar_target(
+    river_networks_dissolved_junctions2,
+    dissolve_line_features_between_junctions(
+      river_networks_without_brackets)
+  ),
+  
+  tar_target(
     river_networks_strahler_merge,
     merge_same_strahler_segments(
-      river_networks_without_brackets,
+      river_networks_dissolved_junctions2,
       linemerge_query
     )
   ),
@@ -327,6 +332,24 @@ targets <- list(
 
   # Visualization -----------------------------------------------------------
 
+  tar_target(
+    plot_subset_all_steps,
+    list(
+      river_networks_clip,
+      river_networks_only_rivers,
+      river_networks_valid_strahler,
+      river_networks_clean,
+      river_networks_only_connected,
+      river_networks_dissolved_junctions,
+      river_networks_without_brackets,
+      river_networks_dissolved_junctions2,
+      river_networks_strahler_merge
+    ) %>% 
+      map(plot_lines_coloured_by_categorical_attribute, feature_id) %>% 
+      cowplot::plot_grid(plotlist = .)
+  ),
+  
+  
   tar_target(
     test_processed_river_network_plot,
     plot_test_processed_river_network(river_networks_strahler_merge,
