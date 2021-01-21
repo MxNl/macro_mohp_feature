@@ -18,6 +18,7 @@ tar_option_set(packages = c(
                             "RPostgres",
                             "rmarkdown",
                             "raster",
+                            "janitor",
                             "rgdal",
                             "lwgeom",
                             "assertr",
@@ -155,8 +156,7 @@ targets <- list(
   tar_target(
     river_networks_clean,
     clean_river_networks(
-      river_networks_valid_strahler, 
-      studyarea_outline)
+      river_networks_valid_strahler)
   ),
   
   tar_target(
