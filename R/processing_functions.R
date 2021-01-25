@@ -452,19 +452,16 @@ get_unique_feature_ids <-
 
 
 drop_disconnected_river_networks <-
-  function(river_networks, studyarea, connection, query) {
+  function(river_networks, studyarea) {
     ### Test
     # river_networks <- tar_read(river_networks_clean)
     # studyarea <- tar_read(studyarea_outline)
     # connection <- connect_to_database()
-    # query <- read_file("sql/get_connected_id.sql")
     ####
     
-    connection %>%
-      run_query_connected(query)
+    run_query_connected()
 
     river_network <-
-      connection %>%
       get_table_from_postgress("connected_id") %>% 
       query_result_as_sf()
     
@@ -487,15 +484,47 @@ drop_disconnected_river_networks <-
 
 
 run_query_connected <- 
-  function(connection, query) {
+  function() {
+    
+    connection <- 
+      connect_to_database()
+    
     DBI::dbExecute(connection, "DROP TABLE IF EXISTS connected_id")
-    DBI::dbExecute(connection, query)
+    # DBI::dbExecute(connection, read_file("sql/get_connected_id.sql"))
+    DBI::dbExecute(connection, "
+      CREATE TABLE connected_id AS (
+	      WITH endpoints AS (
+	        SELECT
+	          ST_Collect(ST_StartPoint(geometry),
+	          ST_EndPoint(geometry)) AS geometry
+	        FROM lines_clean
+	      ), clusters AS (
+	        SELECT
+	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
+	        FROM endpoints
+	      ), clusters_with_ids AS (
+	        SELECT
+	          row_number() OVER () AS connected_id,
+	          ST_CollectionHomogenize(geometry) AS geometry
+	        FROM clusters
+	      )
+      	SELECT
+		      connected_id,
+		      ST_Collect(lines_clean.geometry) AS geometry
+	      FROM
+	        lines_clean
+	        LEFT JOIN
+	        clusters_with_ids
+	        ON ST_Intersects(lines_clean.geometry, clusters_with_ids.geometry)
+	      GROUP BY connected_id
+      )
+    ")
   }
 
 
 
 merge_same_strahler_segments <-
-  function(sf_lines, query) {
+  function(sf_lines) {
     ###### Test
     # sf_lines <- tar_read(river_networks_dissolved_junctions2)
     # query <- tar_read(linemerge_query)
@@ -515,7 +544,7 @@ merge_same_strahler_segments <-
     #   run_query_create_table_brackets(query_list[[1]])
     
     connection %>% 
-      run_query_linemerge_by_streamorder(query) %>% 
+      run_query_linemerge_by_streamorder() %>% 
       prepare_lines()
   }
 

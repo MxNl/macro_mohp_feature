@@ -47,35 +47,5 @@ import_targets <-
     tar_target(
       features_ids_to_reclassify,
       get_feature_ids_to_reclassify(filepath_canals_to_reclassify)
-    ),
-    
-    tar_target(
-      filepath_create_table_brackets_query,
-      "sql/filter_brackets.sql",
-      format = "file"
-    ),
-    tar_target(
-      create_table_brackets_query,
-      read_file(filepath_create_table_brackets_query)
-    ),
-    
-    tar_target(
-      filepath_linemerge_query,
-      "sql/linemerge_query.sql",
-      format = "file"
-    ),
-    tar_target(
-      linemerge_query,
-      read_file(filepath_linemerge_query)
-    ),
-    
-    tar_target(
-      filepath_connected_query,
-      "sql/get_connected_id.sql",
-      format = "file"
-    ),
-    tar_target(
-      connected_query,
-      read_file(filepath_connected_query)
     )
   )

@@ -39,9 +39,8 @@ preprocessing_targets <-
       river_networks_only_connected,
       drop_disconnected_river_networks(
         river_networks_clean, 
-        studyarea_outline, 
-        connect_to_database(),
-        connected_query)
+        studyarea_outline
+        )
     ),
     
     tar_target(
@@ -65,8 +64,7 @@ preprocessing_targets <-
     tar_target(
       river_networks_strahler_merge,
       merge_same_strahler_segments(
-        river_networks_dissolved_junctions2,
-        linemerge_query
+        river_networks_dissolved_junctions2
       )
     ),
     
