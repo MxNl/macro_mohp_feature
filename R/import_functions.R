@@ -8,7 +8,7 @@ read_studyarea <-
 read_river_networks <-
   function(filepath) {
     ##### Test
-    # filepath <- tar_read(filepath_river_networks)
+    # filepath <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data/"
     ####
 
     files <-
@@ -28,7 +28,7 @@ read_river_networks <-
           .y = .x
         )
       ) %>%
-      reduce(bind_rows) %>% 
+      reduce(bind_rows) %>%
       st_zm() %>% 
       rename(geometry = Shape) %>% 
       janitor::clean_names() %>%

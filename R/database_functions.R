@@ -1,6 +1,6 @@
 write_to_table <- 
-  function(data, connection, table_name, append = FALSE) {
-    st_write(data, dsn = connection, layer = table_name, 
+  function(data, table_name, append = FALSE) {
+    st_write(data, dsn = connect_to_database(), layer = table_name, 
              append = append)
   }
 
@@ -9,19 +9,21 @@ connect_to_database <-
     DBI::dbConnect(
       drv = RPostgres::Postgres(),
       user = "postgres",
-      password = "1Bg1bheYJIHnTmM6Gw",
+      # password = "1Bg1bheYJIHnTmM6Gw",
       host = "localhost",
       dbname = "postgis"
     )
   }
 
 initiate_database <- 
-  function(river_networks, connection, table_name) {
+  function(river_networks, table_name) {
     #### Test
     # river_networks <- tar_read(river_networks_clip)
     # table_name <- "testi"
     # connection <- connect_to_database()
     ####
+    connection <- connect_to_database()
+    
     DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name}"))
     
     river_networks %>% 
@@ -34,18 +36,18 @@ initiate_database <-
   }
 
 run_query_create_table_brackets <- 
-  function(con, query) {
-    
-    DBI::dbExecute(con, "DROP TABLE IF EXISTS brackets_to_drop")
-    DBI::dbExecute(con, query)
+  function(query) {
+    connection <- connect_to_database()
+    DBI::dbExecute(connection, "DROP TABLE IF EXISTS brackets_to_drop")
+    DBI::dbExecute(connection, query)
   }
 
 run_query_linemerge_by_streamorder <- 
   function(con) {
-    DBI::dbGetQuery(con, "
+    DBI::dbGetQuery(con, glue::glue("
       WITH collected AS (
       	SELECT strahler, ST_Collect(geometry) AS geometry
-      	FROM lines_raw GROUP BY strahler
+      	FROM {LINES_RAW} GROUP BY strahler
       ), local_linestrings AS (
       	SELECT strahler, (ST_Dump(ST_LineMerge(geometry))).geom AS geometry FROM collected
       ), local_linestrings_with_id AS (
@@ -96,7 +98,7 @@ run_query_linemerge_by_streamorder <-
       SELECT * FROM local_linestrings_splitted
       UNION
       SELECT * FROM local_linestrings_without_splitpoints
-    ")
+    "))
   }
 
 prepare_lines <- 
@@ -137,16 +139,20 @@ convert_pq_geomentry <-
 
 get_table_from_postgress <-
   function(table_name) {
-    connection <- 
-      connect_to_database()
-    
-    DBI::dbGetQuery(connection, glue::glue("SELECT * FROM {table_name}"))
+    DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name}"))
   }
 
 hash_of_table <- 
-  function(connection,
-           table_name) {
-    connection %>% 
+  function(table_name) {
+    DB %>% 
       get_table_from_postgress(table_name) %>% 
       digest::digest()
+  }
+
+
+write_to_db <- 
+  function(sf_lines, table_name){
+    sf_lines %>% 
+      st_cast("LINESTRING") %>%
+      write_to_table(table_name = table_name)
   }

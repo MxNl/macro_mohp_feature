@@ -11,7 +11,7 @@ visualization_targets <-
         river_networks_only_connected,
         river_networks_dissolved_junctions,
         river_networks_without_brackets,
-        river_networks_dissolved_junctions2,
+        river_networks_dissolved_junctions_after,
         river_networks_strahler_merge
       ) %>% 
         map(plot_lines_coloured_by_categorical_attribute, feature_id) %>% 

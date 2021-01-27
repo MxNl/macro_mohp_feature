@@ -67,21 +67,11 @@ clean_river_networks <-
     # studyarea <- tar_read(studyarea_outline)
     ###
 
-    river_network <-
-      river_network %>%
+    river_network %>%
       keep_relevant_columns() %>%
       remove_invalid_streamorder_values() %>%
       st_zm() %>%
       add_feature_index_column()
-
-    river_network %>%
-      st_cast("LINESTRING") %>%
-      initiate_database(
-        connect_to_database(),
-        "lines_clean"
-      )
-
-    return(river_network)
   }
 
 split_river_network <-
@@ -452,52 +442,43 @@ get_unique_feature_ids <-
 
 
 drop_disconnected_river_networks <-
-  function(river_networks, studyarea) {
-    ### Test
-    # river_networks <- tar_read(river_networks_clean)
-    # studyarea <- tar_read(studyarea_outline)
-    # connection <- connect_to_database()
+  function(river_networks, studyarea, table_name) {
+    test <- FALSE
+    if (test) {
+      river_networks <- tar_read(river_networks_clean)
+      studyarea <- tar_read(studyarea_outline)
+      table_name <- LINES_CLEAN
+    }
+   
     ####
     
-    run_query_connected()
-
-    river_network <-
-      get_table_from_postgress("connected_id") %>% 
-      query_result_as_sf()
+    message("a")
+    run_query_connected(table_name)
+    message("b")
     
-    river_network <- 
-      river_network %>%
+    a <- get_table_from_postgress("connected_id") %>% 
+      query_result_as_sf() %>%
       filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1]) %>% 
       select(-connected_id) %>%
       st_intersection(river_networks) %>%
       add_feature_index_column()
-    
-    river_network %>% 
-      initiate_database(
-        connect_to_database(),
-        "lines_connected"
-      )
-    
-    return(river_network)
+    message("c")
+    a
   }
 
 
 
 run_query_connected <- 
-  function() {
-    
-    connection <- 
-      connect_to_database()
-    
-    DBI::dbExecute(connection, "DROP TABLE IF EXISTS connected_id")
-    # DBI::dbExecute(connection, read_file("sql/get_connected_id.sql"))
-    DBI::dbExecute(connection, "
+  function(table_name) {
+    database <- connect_to_database()
+    DBI::dbExecute(database, "DROP TABLE IF EXISTS connected_id")
+    DBI::dbExecute(database, glue::glue("
       CREATE TABLE connected_id AS (
 	      WITH endpoints AS (
 	        SELECT
 	          ST_Collect(ST_StartPoint(geometry),
 	          ST_EndPoint(geometry)) AS geometry
-	        FROM lines_clean
+	        FROM {table_name}
 	      ), clusters AS (
 	        SELECT
 	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
@@ -510,40 +491,28 @@ run_query_connected <-
 	      )
       	SELECT
 		      connected_id,
-		      ST_Collect(lines_clean.geometry) AS geometry
+		      ST_Collect({table_name}.geometry) AS geometry
 	      FROM
-	        lines_clean
+	        {table_name}
 	        LEFT JOIN
 	        clusters_with_ids
-	        ON ST_Intersects(lines_clean.geometry, clusters_with_ids.geometry)
+	        ON ST_Intersects({table_name}.geometry, clusters_with_ids.geometry)
 	      GROUP BY connected_id
       )
-    ")
+    "))
   }
 
 
 
 merge_same_strahler_segments <-
   function(sf_lines) {
+    database <- connect_to_database()
+    
     ###### Test
-    # sf_lines <- tar_read(river_networks_dissolved_junctions2)
+    # sf_lines <- tar_read(river_networks_dissolved_junctions_after)
     # query <- tar_read(linemerge_query)
     ###
-
-    connection <- 
-      connect_to_database()
-    
-    sf_lines %>% 
-      st_cast("LINESTRING") %>%
-      write_to_table(
-        connection = connection,
-        table_name = "lines_raw"
-        )
-    
-    # connection %>% 
-    #   run_query_create_table_brackets(query_list[[1]])
-    
-    connection %>% 
+    database %>% 
       run_query_linemerge_by_streamorder() %>% 
       prepare_lines()
   }
@@ -610,17 +579,13 @@ linked_rows <- function(data){
   })
 }
 
-
-
-
-
-
-
-
 stream_order_filter <- 
   function(river_network, stream_order) {
     river_network %>% 
-      mutate(strahler = as.numeric(strahler)) %>% 
+      mutate(
+        strahler = as.numeric(strahler),
+        stream_order_id = stream_order
+      ) %>% 
       filter(strahler >= stream_order)
   }
 
@@ -630,27 +595,26 @@ make_grid <-
       st_make_grid(cellsize = CELLSIZE) %>% 
       st_as_sf() %>% 
       st_geometry() %>% 
-      st_sf()
+      st_sf() %>% 
+      mutate(id = row_number())
   }
 
 make_grid_centroids <- 
   function(grid) {
     grid %>% 
-      st_centroid() %>% 
-      st_geometry() %>% 
-      st_sf()
+      st_centroid()
   }
 
 
 make_thiessen_catchments_centroids <-
   function(river_network, grid, grid_centroids) {
-    grid_centroids <-
-      grid_centroids %>%
-      mutate(nearest_feature = grid %>%
-        st_centroid() %>%
-        st_nearest_feature(river_network) %>%
-        as.character(),
-        .before = 1)
+    grid_centroids %>%
+      mutate(
+        nearest_feature = grid_centroids %>%
+          st_nearest_feature(river_network) %>%
+          as.character(),
+          .before = 1
+        )
   }
 
 centroids_to_grid <- 

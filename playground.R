@@ -29,6 +29,7 @@ tar_read(plot_subset_all_steps)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
+tar_read(river_networks_clean)
 
 tar_read(river_networks_only_connected) %>% 
   as_tibble() %>% 
@@ -49,7 +50,7 @@ list(
   tar_read(river_networks_only_connected),
   tar_read(river_networks_dissolved_junctions),
   tar_read(river_networks_without_brackets),
-  tar_read(river_networks_dissolved_junctions2)
+  tar_read(river_networks_dissolved_junctions_after)
 ) %>%
   map(plot_lines_coloured_by_categorical_attribute, feature_id) %>% 
   pluck(1) %>% 
