@@ -440,6 +440,12 @@ get_unique_feature_ids <-
       pull(feature_id)
   }
 
+write_connected_but_merged_river_networks_and_return_hash <- 
+  function(table_name_source, table_name_create){
+    run_query_connected(table_name_source, table_name_create)
+    
+    hash_of_db(table_name_create)
+  }
 
 drop_disconnected_river_networks <-
   function(river_networks, studyarea, table_name) {
@@ -449,55 +455,47 @@ drop_disconnected_river_networks <-
       studyarea <- tar_read(studyarea_outline)
       table_name <- LINES_CLEAN
     }
-   
     ####
-    
-    message("a")
-    run_query_connected(table_name)
-    message("b")
-    
-    a <- get_table_from_postgress("connected_id") %>% 
+    get_table_from_postgress("connected_id") %>% 
       query_result_as_sf() %>%
       filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1]) %>% 
       select(-connected_id) %>%
       st_intersection(river_networks) %>%
       add_feature_index_column()
-    message("c")
-    a
   }
 
 
 
 run_query_connected <- 
-  function(table_name) {
+  function(table_name_source, table_name_create) {
     database <- connect_to_database()
     DBI::dbExecute(database, "DROP TABLE IF EXISTS connected_id")
     DBI::dbExecute(database, glue::glue("
-      CREATE TABLE connected_id AS (
+      CREATE TABLE {table_name_create} AS (
 	      WITH endpoints AS (
 	        SELECT
 	          ST_Collect(ST_StartPoint(geometry),
 	          ST_EndPoint(geometry)) AS geometry
-	        FROM {table_name}
+	        FROM {table_name_source}
 	      ), clusters AS (
 	        SELECT
 	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
 	        FROM endpoints
 	      ), clusters_with_ids AS (
 	        SELECT
-	          row_number() OVER () AS connected_id,
+	          row_number() OVER () AS {table_name_create},
 	          ST_CollectionHomogenize(geometry) AS geometry
 	        FROM clusters
 	      )
       	SELECT
-		      connected_id,
-		      ST_Collect({table_name}.geometry) AS geometry
+		      {table_name_create},
+		      ST_Collect({table_name_source}.geometry) AS geometry
 	      FROM
-	        {table_name}
+	        {table_name_source}
 	        LEFT JOIN
 	        clusters_with_ids
-	        ON ST_Intersects({table_name}.geometry, clusters_with_ids.geometry)
-	      GROUP BY connected_id
+	        ON ST_Intersects({table_name_source}.geometry, clusters_with_ids.geometry)
+	      GROUP BY {table_name_create}
       )
     "))
   }

@@ -150,9 +150,11 @@ hash_of_table <-
   }
 
 
-write_to_db <- 
+write_to_db_and_return_hash <- 
   function(sf_lines, table_name){
     sf_lines %>% 
       st_cast("LINESTRING") %>%
       write_to_table(table_name = table_name)
+    
+    hash_of_db(table_name)
   }

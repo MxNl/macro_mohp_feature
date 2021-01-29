@@ -27,6 +27,7 @@ tar_option_set(packages = c(
                garbage_collection = TRUE)
 
 source("import_targets.R")
+# source("db_hash_targets.R")
 source("preprocessing_targets.R")
 source("visualization_targets.R")
 
@@ -45,6 +46,7 @@ plan(multisession)
 targets <- 
   c(
     import_targets,
+    # db_hash_targets,
     preprocessing_targets#,
     #visualization_targets
   )

@@ -48,7 +48,7 @@ nearest_neighbours_between <- function(
   distance <- glue::glue('ST_Distance({left_geometry}, {right_geometry}) AS distance_meters')
   
   query <- glue::glue("
-  CREATE_TABLE nearest_neighbours_streamorder_id_{stream_order_id} AS (
+  CREATE TABLE nearest_neighbours_streamorder_id_{stream_order_id} AS (
     SELECT
       {left_select},
       {right_select},
@@ -70,6 +70,7 @@ nearest_neighbours_between <- function(
     );
   ")
   print(query)
+  DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS nearest_neighbours_streamorder_id_{stream_order_id};"))
   result <- tibble::as_tibble(DBI::dbGetQuery(connection, query))
   
   if (!as_wkt) { return(result) }
@@ -87,3 +88,19 @@ set_geo_indices <- function(table_names) {
     DBI::dbExecute(connection, glue::glue("CREATE INDEX {.}_geometry_idx ON {.} USING GIST (geometry);"))
   })
 }
+
+hash_of_db <- 
+  function(table_name) {
+    get_table_from_postgress(table_name) %>% 
+      fastdigest::fastdigest()
+  }
+
+is_db_hash_outdated <- 
+  function(last_hash, table_name_for_current_hash) {
+    current_hash <- 
+      table_name_for_current_hash %>% 
+      hash_of_db()
+    
+    current_hash != last_hash
+  }
+

@@ -30,7 +30,19 @@ tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
+tar_read()
 
+
+is_db_hash_uptodate(tar_read(db_river_networks_clean), LINES_CLEAN) & is_db_hash_uptodate(tar_read(db_connected_but_merged_river_networks), LINES_CONNECTED_ID)
+
+area_test <- 
+  studyarea_subset_plots %>% 
+  st_area() %>% 
+  as.numeric()
+
+area_test / 1E6
+
+6E6 / (area_test / 1E6)
 tar_read(river_networks_only_connected) %>% 
   as_tibble() %>% 
   mutate(geometry = as.character(geometry)) %>% 

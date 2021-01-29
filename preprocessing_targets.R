@@ -25,15 +25,21 @@ preprocessing_targets <-
     ),
     tar_target(
       db_river_networks_clean,
-      write_to_db(river_networks_clean, LINES_CLEAN)
+      write_to_db_and_return_hash(river_networks_clean, LINES_CLEAN)
     ),
-    tar_target(
+    tar_force(
+      db_connected_but_merged_river_networks,
+      write_connected_but_merged_river_networks_and_return_hash(LINES_CLEAN, LINES_CONNECTED_ID),
+      force = is_db_hash_outdated(db_river_networks_clean, LINES_CLEAN)
+    ),
+    tar_force(
       river_networks_only_connected,
       drop_disconnected_river_networks(
         river_networks_clean, 
         studyarea_outline,
         LINES_CLEAN
-      )
+      ),
+      force = is_db_hash_outdated(db_river_networks_clean, LINES_CLEAN) & is_db_hash_outdated(db_connected_but_merged_river_networks, LINES_CONNECTED_ID)
     ),
     tar_target(
       river_networks_dissolved_junctions,
@@ -49,11 +55,12 @@ preprocessing_targets <-
     ),
     tar_target(
       db_river_networks_dissolved_junctions_after,
-      write_to_db(river_networks_dissolved_junctions_after, LINES_RAW)
+      write_to_db_and_return_hash(river_networks_dissolved_junctions_after, LINES_RAW)
     ),
-    tar_target(
+    tar_force(
       river_networks_strahler_merge,
-      merge_same_strahler_segments(river_networks_dissolved_junctions_after)
+      merge_same_strahler_segments(river_networks_dissolved_junctions_after),
+      force = is_db_hash_outdated(db_river_networks_dissolved_junctions_after, LINES_RAW)
     ),
     tar_target(
       streamorders,
