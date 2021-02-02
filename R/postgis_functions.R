@@ -154,7 +154,7 @@ nearest_neighbours_between <- function(
   dplyr::mutate(result, dplyr::across(where(is_pq_geometry), from_wkb))
 }
 
-thiessen_catchments <- function(
+make_thiessen_catchments <- function(
   left_table,
   stream_order_id,
   as_wkt = TRUE,

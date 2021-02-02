@@ -9,3 +9,5 @@ data_processed
 test*
 output_data
 qgis
+.tmp
+.idea

@@ -3,28 +3,31 @@ library(tarchetypes)
 library(future)
 
 options(tidyverse.quiet = TRUE,
-        future.globals.maxSize= 4E5*1024^2)
+        future.globals.maxSize = 4E5 * 1024^2)
 
-tar_option_set(packages = c(
-                            "igraph",
-                            "DBI",
-                            "glue",
-                            "RPostgres",
-                            "rmarkdown",
-                            "raster",
-                            "janitor",
-                            "rgdal",
-                            "lwgeom",
-                            "assertr",
-                            "patchwork",
-                            "fasterize",
-                            "stars",
-                            "sf",
-                            "furrr",
-                            "tarchetypes",
-                            "tidyverse"),
-               memory = "transient",
-               garbage_collection = TRUE)
+tar_option_set(
+  packages = c(
+    "here",
+    "igraph",
+    "DBI",
+    "glue",
+    "RPostgres",
+    "rmarkdown",
+    "raster",
+    "janitor",
+    "rgdal",
+    "lwgeom",
+    "assertr",
+    "patchwork",
+    "fasterize",
+    "stars",
+    "sf",
+    "furrr",
+    "tarchetypes",
+    "tidyverse"),
+  memory = "transient",
+  garbage_collection = TRUE
+)
 
 source("import_targets.R")
 # source("db_hash_targets.R")
@@ -43,11 +46,11 @@ source("R/constants.R")
 plan(multisession)
 
 # Define targets
-targets <- 
+targets <-
   c(
     import_targets,
     # db_hash_targets,
-    preprocessing_targets#,
+    preprocessing_targets #,
     #visualization_targets
   )
   

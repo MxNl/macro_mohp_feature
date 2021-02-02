@@ -183,7 +183,7 @@ preprocessing_targets <-
     ),
     tar_target(
       thiessen_catchments,
-      thiessen_catchments(
+      make_thiessen_catchments(
         left_table =  GRID_POLYGONS,
         stream_order_id = 1,
         depends_on = list(
