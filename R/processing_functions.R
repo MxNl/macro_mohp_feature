@@ -81,6 +81,31 @@ split_river_network <-
       group_split()
   }
 
+all_basins <- 
+  function(river_basins) {
+    river_basins %>% 
+      summarise()
+  }
+
+# determine_studyarea_outline <-
+#   function(river_basins, study_area_subset = NULL){
+#     ### Test
+#     # coastline <- tar_read(coastline)
+#     # studyarea <- tar_read(studyarea_subset_plots)
+#     ###
+#     
+#     if(is.null(study_area_subset)) {
+#       river_basins %>% 
+#         all_basins() %>%
+#         st_cast("MULTILINESTRING")
+#     } else {
+#       river_basins %>% 
+#         all_basins() %>% 
+#         st_intersection(study_area_subset) %>% 
+#         st_cast("MULTILINESTRING")
+#     }
+#   }
+
 determine_studyarea_outline <-
   function(studyarea, coastline){
     ### Test
@@ -90,14 +115,13 @@ determine_studyarea_outline <-
 
     studyarea_outline <-
       studyarea %>%
-      st_difference(coastline) %>% 
+      st_difference(coastline) %>%
       st_cast("POLYGON")
-    
-    studyarea_outline <- 
-      studyarea_outline %>% 
-      mutate(area = as.numeric(st_area(geometry))) %>% 
-      arrange(-area) %>% 
-      slice(1) %>% 
+
+    studyarea_outline %>%
+      mutate(area = as.numeric(st_area(geometry))) %>%
+      arrange(-area) %>%
+      slice(1) %>%
       select(geometry)
   }
 
@@ -440,85 +464,6 @@ get_unique_feature_ids <-
       pull(feature_id)
   }
 
-write_connected_but_merged_river_networks_and_return_hash <- 
-  function(table_name_source, table_name_create){
-    run_query_connected(table_name_source, table_name_create)
-    
-    hash_of_db(table_name_create)
-  }
-
-drop_disconnected_river_networks <-
-  function(river_networks, studyarea, table_name) {
-    test <- FALSE
-    if (test) {
-      river_networks <- tar_read(river_networks_clean)
-      studyarea <- tar_read(studyarea_outline)
-      table_name <- LINES_CLEAN
-    }
-    ####
-    get_table_from_postgress("connected_id") %>% 
-      query_result_as_sf() %>%
-      filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[,1]) %>% 
-      select(-connected_id) %>%
-      st_intersection(river_networks) %>%
-      add_feature_index_column()
-  }
-
-
-
-run_query_connected <- 
-  function(table_name_source, table_name_create) {
-    database <- connect_to_database()
-    DBI::dbExecute(database, "DROP TABLE IF EXISTS connected_id")
-    DBI::dbExecute(database, glue::glue("
-      CREATE TABLE {table_name_create} AS (
-	      WITH endpoints AS (
-	        SELECT
-	          ST_Collect(ST_StartPoint(geometry),
-	          ST_EndPoint(geometry)) AS geometry
-	        FROM {table_name_source}
-	      ), clusters AS (
-	        SELECT
-	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
-	        FROM endpoints
-	      ), clusters_with_ids AS (
-	        SELECT
-	          row_number() OVER () AS {table_name_create},
-	          ST_CollectionHomogenize(geometry) AS geometry
-	        FROM clusters
-	      )
-      	SELECT
-		      {table_name_create},
-		      ST_Collect({table_name_source}.geometry) AS geometry
-	      FROM
-	        {table_name_source}
-	        LEFT JOIN
-	        clusters_with_ids
-	        ON ST_Intersects({table_name_source}.geometry, clusters_with_ids.geometry)
-	      GROUP BY {table_name_create}
-      )
-    "))
-  }
-
-
-
-merge_same_strahler_segments <-
-  function(sf_lines) {
-    database <- connect_to_database()
-    
-    ###### Test
-    # sf_lines <- tar_read(river_networks_dissolved_junctions_after)
-    # query <- tar_read(linemerge_query)
-    ###
-    database %>% 
-      run_query_linemerge_by_streamorder() %>% 
-      prepare_lines()
-  }
-
-# sf_lines_merged %>% 
-#   ggplot() +
-#   geom_sf(aes(colour = feature_id))
-
 list_to_long_df <-
   function(list) {
     long_format <- 
@@ -626,7 +571,7 @@ make_thiessen_catchments <-
     centroids %>% 
       centroids_to_grid(grid) %>% 
       group_by(nearest_feature) %>% 
-      summarise() %>% 
+      summarise(feature_id = first(nearest_feature)) %>% 
       st_cast("MULTIPOLYGON") %>% 
       st_geometry() %>% 
       st_sf() %>% 

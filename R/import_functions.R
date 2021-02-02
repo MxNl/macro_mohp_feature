@@ -5,36 +5,59 @@ read_studyarea <-
       st_transform(crs = CRS_REFERENCE)
   }
 
-read_river_networks <-
-  function(filepath) {
+list_river_network_files <- 
+  function(directory) {
+    directory %>%
+      list.files(recursive = TRUE) %>%
+      keep(str_detect(., ".gpkg$")) %>%
+      discard(str_detect(., "public|Documentation")) %>% 
+      str_c(directory, .)
+  }
+
+list_river_basin_files <- 
+  function(directory) {
+    directory %>%
+      list.files(recursive = TRUE) %>%
+      keep(str_detect(., ".gpkg$")) %>%
+      keep(str_detect(., "public")) %>% 
+      str_c(directory, .)
+  }
+
+read_river_networks <- 
+  function(file) {
+    file %>% 
+      map(
+        STREAM_TYPE_TO_INCLUDE,
+        read_sf,
+        dsn = .
+      ) %>%
+      reduce(bind_rows) %>%
+      st_zm() %>%
+      rename(geometry = Shape) %>% 
+      janitor::clean_names() %>%
+      select(strahler) %>% 
+      st_transform(crs = CRS_REFERENCE)
+  }
+
+read_river_basins <-
+  function(file) {
     ##### Test
     # filepath <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data/"
     ####
-
-    files <-
-      filepath %>%
-      list.files(recursive = TRUE) %>%
-      keep(str_detect(., ".gpkg$")) %>%
-      keep(!str_detect(., "public|Documentation"))
-
-
-    river_networks <-
-      filepath %>%
-      str_c(files) %>%
-      map(
-        ~ map(
-          STREAM_TYPE_TO_INCLUDE,
-          ~ read_sf(.y, layer = .x),
-          .y = .x
-        )
-      ) %>%
-      reduce(bind_rows) %>%
-      st_zm() %>% 
+    layer <-
+      tar_read(river_basins_files)[1] %>% 
+      str_replace(".*(?=drainage)", "") %>% 
+      str_replace("(?=_public).*", "") %>% 
+      str_replace("drainage_network_", "") %>% 
+      str_c("_eudem2_basins")
+    
+    tar_read(river_basins_files)[1] %>% 
+      read_sf(layer) %>%
       rename(geometry = Shape) %>% 
       janitor::clean_names() %>%
+      select(namebasin) %>% 
+      summarize(namebasin = first(namebasin)) %>% 
       st_transform(crs = CRS_REFERENCE)
-
-    return(river_networks)
   }
 
 read_coastline <-

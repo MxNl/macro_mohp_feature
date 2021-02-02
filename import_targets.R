@@ -1,6 +1,5 @@
 import_targets <-
   list(
- 
     tar_target(
       filepath_studyarea,
       "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/germany_buffer/time_invariant/shape/self_processed/data/buffer_germany_point6.shp",
@@ -22,13 +21,32 @@ import_targets <-
     ),
     
     tar_target(
-      filepath_river_networks,
+      directory_river_networks,
       "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data/"
+    ),
+    tar_files(
+      river_networks_files,
+      list_river_network_files(directory_river_networks)
     ),
     tar_target(
       river_networks,
-      read_river_networks(filepath_river_networks)
+      read_river_networks(river_networks_files),
+      pattern = map(river_networks_files)
     ),
+    
+    tar_target(
+      directory_river_basins,
+      "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data/"
+    ),
+    tar_files(
+      river_basins_files,
+      list_river_basin_files(directory_river_basins)
+    ),
+    # tar_target(
+    #   river_basins,
+    #   read_river_basins(river_basins_files),
+    #   pattern = map(river_basins_files)
+    # ),
     
     tar_target(
       filepath_coastline,

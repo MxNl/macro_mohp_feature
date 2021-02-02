@@ -23,23 +23,36 @@ preprocessing_targets <-
       river_networks_clean,
       clean_river_networks(river_networks_valid_strahler)
     ),
-    tar_target(
+    tar_force(
       db_river_networks_clean,
-      write_to_db_and_return_hash(river_networks_clean, LINES_CLEAN)
+      write_as_lines_to_db(
+        river_networks_clean, 
+        LINES_CLEAN
+        ),
+      force = table_doesnt_exist(LINES_CLEAN)
     ),
     tar_force(
       db_connected_but_merged_river_networks,
-      write_connected_but_merged_river_networks_and_return_hash(LINES_CLEAN, LINES_CONNECTED_ID),
-      force = is_db_hash_outdated(db_river_networks_clean, LINES_CLEAN)
+      write_connected_but_merged_river_networks(
+        LINES_CLEAN, 
+        LINES_CONNECTED_ID, 
+        depends_on = list(
+          db_river_networks_clean
+          )
+        ),
+      force = table_doesnt_exist(LINES_CONNECTED_ID)
     ),
-    tar_force(
+    tar_target(
       river_networks_only_connected,
       drop_disconnected_river_networks(
         river_networks_clean, 
         studyarea_outline,
-        LINES_CLEAN
-      ),
-      force = is_db_hash_outdated(db_river_networks_clean, LINES_CLEAN) & is_db_hash_outdated(db_connected_but_merged_river_networks, LINES_CONNECTED_ID)
+        LINES_CONNECTED_ID,
+        depends_on = list(
+          db_river_networks_clean,
+          db_connected_but_merged_river_networks
+        )
+      )
     ),
     tar_target(
       river_networks_dissolved_junctions,
@@ -53,14 +66,20 @@ preprocessing_targets <-
       river_networks_dissolved_junctions_after,
       dissolve_line_features_between_junctions(river_networks_without_brackets)
     ),
-    tar_target(
-      db_river_networks_dissolved_junctions_after,
-      write_to_db_and_return_hash(river_networks_dissolved_junctions_after, LINES_RAW)
-    ),
     tar_force(
+      db_river_networks_dissolved_junctions_after,
+      write_as_lines_to_db(
+        river_networks_dissolved_junctions_after, 
+        LINES_RAW),
+      force = table_doesnt_exist(LINES_RAW)
+    ),
+    tar_target(
       river_networks_strahler_merge,
-      merge_same_strahler_segments(river_networks_dissolved_junctions_after),
-      force = is_db_hash_outdated(db_river_networks_dissolved_junctions_after, LINES_RAW)
+      merge_same_strahler_segments(
+        depends_on = list(
+          db_river_networks_dissolved_junctions_after
+          )
+        )
     ),
     tar_target(
       streamorders,
@@ -84,9 +103,13 @@ preprocessing_targets <-
         ) %>% 
         bind_rows()
     ),
-    tar_target(
+    tar_force(
       db_river_network_by_streamorder,
-      write_to_table(river_network_by_streamorder, "river_network_by_streamorder")
+      write_to_table(
+        river_network_by_streamorder, 
+        LINES_BY_STREAMORDER
+        ),
+      force = table_doesnt_exist(LINES_BY_STREAMORDER)
     ),
     tar_target(
       base_grid,
@@ -107,34 +130,80 @@ preprocessing_targets <-
     #       )
     #     )
     # ),
-    tar_target(
+    tar_force(
       db_grid,
-      write_to_table(base_grid_centroids, "grid")
+      write_to_table(
+        base_grid_centroids,
+        GRID_CENTROIDS
+        ),
+      force = table_doesnt_exist(GRID_CENTROIDS)
     ),
-    tar_target(
+    tar_force(
       db_grid_polygons,
-      write_to_table(base_grid, "grid_polygons")
+      write_to_table(
+        base_grid, 
+        GRID_POLYGONS),
+      force = table_doesnt_exist(GRID_POLYGONS)
     ),
     tar_target(
       db_geo_indices,
-      set_geo_indices(c("grid", "river_network_by_streamorder"))
+      set_geo_indices(
+        c(GRID_CENTROIDS, LINES_BY_STREAMORDER),
+        depends_on = list(
+          db_grid,
+          db_river_network_by_streamorder
+          )
+        )
     ),
     tar_target(
       nearest_neighbours,
       nearest_neighbours_between(
-        left_table =  "grid",
-        right_table = "river_network_by_streamorder",
+        left_table =  GRID_CENTROIDS,
+        right_table = LINES_BY_STREAMORDER,
         left_columns = c("id", "geometry"),
         right_columns = c("feature_id", "strahler", "stream_order_id", "geometry"),
-        stream_order_id = 6,
-        left_target = db_river_network_by_streamorder,
-        right_target = db_grid
+        stream_order_id = 1,
+        depends_on = list(
+          db_river_network_by_streamorder,
+          db_grid,
+          db_geo_indices
+        )
       )
-    )#,
-    
+    ),
+    tar_target(
+      db_geo_indices_next,
+      set_geo_indices(
+        c(GRID_POLYGONS, "nearest_neighbours_streamorder_id_1"),
+        c("geometry", "grid_geometry"),
+        depends_on = list(
+          db_grid_polygons,
+          nearest_neighbours
+        )
+      )
+    ),
+    tar_target(
+      thiessen_catchments,
+      thiessen_catchments(
+        left_table =  GRID_POLYGONS,
+        stream_order_id = 1,
+        depends_on = list(
+          nearest_neighbours
+        )
+      )
+    )
     # tar_target(
     #   thiessen_catchments,
-    #   thiessen_catchments_centroids %>% 
+    #   thiessen_catchments_centroids %>%
+    #     future_map(
+    #       ~make_thiessen_catchments(
+    #         base_grid,
+    #         .x
+    #       )
+    #     )
+    # ),
+    # tar_target(
+    #   thiessen_catchments,
+    #   thiessen_catchments_centroids %>%
     #     future_map(
     #       ~make_thiessen_catchments(
     #         base_grid,

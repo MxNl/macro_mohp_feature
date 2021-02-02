@@ -1,6 +1,6 @@
 write_to_table <- 
-  function(data, table_name, append = FALSE) {
-    st_write(data, dsn = connect_to_database(), layer = table_name, 
+  function(data, table_name_create, append = FALSE) {
+    st_write(data, dsn = connect_to_database(), layer = table_name_create, 
              append = append)
   }
 
@@ -36,9 +36,9 @@ initiate_database <-
   }
 
 run_query_create_table_brackets <- 
-  function(query) {
+  function(query, table_name_create) {
     connection <- connect_to_database()
-    DBI::dbExecute(connection, "DROP TABLE IF EXISTS brackets_to_drop")
+    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_create}"))
     DBI::dbExecute(connection, query)
   }
 
@@ -157,4 +157,31 @@ write_to_db_and_return_hash <-
       write_to_table(table_name = table_name)
     
     hash_of_db(table_name)
+  }
+
+write_as_lines_to_db <- 
+  function(sf_lines, table_name){
+    sf_lines %>% 
+      st_cast("LINESTRING") %>%
+      write_to_table(table_name = table_name)
+  }
+
+hash_of_db <- 
+  function(table_name) {
+    get_table_from_postgress(table_name) %>% 
+      fastdigest::fastdigest()
+  }
+
+is_db_hash_outdated <- 
+  function(last_hash, table_name_for_current_hash) {
+    current_hash <- 
+      table_name_for_current_hash %>% 
+      hash_of_db()
+    
+    current_hash != last_hash
+  }
+
+table_doesnt_exist <- 
+  function(table_name_source) {
+    !DBI::dbExistsTable(connect_to_database(), table_name_source)
   }

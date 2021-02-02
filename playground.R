@@ -31,9 +31,37 @@ tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
 tar_read()
+FALSE | TRUE
+
+tar_read(river_networks)
+
+is_db_hash_outdated(tar_read(db_river_networks_clean), LINES_CLEAN) | is_db_hash_outdated(tar_read(db_connected_but_merged_river_networks), LINES_CONNECTED_ID)
+
+tar_read(river_network_by_streamorder) %>% 
+  filter(stream_order_id == 1)
+
+test <- 
+  get_table_from_postgress("nearest_neighbours_streamorder_id_1") %>% 
+  rename(geometry = grid_geometry) %>% 
+  query_result_as_sf()
+
+thiessen_catchments <- 
+  test %>% 
+  rename(nearest_feature = river_network_by_streamorder_feature_id) %>% 
+  make_thiessen_catchments(tar_read(base_grid), .)
+  
+thiessen_catchments %>% 
+  mutate(feature_id = as.character(row_number())) %>% 
+  ggplot() +
+  geom_sf(fill = NA)
 
 
-is_db_hash_uptodate(tar_read(db_river_networks_clean), LINES_CLEAN) & is_db_hash_uptodate(tar_read(db_connected_but_merged_river_networks), LINES_CONNECTED_ID)
+  
+test %>% 
+  select(distance_meters) %>% 
+  st_intersection(st_buffer(sample_n(., 1), dist = 1E4)) %>% 
+  mapview::mapview(zcol = "distance_meters", alpha = 0)
+  
 
 area_test <- 
   studyarea_subset_plots %>% 
