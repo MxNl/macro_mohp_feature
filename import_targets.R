@@ -20,8 +20,7 @@ import_targets <-
     ),
     tar_target(
       river_networks,
-      read_river_networks(river_networks_files),
-      pattern = map(river_networks_files)
+      read_river_networks(river_networks_files)
     ),
     #tar_target(
     #  directory_river_basins,
@@ -42,10 +41,10 @@ import_targets <-
       here('.tmp/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp')
       #"J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
     ),
-    tar_target(
-      coastline,
-      read_coastline(filepath_coastline)
-    ),
+    # tar_target(
+    #   coastline,
+    #   read_coastline(filepath_coastline)
+    # ),
     tar_target(
       filepath_canals_to_reclassify,
       ".tmp/line_features_to_reclassify",

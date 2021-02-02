@@ -25,14 +25,16 @@ list_river_basin_files <-
 read_river_networks <-
   function(file) {
     message(file)
-    file %>%
+    up_to_here <- file %>%
       map(read_sf) %>%
       reduce(bind_rows) %>%
       st_zm() %>%
       #rename(geometry = Shape) %>%
       janitor::clean_names() %>%
-      select(strahler) %>%
-      st_transform(crs = CRS_REFERENCE)
+      select(dfdd, inspire_id, strahler)
+
+    message("transform")
+    st_transform(up_to_here, crs = CRS_REFERENCE)
   }
 
 read_river_basins <-

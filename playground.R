@@ -8,6 +8,13 @@ library(assertr)
 library(tarchetypes)
 library(tidyverse)
 
+tar_read(river_networks_files) %>%
+  map_dfr(read_sf) %>%
+  names()
+
+tar_read(filepath_canals_to_reclassify)
+tar_read(river_networks_clip)
+tar_read(features_ids_to_reclassify)
 studyarea_subset_plots <- tar_read(studyarea_subset_plots)
 studyarea <- tar_read(studyarea)
 river_networks_clip <- tar_read(river_networks_clip)

@@ -2,7 +2,7 @@ preprocessing_targets <-
   list(
     tar_target(
       studyarea_outline,
-      determine_studyarea_outline(studyarea_subset_plots, coastline)
+      studyarea_subset_plots
     ),
     tar_target(
       river_networks_clip,
