@@ -1,0 +1,7 @@
+LINES_RAW <- "lines_raw"
+LINES_CLEAN <- "lines_clean"
+LINES_CONNECTED_ID <- "connected_id"
+LINES_BY_STREAMORDER <- "river_network_by_streamorder"
+BRACKETS_TO_DROP <- "brackets_to_drop"
+GRID_CENTROIDS <- "grid"
+GRID_POLYGONS <- "grid_polygons"

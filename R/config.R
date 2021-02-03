@@ -1,9 +1,11 @@
-CRS_REFERENCE <- 25832
+CRS_REFERENCE <- 3035
+# CRS_REFERENCE <- 3035
 CRS_LEAFLET <- 3857
-CELLSIZE <- 100
+CELLSIZE <- 300 # TODO: reset to 100
+INVALID_STRAHLER_VALUES <- c(-9999)
 
 STREAM_TYPE_TO_INCLUDE <- c(
-  # "Canals_l",
-  # "Ditches_l",
+  "Canals_l",
+  "Ditches_l",
   "River_Net_l"
 )
