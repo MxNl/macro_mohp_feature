@@ -23,8 +23,8 @@ reclassify_relevant_canals_and_ditches_and_drop_others <-
     # id_to_reclassify <- tar_read(features_ids_to_reclassify)
     ####
     river_network %>% 
-      mutate(dfdd = if_else(inspire_id %in% id_to_reclassify, "BH140", dfdd)) %>% 
-      filter(dfdd == "BH140") %>% 
+      mutate(dfdd = if_else(inspire_id %in% id_to_reclassify, "BH140", dfdd)) %>%
+      filter(dfdd == "BH140") %>%
       add_feature_index_column()
   }
 
@@ -566,17 +566,16 @@ centroids_to_grid <-
       st_join(centroids)
   }
 
-make_thiessen_catchments <- 
-  function(grid, centroids) {
-    centroids %>% 
-      centroids_to_grid(grid) %>% 
-      group_by(nearest_feature) %>% 
-      summarise(feature_id = first(nearest_feature)) %>% 
-      st_cast("MULTIPOLYGON") %>% 
-      st_geometry() %>% 
-      st_sf() %>% 
-      return()
-  }
+# make_thiessen_catchments <-
+#   function(grid, centroids) {
+#     centroids %>%
+#       centroids_to_grid(grid) %>%
+#       group_by(nearest_feature) %>%
+#       summarise(feature_id = first(nearest_feature)) %>%
+#       st_cast("MULTIPOLYGON") %>%
+#       st_geometry() %>%
+#       st_sf()
+#   }
 
 calculate_stream_distance_centroids <-
   function(centroids, river_network) {

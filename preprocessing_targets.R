@@ -1,4 +1,4 @@
-preprocessing_targets <- 
+preprocessing_targets <-
   list(
     tar_target(
       studyarea_outline,
@@ -26,26 +26,26 @@ preprocessing_targets <-
     tar_force(
       db_river_networks_clean,
       write_as_lines_to_db(
-        river_networks_clean, 
+        river_networks_clean,
         LINES_CLEAN
-        ),
+      ),
       force = table_doesnt_exist(LINES_CLEAN)
     ),
     tar_force(
       db_connected_but_merged_river_networks,
       write_connected_but_merged_river_networks(
-        LINES_CLEAN, 
-        LINES_CONNECTED_ID, 
+        LINES_CLEAN,
+        LINES_CONNECTED_ID,
         depends_on = list(
           db_river_networks_clean
-          )
-        ),
+        )
+      ),
       force = table_doesnt_exist(LINES_CONNECTED_ID)
     ),
     tar_target(
       river_networks_only_connected,
       drop_disconnected_river_networks(
-        river_networks_clean, 
+        river_networks_clean,
         studyarea_outline,
         LINES_CONNECTED_ID,
         depends_on = list(
@@ -69,7 +69,7 @@ preprocessing_targets <-
     tar_force(
       db_river_networks_dissolved_junctions_after,
       write_as_lines_to_db(
-        river_networks_dissolved_junctions_after, 
+        river_networks_dissolved_junctions_after,
         LINES_RAW),
       force = table_doesnt_exist(LINES_RAW)
     ),
@@ -78,37 +78,37 @@ preprocessing_targets <-
       merge_same_strahler_segments(
         depends_on = list(
           db_river_networks_dissolved_junctions_after
-          )
         )
+      )
     ),
     tar_target(
       streamorders,
-      river_networks_strahler_merge %>% 
-        as_tibble() %>% 
-        distinct(strahler) %>% 
-        pull(strahler) %>% 
+      river_networks_strahler_merge %>%
+        as_tibble() %>%
+        distinct(strahler) %>%
+        pull(strahler) %>%
         as.numeric() %>%
         sort()
     ),
     tar_target(
       river_network_by_streamorder,
-      streamorders %>% 
-        as.vector() %>% 
-        as.numeric() %>% 
+      streamorders %>%
+        as.vector() %>%
+        as.numeric() %>%
         future_map(
           ~stream_order_filter(
             river_network = river_networks_strahler_merge,
             stream_order = .x
           )
-        ) %>% 
+        ) %>%
         bind_rows()
     ),
     tar_force(
       db_river_network_by_streamorder,
       write_to_table(
-        river_network_by_streamorder, 
+        river_network_by_streamorder,
         LINES_BY_STREAMORDER
-        ),
+      ),
       force = table_doesnt_exist(LINES_BY_STREAMORDER)
     ),
     tar_target(
@@ -135,13 +135,13 @@ preprocessing_targets <-
       write_to_table(
         base_grid_centroids,
         GRID_CENTROIDS
-        ),
+      ),
       force = table_doesnt_exist(GRID_CENTROIDS)
     ),
     tar_force(
       db_grid_polygons,
       write_to_table(
-        base_grid, 
+        base_grid,
         GRID_POLYGONS),
       force = table_doesnt_exist(GRID_POLYGONS)
     ),
@@ -152,17 +152,19 @@ preprocessing_targets <-
         depends_on = list(
           db_grid,
           db_river_network_by_streamorder
-          )
         )
+      )
     ),
     tar_target(
       nearest_neighbours,
       nearest_neighbours_between(
-        left_table =  GRID_CENTROIDS,
+        table_name = 'nearest_neighbours_streamorder',
+        left_table = GRID_CENTROIDS,
         right_table = LINES_BY_STREAMORDER,
         left_columns = c("id", "geometry"),
         right_columns = c("feature_id", "strahler", "stream_order_id", "geometry"),
         stream_order_id = 1,
+        right_table_is_long_format = TRUE,
         depends_on = list(
           db_river_network_by_streamorder,
           db_grid,
@@ -171,23 +173,49 @@ preprocessing_targets <-
       )
     ),
     tar_target(
-      db_geo_indices_next,
-      set_geo_indices(
-        c(GRID_POLYGONS, "nearest_neighbours_streamorder_id_1"),
-        c("geometry", "grid_geometry"),
+      # TODO: make dependency with nearest_neighbours_between_grid_and_catchments_1
+      thiessen_catchments,
+      make_thiessen_catchments(
+        left_table = GRID_POLYGONS,
+        stream_order_id = 1,
         depends_on = list(
-          db_grid_polygons,
           nearest_neighbours
         )
       )
     ),
     tar_target(
-      thiessen_catchments,
-      make_thiessen_catchments(
-        left_table =  GRID_POLYGONS,
+      db_geo_indices_thiessen_1,
+      set_geo_indices(
+        c('thiessen_catchments_1'),
+        depends_on = list(thiessen_catchments)
+      )
+    ),
+    tar_target(
+      nearest_neighbours_between_grid_and_catchments_1,
+      nearest_neighbours_between(
+        table_name = 'nearest_neighbours_between_grid_and_catchments',
+        left_table = GRID_CENTROIDS,
+        right_table = 'thiessen_catchments_1',
+        left_columns = c("id"),
+        right_columns = c("river_network_by_streamorder_feature_id"),
         stream_order_id = 1,
         depends_on = list(
-          nearest_neighbours
+          thiessen_catchments,
+          db_grid,
+          db_geo_indices_thiessen_1
+        )
+      )
+    ),
+    tar_target(
+      db_lateral_position_stream_divide_distance,
+      lateral_position_stream_divide_distance(
+        "lateral_position_stream_divide_distance",
+        "nearest_neighbours_between_grid_and_catchments",
+        "nearest_neighbours_streamorder",
+        stream_order_id = 1,
+        depends_on = list(
+          nearest_neighbours,
+          nearest_neighbours_between_grid_and_catchments_1
         )
       )
     )
