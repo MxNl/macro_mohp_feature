@@ -142,22 +142,6 @@ get_table_from_postgress <-
     DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name}"))
   }
 
-hash_of_table <- 
-  function(table_name) {
-    DB %>% 
-      get_table_from_postgress(table_name) %>% 
-      digest::digest()
-  }
-
-
-write_to_db_and_return_hash <- 
-  function(sf_lines, table_name){
-    sf_lines %>% 
-      st_cast("LINESTRING") %>%
-      write_to_table(table_name = table_name)
-    
-    hash_of_db(table_name)
-  }
 
 write_as_lines_to_db <- 
   function(sf_lines, table_name){
@@ -170,15 +154,6 @@ hash_of_db <-
   function(table_name) {
     get_table_from_postgress(table_name) %>% 
       fastdigest::fastdigest()
-  }
-
-is_db_hash_outdated <- 
-  function(last_hash, table_name_for_current_hash) {
-    current_hash <- 
-      table_name_for_current_hash %>% 
-      hash_of_db()
-    
-    current_hash != last_hash
   }
 
 table_doesnt_exist <- 

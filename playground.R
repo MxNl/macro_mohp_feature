@@ -7,6 +7,7 @@ library(patchwork)
 library(assertr)
 library(tarchetypes)
 library(tidyverse)
+library(here)
 
 tar_read(river_networks_files) %>%
   map_dfr(read_sf) %>%
@@ -37,8 +38,50 @@ tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
-tar_read()
-FALSE | TRUE
+
+tar_read(river_basins) %>%
+  slice(1:3) %>% 
+  # summarise() %>% 
+  st_difference(tar_read(coastline) %>% st_zm()) %>%
+  st_cast("POLYGON") %>% 
+  select(geometry)
+
+tar_read(river_basins) %>% 
+  st_intersects(tar_read(selected_studyarea))
+
+tar_read(river_networks_files)
+
+river_basins <- tar_read(river_basins)
+studyarea <- tar_read(selected_studyarea)
+river_networks <- tar_read(river_networks)
+
+  relevant_river_basins <- 
+    river_basins %>%
+    filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
+    pull(river_basin_name)
+  
+  
+  river_networks %>%
+    # slice_sample(prop = .6) %>%
+    filter(river_basin_name %in% relevant_river_basins) %>%
+    filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>%
+    st_intersection(studyarea) %>% 
+    st_cast("MULTILINESTRING") %>% 
+    add_feature_index_column()
+
+
+
+test_rivers <- 
+  tar_read(river_networks_files_files) %>% 
+  magrittr::extract(str_detect(., "rhine")) %>% st_read("River_Net_l")
+
+test_rivers %>% 
+  st_intersects(tar_read(studyarea_subset_plots), sparse = FALSE) %>% 
+  as.vector() %>% 
+  magrittr::extract(. == FALSE)
+
+
+
 
 tar_read(river_networks)
 

@@ -12,7 +12,7 @@ drop_disconnected_river_networks <-
 
     get_table_from_postgress(table_name_source) %>%
       query_result_as_sf() %>%
-      filter(st_intersects(., st_cast(studyarea, "LINESTRING"), sparse = FALSE)[, 1]) %>%
+      filter(st_intersects(., st_cast(studyarea, "MULTILINESTRING"), sparse = FALSE)[, 1]) %>%
       select(-connected_id) %>%
       st_intersection(river_networks) %>%
       add_feature_index_column()

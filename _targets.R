@@ -30,9 +30,10 @@ tar_option_set(
 )
 
 source("import_targets.R")
-# source("db_hash_targets.R")
 source("preprocessing_targets.R")
-source("visualization_targets.R")
+source("mohpcalculation_targets.R")
+source("export_targets.R")
+source("visualization_targets.R") #TODO include again
 
 source("R/import_functions.R")
 source("R/plot_functions.R")
@@ -42,15 +43,16 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/config.R")
 source("R/constants.R")
+source("R/directories_data.R")
 
 plan(multisession)
 
 # Define targets
-targets <-
-  c(
-    import_targets,
-    # db_hash_targets,
-    preprocessing_targets #,
-    #visualization_targets
-  )
+c(
+  import_targets,
+  preprocessing_targets,
+  mohpcalculation_targets,
+  export_targets # ,
+  # visualization_targets #TODO include again
+)
   

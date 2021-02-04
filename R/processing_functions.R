@@ -1,19 +1,28 @@
 clip_river_networks <-
-  function(river_networks, studyarea = NULL) {
+  function(river_networks, river_basins, studyarea = NULL) {
     ###### Test
     # river_networks <- tar_read(river_networks)
-    # studyarea <- tar_read(filepath_studyarea_subset_plots)
+    # river_basins <- tar_read(selected_studyarea)
+    # studyarea <- tar_read(selected_studyarea)
     #####
     
     if (!is.null(studyarea)) {
-      river_networks <-
-        river_networks %>%
-        st_intersection(studyarea, .x) %>% 
+      relevant_river_basins <- 
+        river_basins %>%
+        filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
+        pull(river_basin_name)
+      
+      
+      river_networks %>%
+        filter(river_basin_name %in% relevant_river_basins) %>% 
+        filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
+        st_intersection(studyarea) %>% 
         st_cast("MULTILINESTRING") %>% 
         add_feature_index_column()
+    } else {
+      river_networks %>% 
+        add_feature_index_column()
     }
-
-    return(river_networks)
   }
 
 reclassify_relevant_canals_and_ditches_and_drop_others <- 
@@ -81,32 +90,7 @@ split_river_network <-
       group_split()
   }
 
-all_basins <- 
-  function(river_basins) {
-    river_basins %>% 
-      summarise()
-  }
-
-# determine_studyarea_outline <-
-#   function(river_basins, study_area_subset = NULL){
-#     ### Test
-#     # coastline <- tar_read(coastline)
-#     # studyarea <- tar_read(studyarea_subset_plots)
-#     ###
-#     
-#     if(is.null(study_area_subset)) {
-#       river_basins %>% 
-#         all_basins() %>%
-#         st_cast("MULTILINESTRING")
-#     } else {
-#       river_basins %>% 
-#         all_basins() %>% 
-#         st_intersection(study_area_subset) %>% 
-#         st_cast("MULTILINESTRING")
-#     }
-#   }
-
-determine_studyarea_outline <-
+determine_studyarea_outline_level_germany <-
   function(studyarea, coastline){
     ### Test
     # coastline <- tar_read(coastline)
@@ -122,6 +106,20 @@ determine_studyarea_outline <-
       mutate(area = as.numeric(st_area(geometry))) %>%
       arrange(-area) %>%
       slice(1) %>%
+      select(geometry)
+  }
+
+determine_studyarea_outline_level_europe <-
+  function(studyarea, coastline){
+    ### Test
+    # coastline <- tar_read(coastline)
+    # studyarea <- tar_read(studyarea_subset_plots)
+    ###
+
+    studyarea %>%
+      summarise() %>% 
+      st_difference(coastline) %>%
+      st_cast("POLYGON") %>% 
       select(geometry)
   }
 
@@ -533,12 +531,19 @@ stream_order_filter <-
   }
 
 make_grid <- 
-  function(river_network) {
-    river_network %>% 
-      st_make_grid(cellsize = CELLSIZE) %>% 
-      st_as_sf() %>% 
-      st_geometry() %>% 
-      st_sf() %>% 
+  function(sf_object) {
+    sf_object %>% 
+      st_make_grid(cellsize = CELLSIZE) %>%
+      transform_crs_if_required() %>%
+      st_as_sf() %>%
+      st_geometry() %>%
+      st_sf() %>%
+      filter(
+        as.vector(
+          st_intersects(
+          ., 
+          sf_object, 
+          sparse = FALSE))) %>% 
       mutate(id = row_number())
   }
 

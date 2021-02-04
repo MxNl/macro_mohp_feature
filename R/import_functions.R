@@ -2,14 +2,15 @@ read_studyarea <-
   function(filepath) {
     filepath %>%
       st_read() %>%
-      st_transform(crs = CRS_REFERENCE)
+      transform_crs_if_required()
   }
 
 list_river_network_files <-
   function(directory) {
     directory %>%
       list.files(recursive = TRUE) %>%
-      keep(str_detect(., ".shp$")) %>%
+      keep(str_detect(., ".gpkg$")) %>%
+      discard(str_detect(., "public")) %>%
       fs::path(directory, .)
   }
 
@@ -22,49 +23,64 @@ list_river_basin_files <-
       str_c(directory, .)
   }
 
-read_river_networks <-
+read_river_networks <- 
   function(file) {
-    file %>%
-      map(read_sf) %>%
+    river_basin_name <-
+      file %>% 
+      str_replace(".*(?=GPKG/euhydro_)", "") %>% 
+      str_replace("(?=_v0).*", "") %>% 
+      str_replace("GPKG/euhydro_", "")
+    
+    file %>% 
+      map(
+        STREAM_TYPE_TO_INCLUDE,
+        read_sf,
+        dsn = .
+      ) %>%
       reduce(bind_rows) %>%
       st_zm() %>%
-      #rename(geometry = Shape) %>%
-      janitor::clean_names() %>%
-      select(dfdd, inspire_id, strahler) %>%
-      st_transform(up_to_here, crs = CRS_REFERENCE)
+      rename(geometry = Shape) %>% 
+      clean_names() %>%
+      select(dfdd, inspire_id, strahler) %>% 
+      mutate(river_basin_name = river_basin_name) %>% 
+      transform_crs_if_required()
+  }
+
+transform_crs_if_required <- 
+  function(x) {
+    if(st_crs(x) != CRS_REFERENCE) {
+      x %>% 
+        st_transform(crs = CRS_REFERENCE)
+    } else {
+      x
+    }
+    
   }
 
 read_river_basins <-
   function(file) {
-    ##### Test
-    # filepath <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data/"
-    ####
-    layer <-
-      tar_read(river_basins_files)[1] %>%
-        str_replace(".*(?=drainage)", "") %>%
-        str_replace("(?=_public).*", "") %>%
-        str_replace("drainage_network_", "") %>%
-        str_c("_eudem2_basins")
-
-    tar_read(river_basins_files)[1] %>%
-      read_sf(layer) %>%
-      rename(geometry = Shape) %>%
-      janitor::clean_names() %>%
-      select(namebasin) %>%
-      summarize(namebasin = first(namebasin)) %>%
-      st_transform(crs = CRS_REFERENCE)
+    river_basin_name <-
+      file %>% 
+      str_replace(".*(?=GPKG/euhydro_)", "") %>% 
+      str_replace("(?=_v0).*", "") %>% 
+      str_replace("GPKG/euhydro_", "")
+    
+    file %>% 
+      read_sf("RiverBasins") %>%
+      st_zm() %>%
+      rename(geometry = Shape) %>% 
+      select(geometry) %>%
+      mutate(river_basin_name = river_basin_name) %>%
+      transform_crs_if_required()
   }
 
 read_coastline <-
   function(filepath) {
-
-    coastline <-
-      filepath %>%
-        read_sf() %>%
-        summarise() %>%
-        st_transform(CRS_REFERENCE)
-
-    return(coastline)
+    filepath %>%
+      read_sf() %>%
+      st_zm() %>% 
+      summarise() %>%
+      transform_crs_if_required()
   }
 
 
@@ -75,10 +91,8 @@ get_feature_ids_to_reclassify <-
       magrittr::extract(str_detect(., ".shp$")) %>%
       str_c(filepath, "/", .) %>%
       map_df(st_read) %>%
-      # imap_dfr(add_source_id) %>% 
-      # reduce(bind_rows) %>% 
       as_tibble() %>%
-      janitor::clean_names() %>%
+      clean_names() %>%
       verify(nrow(.) == length(unique(.$inspire_id))) %>%
       pull(inspire_id) %>%
       as.character()
