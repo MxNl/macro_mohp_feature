@@ -8,7 +8,9 @@ preprocessing_targets <-
     
     # tar_target(
     #   studyarea_outline_level_europe,
-    #   determine_studyarea_outline_level_europe(river_basins, coastline)
+    #   determine_studyarea_outline_level_europe(
+    #     river_basins, 
+    #     coastline)
     # ),
     
     tar_target(
@@ -21,18 +23,18 @@ preprocessing_targets <-
       studyarea_outline_level_pipelinetest
       ),
     
-    tar_target(
-      river_networks_clip,
-      clip_river_networks(
-        river_networks, 
-        river_basins, 
-        selected_studyarea)
-    ),
+    # tar_target(
+    #   river_networks_clip,
+    #   clip_river_networks(
+    #     river_networks, 
+    #     river_basins, 
+    #     selected_studyarea)
+    # ),
     
     tar_target(
       river_networks_only_rivers,
       reclassify_relevant_canals_and_ditches_and_drop_others(
-        river_networks_clip,
+        river_network_pipeline_test, # TODO use river_networks_clip again,
         features_ids_to_reclassify
       )
     ),
@@ -47,16 +49,15 @@ preprocessing_targets <-
       clean_river_networks(river_networks_valid_strahler)
     ),
     
-    tar_force(
+    tar_target(
       db_river_networks_clean,
       write_as_lines_to_db(
         river_networks_clean,
         LINES_CLEAN
-      ),
-      force = table_doesnt_exist(LINES_CLEAN)
+      )
     ),
     
-    tar_force(
+    tar_target(
       db_connected_but_merged_river_networks,
       write_connected_but_merged_river_networks(
         LINES_CLEAN,
@@ -64,8 +65,7 @@ preprocessing_targets <-
         depends_on = list(
           db_river_networks_clean
         )
-      ),
-      force = table_doesnt_exist(LINES_CONNECTED_ID)
+      )
     ),
     
     tar_target(
@@ -96,12 +96,11 @@ preprocessing_targets <-
       dissolve_line_features_between_junctions(river_networks_without_brackets)
     ),
     
-    tar_force(
+    tar_target(
       db_river_networks_dissolved_junctions_after,
       write_as_lines_to_db(
         river_networks_dissolved_junctions_after,
-        LINES_RAW),
-      force = table_doesnt_exist(LINES_RAW)
+        LINES_RAW)
     ),
     
     tar_target(
@@ -137,13 +136,12 @@ preprocessing_targets <-
         bind_rows()
     ),
     
-    tar_force(
+    tar_target(
       db_river_network_by_streamorder,
       write_to_table(
         river_network_by_streamorder,
         LINES_BY_STREAMORDER
-      ),
-      force = table_doesnt_exist(LINES_BY_STREAMORDER)
+      )
     ),
     
     tar_target(
@@ -156,21 +154,19 @@ preprocessing_targets <-
       make_grid_centroids(base_grid)
     ),
     
-    tar_force(
+    tar_target(
       db_grid,
       write_to_table(
         base_grid_centroids,
         GRID_CENTROIDS
-      ),
-      force = table_doesnt_exist(GRID_CENTROIDS)
+      )
     ),
     
-    tar_force(
+    tar_target(
       db_grid_polygons,
       write_to_table(
         base_grid,
-        GRID_POLYGONS),
-      force = table_doesnt_exist(GRID_POLYGONS)
+        GRID_POLYGONS)
     ),
     
     tar_target(

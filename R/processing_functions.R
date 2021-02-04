@@ -29,6 +29,7 @@ reclassify_relevant_canals_and_ditches_and_drop_others <-
   function(river_network, id_to_reclassify) {
     ##### Test
     # river_network <- tar_read(river_networks_clip)
+    # river_network <- tar_read(river_network_pipeline_test)
     # id_to_reclassify <- tar_read(features_ids_to_reclassify)
     ####
     river_network %>% 

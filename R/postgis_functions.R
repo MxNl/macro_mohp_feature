@@ -215,7 +215,9 @@ composite_name <- function(table_name, stream_order_id) {
 
 lateral_position_stream_divide_distance <- function(destination_table, catchments, rivers, stream_order_id, depends_on = NULL) {
   length(depends_on)
-
+  
+  connection <- connect_to_database()
+  
   catchments_table <- composite_name(catchments, stream_order_id)
   rivers_table <- composite_name(rivers, stream_order_id)
   table <- composite_name(destination_table, stream_order_id)
@@ -235,8 +237,9 @@ lateral_position_stream_divide_distance <- function(destination_table, catchment
       SELECT * FROM distances INNER JOIN grid_polygons ON distances.grid_id = grid_polygons.id
     );
   ")
-  DBI::dbExecute(glue::glue('DROP TABLE IF EXISTS {table}'))
-  DBI::dbExecute(query)
+  print(query)
+  DBI::dbExecute(connection, glue::glue('DROP TABLE IF EXISTS {table}'))
+  DBI::dbExecute(connection, query)
 }
 
 

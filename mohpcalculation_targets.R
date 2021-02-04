@@ -9,14 +9,15 @@ mohpcalculation_targets <-
         right_table = LINES_BY_STREAMORDER,
         left_columns = c("id", "geometry"),
         right_columns = c("feature_id", "strahler", "stream_order_id", "geometry"),
-        stream_order_id = 1,
+        stream_order_id = streamorders,
         right_table_is_long_format = TRUE,
         depends_on = list(
           db_river_network_by_streamorder,
           db_grid,
           db_geo_indices
         )
-      )
+      ),
+      pattern = map(streamorders)
     ),
     
     tar_target(

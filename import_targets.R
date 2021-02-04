@@ -24,10 +24,9 @@ import_targets <-
       directory_river_networks,
       DIRECTORY_RIVER_NETWORKS
     ),
-    tar_target(
+    tar_files(
       river_networks_files,
-      list_river_network_files(directory_river_networks),
-      format = "file"
+      list_river_network_files(directory_river_networks)
     ),
     tar_target(
       river_networks,
@@ -58,5 +57,18 @@ import_targets <-
     tar_target(
       features_ids_to_reclassify,
       get_feature_ids_to_reclassify(directory_nonrivers_to_reclassify)
+    ),
+    
+    tar_target( #TODO Delete this target, use clip
+      river_network_pipeline_test,
+      "test_data/river_network_pipeline_test.shp" %>% 
+        st_read() %>% 
+        set_names(c("feature_id", 
+                    "dfdd", 
+                    "inspire_id", 
+                    "strahler", 
+                    "river_basin", 
+                    "id",
+                    "geometry"))
     )
   )
