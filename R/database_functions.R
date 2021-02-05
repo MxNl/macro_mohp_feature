@@ -1,7 +1,13 @@
 write_to_table <- 
-  function(data, table_name_create, append = FALSE) {
-    st_write(data, dsn = connect_to_database(), layer = table_name_create, 
+  function(data, table_name_destination, append = FALSE, index_column = NULL) {
+    connection <- connect_to_database()
+    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_destination}"))
+    st_write(data, dsn = connection, layer = table_name_destination, 
              append = append)
+    
+    if(!is.null(index_column)){
+      set_index(connection, table_name_destination, index_column)
+    }
   }
 
 connect_to_database <- 
@@ -9,7 +15,6 @@ connect_to_database <-
     DBI::dbConnect(
       drv = RPostgres::Postgres(),
       user = "postgres",
-      # password = "1Bg1bheYJIHnTmM6Gw",
       host = "localhost",
       dbname = "postgis"
     )
@@ -35,16 +40,16 @@ initiate_database <-
     return(river_networks)
   }
 
-run_query_create_table_brackets <- 
-  function(query, table_name_create) {
+create_table <- 
+  function(query, table) {
     connection <- connect_to_database()
-    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_create}"))
+    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table}"))
     DBI::dbExecute(connection, query)
   }
 
 run_query_linemerge_by_streamorder <- 
-  function(con) {
-    DBI::dbGetQuery(con, glue::glue("
+  function(connection) {
+    DBI::dbGetQuery(connection, glue::glue("
       WITH collected AS (
       	SELECT strahler, ST_Collect(geometry) AS geometry
       	FROM {LINES_RAW} GROUP BY strahler
@@ -138,16 +143,16 @@ convert_pq_geomentry <-
 #   }
 
 get_table_from_postgress <-
-  function(table_name) {
-    DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name}"))
+  function(table_name_read) {
+    DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name_read}"))
   }
 
 
 write_as_lines_to_db <- 
-  function(sf_lines, table_name){
+  function(sf_lines, table_name_destination){
     sf_lines %>% 
       st_cast("LINESTRING") %>%
-      write_to_table(table_name = table_name)
+      write_to_table(table_name_destination)
   }
 
 hash_of_db <- 

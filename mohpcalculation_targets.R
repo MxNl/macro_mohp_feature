@@ -2,72 +2,76 @@ mohpcalculation_targets <-
   list(
     
     tar_target(
-      nearest_neighbours,
+      # TODO: rename to schema
+      db_nearest_neighbours,
       nearest_neighbours_between(
-        table_name = 'nearest_neighbours_streamorder',
+        table_name_destination = NN_GRID_RIVERS_TABLE,
         left_table = GRID_CENTROIDS,
         right_table = LINES_BY_STREAMORDER,
-        left_columns = c("id", "geometry"),
-        right_columns = c("feature_id", "strahler", "stream_order_id", "geometry"),
+        left_columns = c("grid_id", "geometry"),
+        right_columns = c("feature_id", "strahler", "stream_order_id"),
         stream_order_id = streamorders,
         right_table_is_long_format = TRUE,
         depends_on = list(
           db_river_network_by_streamorder,
-          db_grid,
-          db_geo_indices
+          db_grid
         )
       ),
       pattern = map(streamorders)
     ),
     
     tar_target(
-      # TODO: make dependency with nearest_neighbours_between_grid_and_catchments_1
       thiessen_catchments,
       make_thiessen_catchments(
-        left_table = GRID_POLYGONS,
-        stream_order_id = 1,
-        depends_on = list(
-          nearest_neighbours
-        )
-      )
+        stream_order_id = streamorders,
+        depends_on = list(db_nearest_neighbours, db_grid_polygons)
+      ),
+      pattern = map(streamorders)
     ),
     
     tar_target(
-      db_geo_indices_thiessen_1,
-      set_geo_indices(
-        c('thiessen_catchments_1'),
-        depends_on = list(thiessen_catchments)
-      )
-    ),
-    
-    tar_target(
-      nearest_neighbours_between_grid_and_catchments_1,
+      # TODO: rename to schema
+      db_nearest_neighbours_between_grid_and_catchments,
       nearest_neighbours_between(
-        table_name = 'nearest_neighbours_between_grid_and_catchments',
+        table_name_destination = NN_GRID_CATCHMENTS_TABLE,
         left_table = GRID_CENTROIDS,
-        right_table = 'thiessen_catchments_1',
-        left_columns = c("id"),
-        right_columns = c("river_network_by_streamorder_feature_id"),
-        stream_order_id = 1,
+        right_table = composite_name(THIESSEN_CATCHMENTS_TABLE, streamorders),
+        left_columns = c("grid_id"),
+        stream_order_id = streamorders,
         depends_on = list(
           thiessen_catchments,
-          db_grid,
-          db_geo_indices_thiessen_1
+          db_grid
         )
-      )
+      ),
+      pattern = map(streamorders)
     ),
     
     tar_target(
+      # TODO: rename to schema
       db_lateral_position_stream_divide_distance,
-      lateral_position_stream_divide_distance(
-        "lateral_position_stream_divide_distance",
-        "nearest_neighbours_between_grid_and_catchments",
-        "nearest_neighbours_streamorder",
-        stream_order_id = 1,
+      calculate_lateral_position_stream_divide_distance(
+        stream_order_id = streamorders,
         depends_on = list(
-          nearest_neighbours,
-          nearest_neighbours_between_grid_and_catchments_1
+          db_nearest_neighbours,
+          db_nearest_neighbours_between_grid_and_catchments
         )
-      )
-    )
+      ),
+      pattern = map(streamorders)
+    ),
+    
+    tar_target(
+      lateral_position_stream_divide_distance,
+      read_lateral_position_stream_divide_distance_from_db(
+        MOHP_FEATURES_TABLE,
+        streamorders,
+        depends_on = list(db_lateral_position_stream_divide_distance)
+      ),
+      pattern = map(streamorders),
+      iteration = "list"
+    )#,
+    
+    # tar_target(
+    #   raster_lateral_position_stream_divide_distance,
+    #   
+    # )
   )

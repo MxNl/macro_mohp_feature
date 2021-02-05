@@ -1,5 +1,8 @@
 clip_river_networks <-
-  function(river_networks, river_basins, studyarea = NULL) {
+  function(
+    river_networks,
+    #+river_basins, 
+    studyarea = NULL) {
     ###### Test
     # river_networks <- tar_read(river_networks)
     # river_basins <- tar_read(selected_studyarea)
@@ -7,14 +10,14 @@ clip_river_networks <-
     #####
     
     if (!is.null(studyarea)) {
-      relevant_river_basins <- 
-        river_basins %>%
-        filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
-        pull(river_basin_name)
-      
+      # relevant_river_basins <- 
+      #   river_basins %>%
+      #   filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
+      #   pull(river_basin_name)
+      # 
       
       river_networks %>%
-        filter(river_basin_name %in% relevant_river_basins) %>% 
+        #filter(river_basin_name %in% relevant_river_basins) %>% 
         filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
         st_intersection(studyarea) %>% 
         st_cast("MULTILINESTRING") %>% 
@@ -233,8 +236,7 @@ drop_isolated_line_segments <-
 add_feature_index_column <- 
   function(sf_object, column_name = "feature_id") {
     sf_object %>% 
-      mutate(!!column_name := as.character(1:n()),
-             .before = 1)
+      mutate(!!column_name := 1:n(), .before = 1)
   }
 
 
@@ -250,7 +252,7 @@ keep_relevant_columns <-
 
 remove_invalid_streamorder_values <- 
   function(river_network, 
-           invalid_values = c(-9999)) {
+           invalid_values = INVALID_STRAHLER_VALUES) {
     river_network %>% 
       filter(!(strahler %in% invalid_values))
       # filter(strahler != -9999)
@@ -545,7 +547,7 @@ make_grid <-
           ., 
           sf_object, 
           sparse = FALSE))) %>% 
-      mutate(id = row_number())
+      mutate(grid_id = row_number())
   }
 
 make_grid_centroids <- 

@@ -39,13 +39,96 @@ tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
 
+
+
+
+# rivers before calculation
+test <- 
+  LINES_BY_STREAMORDER %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf()
+
+test %>% 
+  group_by(stream_order_id) %>% 
+  group_split() %>% 
+  map(plot_lines_coloured_by_categorical_attribute, feature_id)
+
+
+# nearest neighbours to rivers
+test <- 
+  tar_read(streamorders) %>%
+  map(~composite_name(TABLE_NAME_PREFIX_NN_STREAMORDER, .)) %>% 
+  map(get_table_from_postgress) %>% 
+  map(as_tibble)
+
+test %>% 
+  pluck(1) %>% 
+  select(grid_geometry, distance_meters) %>% 
+  rename(geometry = grid_geometry) %>% 
+  query_result_as_sf() %>% 
+  mapview::mapview(alpha = 0, zcol = "distance_meters")
+
+
+# thiessen catchments
+test <- 
+  tar_read(streamorders) %>%
+  map(~composite_name(TABLE_NAME_PREFIX_THIESSEN_CATCHMENTS, .)) %>% 
+  map(get_table_from_postgress) %>% 
+  map(as_tibble)
+
+test %>% 
+  pluck(6) %>%
+  query_result_as_sf() %>%
+  mapview::mapview(alpha = 1)
+
+# nearest neighbours to divide
+test <- 
+  tar_read(streamorders) %>%
+  map(~composite_name(TABLE_NAME_PREFIX_NN_GRID_TO_CATCHMENTS, .)) %>% 
+  map(get_table_from_postgress) %>% 
+  map(as_tibble)
+
+test %>% 
+  pluck(2) %>%
+  rename(geometry = grid_geometry) %>% 
+  query_result_as_sf() %>%
+  mapview::mapview(alpha = 0, zcol = "distance_meters")
+
+
+
+# lateral position
+test <- 
+  tar_read(streamorders) %>%
+  map(~composite_name(TABLE_NAME_PREFIX_LATERAL_POSITION_STREAM_DIVIDE_DISTANCE, .)) %>% 
+  map(get_table_from_postgress) %>% 
+  map(as_tibble)
+
+test %>% 
+  pluck(1) %>% 
+  select(geometry, divide_stream_distance) %>%
+  query_result_as_sf() %>% 
+  mapview::mapview(alpha = 0, zcol = "divide_stream_distance")
+
+
+tar_read(lateral_position_stream_divide_distance)
+
+tar_meta() %>% 
+  select(name, seconds, type) %>% 
+  filter(type == "stem") %>% 
+  arrange(-seconds) %>% 
+  View()
+
+
+
+
+
 tar_read(river_basins) %>%
   slice(1:3) %>% 
   # summarise() %>% 
   st_difference(tar_read(coastline) %>% st_zm()) %>%
   st_cast("POLYGON") %>% 
   select(geometry)
-
+tar_read(river_networks_clip)
 tar_read(river_basins) %>% 
   st_intersects(tar_read(selected_studyarea))
 
@@ -69,7 +152,13 @@ river_networks <- tar_read(river_networks)
     st_cast("MULTILINESTRING") %>% 
     add_feature_index_column()
 
-
+tar_read(lateral_position_stream_divide_distance) %>% 
+  pluck(3) %>% 
+  select(lateral_position) %>% 
+  st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
+  plot()
+  
+  
 
 test_rivers <- 
   tar_read(river_networks_files_files) %>% 

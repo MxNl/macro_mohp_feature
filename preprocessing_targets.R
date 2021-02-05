@@ -1,40 +1,33 @@
 preprocessing_targets <-
-  list(
+  c(
+    pipeline_for(AREA),
     
-    tar_target(
-      studyarea_outline_level_germany,
-      determine_studyarea_outline_level_germany(studyarea_germany, coastline)
-    ),
+    # tar_target(
+    #   studyarea_outline_level_germany,
+    #   determine_studyarea_outline_level_germany(studyarea_germany, coastline)
+    # ),
     
     # tar_target(
     #   studyarea_outline_level_europe,
     #   determine_studyarea_outline_level_europe(
-    #     river_basins, 
-    #     coastline)
+    #     river_basins,
+    #     coastline
+    #   )
     # ),
-    
+
     tar_target(
-      studyarea_outline_level_pipelinetest,
-      studyarea_pipelinetest
+      river_networks_clip,
+      clip_river_networks(
+        river_networks,
+        #river_basins,
+        selected_studyarea
+      )
     ),
-    
-    tar_target(
-      selected_studyarea,
-      studyarea_outline_level_pipelinetest
-      ),
-    
-    # tar_target(
-    #   river_networks_clip,
-    #   clip_river_networks(
-    #     river_networks, 
-    #     river_basins, 
-    #     selected_studyarea)
-    # ),
     
     tar_target(
       river_networks_only_rivers,
       reclassify_relevant_canals_and_ditches_and_drop_others(
-        river_network_pipeline_test, # TODO use river_networks_clip again,
+        river_networks_clip,
         features_ids_to_reclassify
       )
     ),
@@ -124,17 +117,26 @@ preprocessing_targets <-
     
     tar_target(
       river_network_by_streamorder,
-      streamorders %>%
-        as.vector() %>%
-        as.numeric() %>%
+      streamorders %>% 
+        as.vector() %>% 
+        as.numeric() %>% 
         future_map(
           ~stream_order_filter(
             river_network = river_networks_strahler_merge,
             stream_order = .x
           )
-        ) %>%
+        ) %>% 
         bind_rows()
     ),
+    
+    # tar_target(
+    #   river_network_by_streamorder,
+    #     stream_order_filter(
+    #       river_networks_strahler_merge,
+    #       streamorders
+    #       ),
+    #   pattern = map(streamorders)
+    # ),
     
     tar_target(
       db_river_network_by_streamorder,
@@ -158,7 +160,8 @@ preprocessing_targets <-
       db_grid,
       write_to_table(
         base_grid_centroids,
-        GRID_CENTROIDS
+        GRID_CENTROIDS,
+        index_column = "grid_id"
       )
     ),
     
@@ -166,7 +169,9 @@ preprocessing_targets <-
       db_grid_polygons,
       write_to_table(
         base_grid,
-        GRID_POLYGONS)
+        GRID_POLYGONS_TABLE,
+        index_column = "grid_id"
+      )
     ),
     
     tar_target(
