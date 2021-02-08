@@ -90,9 +90,10 @@ get_feature_ids_to_reclassify <-
       list.files() %>%
       magrittr::extract(str_detect(., ".shp$")) %>%
       str_c(filepath, "/", .) %>%
-      map_df(st_read) %>%
+      map_dfr(st_read) %>%
       as_tibble() %>%
       clean_names() %>%
+      distinct(inspire_id, .keep_all = TRUE) %>% 
       verify(nrow(.) == length(unique(.$inspire_id))) %>%
       pull(inspire_id) %>%
       as.character()
