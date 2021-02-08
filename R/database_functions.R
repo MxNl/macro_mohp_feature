@@ -153,6 +153,7 @@ write_as_lines_to_db <-
     sf_lines %>% 
       st_cast("LINESTRING") %>%
       write_to_table(table_name_destination)
+    Sys.time()
   }
 
 hash_of_db <- 

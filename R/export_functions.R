@@ -25,8 +25,7 @@ write_raster_mohp_features <-
         "_",
         "streamorder",
         filepath_prefix_streamorder,
-        "_",
-        filepath_prefix_spatial_resolution,
+        "_",        filepath_prefix_spatial_resolution,
         "m",
         ".tiff"
       ) %>%

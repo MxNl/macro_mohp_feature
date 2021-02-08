@@ -58,6 +58,7 @@ write_connected_but_merged_river_networks <-
       table_name_read, 
       table_name_destination
       )
+    Sys.time()
   }
 
 merge_same_strahler_segments <-

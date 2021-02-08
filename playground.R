@@ -39,8 +39,30 @@ tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
 
+tar_read(selected_studyarea) %>% 
+  ggplot() +geom_sf()
+
+test <- 
+  river_networks %>% 
+  group_by(strahler) %>%
+  summarise()
+
+river_networks %>% 
+  slice(1:5) %>% 
+  st_cast("LINESTRING")
 
 
+
+tar_read(river_networks_only_connected) 
+tar_read(river_networks_dissolved_junctions) 
+tar_read(river_networks_without_brackets) 
+test <- tar_read(river_networks_only_connected) %>% 
+  # as_tibble() %>% 
+  slice(1:5)
+  
+tar_read(river_networks_only_connected) %>% st_geometry_type()
+  
+  st_write("output_data/germany_rivers_only_connected.shp")
 
 # rivers before calculation
 test <- 

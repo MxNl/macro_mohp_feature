@@ -22,9 +22,10 @@ import_targets <-
     #   read_studyarea(filepath_studyarea_pipelinetest)
     # ),
 
-    tar_target(
+    tar_target( #TODO tar_force or tar_target with format = "file
       river_networks_files,
-      list_river_network_files(DIRECTORY_RIVER_NETWORKS)
+      list_river_network_files(DIRECTORY_RIVER_NETWORKS),
+      # format = "file"
     ),
     
     tar_target(

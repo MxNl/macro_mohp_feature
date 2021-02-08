@@ -1,30 +1,26 @@
 clip_river_networks <-
   function(
     river_networks,
-    #+river_basins, 
-    studyarea = NULL) {
+    studyarea) {
     ###### Test
     # river_networks <- tar_read(river_networks)
     # river_basins <- tar_read(selected_studyarea)
     # studyarea <- tar_read(selected_studyarea)
     #####
     
-    if (!is.null(studyarea)) {
-      # relevant_river_basins <- 
-      #   river_basins %>%
-      #   filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
-      #   pull(river_basin_name)
-      # 
-      
+    if (AREA %in% c("test", "germany")) {
+
       river_networks %>%
         #filter(river_basin_name %in% relevant_river_basins) %>% 
         filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
         st_intersection(studyarea) %>% 
         st_cast("MULTILINESTRING") %>% 
         add_feature_index_column()
-    } else {
+    } else if (AREA == "europe"){
       river_networks %>% 
         add_feature_index_column()
+    } else {
+      stop("Please provide a valid character string for the AREA/area parameter in config.yml")
     }
   }
 
@@ -226,7 +222,6 @@ drop_isolated_line_segments <-
         rename(feature_id = feature_id.x,
                connected_feature_id = feature_id.y) %>% 
         relocate(connected_feature_id, .after = feature_id)
-      # filter(st_intersects(., river_network_test, sparse = FALSE)[,1])
     
     river_network %>% 
       return()
@@ -261,10 +256,14 @@ remove_invalid_streamorder_values <-
 dissolve_line_features_between_junctions <-
   function(river_networks) {
     ###### Test
-    # river_networks <- tar_read(river_networks_only_connected)
+    # river_networks <- tar_read(river_networks_without_brackets)
     # studyarea <- tar_read(studyarea_outline)
     #####
 
+    river_networks <- #TODO move this step to target river_network_only_connected or river_networks_clean
+      river_networks %>% 
+      filter(st_geometry_type(.) %in% c("MULTILINESTRING", "LINESTRING"))
+    
     startpoints <- 
       river_networks %>%
       st_cast("LINESTRING") %>% 
@@ -295,7 +294,8 @@ dissolve_line_features_between_junctions <-
       river_networks %>% 
       group_by(strahler) %>%
       summarise() %>%
-      st_line_merge() %>% 
+      st_cast("MULTILINESTRING") %>%
+      st_line_merge() %>%
       st_cast("MULTILINESTRING")
     
     lines_merged$geometry %>% 
