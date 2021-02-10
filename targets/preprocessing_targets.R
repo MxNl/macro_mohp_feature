@@ -2,18 +2,13 @@ preprocessing_targets <-
   c(
     pipeline_for(AREA),
     
-    # tar_target(
-    #   studyarea_outline_level_germany,
-    #   determine_studyarea_outline_level_germany(studyarea_germany, coastline)
-    # ),
-    
-    # tar_target(
-    #   studyarea_outline_level_europe,
-    #   determine_studyarea_outline_level_europe(
-    #     river_basins,
-    #     coastline
-    #   )
-    # ),
+    tar_target(
+      db_selected_studyarea,
+      write_selected_studyarea(
+        selected_studyarea,
+        SELECTED_STUDYAREA_TABLE
+      )
+    ),
 
     tar_target(
       river_networks_clip,
@@ -146,40 +141,69 @@ preprocessing_targets <-
       )
     ),
     
-    tar_target(
-      base_grid,
-      make_grid(selected_studyarea)
+    tar_force(
+      cellsize,
+      CELLSIZE,
+      force = TRUE
     ),
     
-    tar_target(
-      base_grid_centroids,
-      make_grid_centroids(base_grid)
+    tar_target( #TODO ST_AsRaster parameter touched=true setzen?! damit grid das polygon überlappt
+      db_grid_polygons,
+      make_grid_polygons_in_db(
+        SELECTED_STUDYAREA_TABLE,
+        GRID_POLYGONS_TABLE, #"db_grid_polygons_test",
+        index_column = "grid_id",
+        depends_on = list(db_selected_studyarea,
+                          cellsize)
+        )
     ),
-    
+
     tar_target(
       db_grid,
-      write_to_table(
-        base_grid_centroids,
-        GRID_CENTROIDS,
-        index_column = "grid_id"
-      )
+      make_grid_centroids_in_db(
+        GRID_POLYGONS_TABLE,
+        GRID_CENTROIDS,#"db_grid_polygons_test"
+        index_column = "grid_id",
+        depends_on = list(db_grid_polygons))
     ),
     
-    tar_target(
-      db_grid_polygons,
-      write_to_table(
-        base_grid,
-        GRID_POLYGONS_TABLE,
-        index_column = "grid_id"
-      )
-    ),
+    # tar_target(
+    #   base_grid,
+    #   make_grid(selected_studyarea)
+    # ),
+    # 
+    # tar_target(
+    #   base_grid_centroids,
+    #   make_grid_centroids(base_grid)
+    # ),
+    # 
+    # tar_target(
+    #   db_grid,
+    #   write_to_table(
+    #     base_grid_centroids,
+    #     GRID_CENTROIDS,
+    #     index_column = "grid_id"
+    #   )
+    # ),
+    # 
+    # tar_target(
+    #   db_grid_polygons,
+    #   write_to_table(
+    #     base_grid,
+    #     GRID_POLYGONS_TABLE,
+    #     index_column = "grid_id"
+    #   )
+    # ),
     
     tar_target(
       db_geo_indices,
       set_geo_indices(
-        c(GRID_CENTROIDS, LINES_BY_STREAMORDER),
+        c(GRID_CENTROIDS,
+          # "db_grid_test", 
+          LINES_BY_STREAMORDER),
         depends_on = list(
           db_grid,
+          # db_grid_test,
           db_river_network_by_streamorder
         )
       )

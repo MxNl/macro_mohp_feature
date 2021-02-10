@@ -1,14 +1,3 @@
-write_to_table <- 
-  function(data, table_name_destination, append = FALSE, index_column = NULL) {
-    connection <- connect_to_database()
-    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_destination}"))
-    st_write(data, dsn = connection, layer = table_name_destination, 
-             append = append)
-    
-    if(!is.null(index_column)){
-      set_index(connection, table_name_destination, index_column)
-    }
-  }
 
 connect_to_database <- 
   function() {
@@ -41,11 +30,29 @@ initiate_database <-
   }
 
 create_table <- 
-  function(query, table) {
+  function(query, table_name_destination, index_column = NULL) {
     connection <- connect_to_database()
-    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table}"))
+    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_destination}"))
     DBI::dbExecute(connection, query)
+    
+    if(!is.null(index_column)){
+      set_index(connection, table_name_destination, index_column)
+    }
   }
+
+write_to_table <- 
+  function(data, table_name_destination, append = FALSE, index_column = NULL) {
+    connection <- connect_to_database()
+    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_destination}"))
+    st_write(data, dsn = connection, layer = table_name_destination, 
+             append = append)
+    
+    if(!is.null(index_column)){
+      set_index(connection, table_name_destination, index_column)
+    }
+  }
+
+
 
 run_query_linemerge_by_streamorder <- 
   function(connection) {

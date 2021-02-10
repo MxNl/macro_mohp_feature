@@ -75,6 +75,73 @@ merge_same_strahler_segments <-
       prepare_lines()
   }
 
+write_selected_studyarea <- 
+  function(x, table_name_destination, index_column = NULL) {
+    write_to_table(
+      x,
+      table_name_destination,
+      index_column = index_column
+    )
+    Sys.time()
+  }
+
+make_grid_polygons_in_db <- 
+  function(
+    grid_over_polygon, 
+    table_name_destination, 
+    index_column = NULL, 
+    depends_on = NULL
+    ){
+    
+    length(depends_on)
+    
+    query <- 
+      glue::glue("
+        CREATE TABLE {table_name_destination} AS (
+          with grid AS (
+          	SELECT 
+          	  (ST_PixelAsPolygons(ST_AsRaster(ST_Union(geometry), {CELLSIZE}.0,{CELLSIZE}.0))).geom AS geometry
+          	FROM {grid_over_polygon}
+          )
+          	SELECT 
+            	geometry, 
+            	row_number() OVER (ORDER BY geometry) AS grid_id 
+          	FROM grid
+          )
+        ")
+    
+    connection <- connect_to_database()
+    DBI::dbExecute(connection, "CREATE EXTENSION IF NOT EXISTS postgis_raster;")
+    create_table(query, table_name_destination, index_column)
+    Sys.time()
+  }
+
+make_grid_centroids_in_db <- 
+  function(
+    table_name_centroids_basis, 
+    table_name_destination, 
+    index_column = NULL, 
+    depends_on = NULL
+    ){
+    
+    length(depends_on)
+    
+    query <- 
+      glue::glue("
+        CREATE TABLE {table_name_destination} AS (
+          SELECT 
+	         grid_id,
+	         ST_Centroid(geometry) AS geometry
+         FROM {table_name_centroids_basis}
+        )
+        ")
+    
+    create_table(query, table_name_destination, index_column)
+    Sys.time()
+  }
+
+
+
 nearest_neighbours_between <- function(
   table_name_destination,
   left_table,
@@ -132,6 +199,7 @@ nearest_neighbours_between <- function(
         ) AS {right_table}
      );
   ")
+  # print(query)
   create_table(query, table_destination)
   set_index(connection, table_destination, "grid_id")
   Sys.time()
@@ -166,6 +234,7 @@ make_thiessen_catchments <- function(stream_order_id, depends_on) {
 	  	GROUP BY 1
     );
   ")
+  # print(query)
   create_table(query, table_name_destination)
   set_geo_index(connection, table_name_destination)
   Sys.time()
@@ -212,6 +281,7 @@ calculate_lateral_position_stream_divide_distance <-
         INNER JOIN {GRID_POLYGONS_TABLE} USING(grid_id)
     );
   ")
+  # print(query)
   create_table(query, table_name_destination)
   Sys.time()
 }

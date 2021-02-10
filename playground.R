@@ -43,6 +43,38 @@ tar_read(river_networks_clean)
 tar_read(selected_studyarea) %>% 
   ggplot() +geom_sf()
 
+tar_read(lateral_position_stream_divide_distance) %>%
+  pluck(3) %>%
+  select(all_of("lateral_position")) %>%
+  st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>%
+  write_stars("output_data/300m_test.tiff")
+
+
+glue::glue("
+        CREATE EXTENSION postgis_raster;
+        CREATE TABLE {GRID_POLYGONS_TABLE} AS (
+          with grid AS (
+          	SELECT 
+          	  (ST_PixelAsCentroids(ST_AsRaster(ST_Union(ST_MakePolygon(geometry)), {CELLSIZE}.0,{CELLSIZE}.0))).geom AS geometry
+          	FROM {SELECTED_STUDYAREA_TABLE}
+          ), with_id AS (
+          	SELECT 
+            	geometry, 
+            	row_number() OVER (ORDER BY geometry) AS grid_id 
+          	FROM grid
+          )
+        )
+        ")
+
+tar_read(base_grid_centroids) %>% 
+  as_tibble()
+
+get_table_from_postgress(GRID_CENTROIDS) %>% 
+  query_result_as_sf() %>% 
+  as_tibble() %>% 
+  distinct(grid_id)
+
+
 test <- 
   river_networks %>% 
   group_by(strahler) %>%
