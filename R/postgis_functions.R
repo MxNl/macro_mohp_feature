@@ -11,7 +11,6 @@ drop_disconnected_river_networks <-
 
     get_table_from_postgress(table_name_read) %>%
       query_result_as_sf() %>%
-      st_sf(crs = CRS_REFERENCE) %>% 
       filter(st_intersects(., st_cast(studyarea, "MULTILINESTRING"), sparse = FALSE)[, 1]) %>%
       select(-connected_id) %>%
       st_intersection(river_networks) %>%
@@ -203,7 +202,6 @@ nearest_neighbours_between <- function(
   ")
   # print(query)
   create_table(query, table_destination)
-  set_index(connection, table_destination, "grid_id")
   Sys.time()
 }
 
@@ -306,10 +304,71 @@ set_geo_index <- function(connection, table_name, index_column = "geometry") {
 }
 
 set_index <- function(connection, table_name, column) {
+  index_command <- glue::glue("CREATE INDEX {column}_idx ON {table_name} ({column});")
+  logging::loginfo(index_command)
   DBI::dbExecute(connection, glue::glue("DROP INDEX IF EXISTS {column}_idx;"))
-  DBI::dbExecute(connection, glue::glue("CREATE UNIQUE INDEX {column}_idx ON {table_name} ({column});"))
+  DBI::dbExecute(connection, index_command)
 }
 
+
+run_query_linemerge_by_streamorder <- 
+  function(connection) {
+    DBI::dbGetQuery(connection, glue::glue("
+      WITH collected AS (
+      	SELECT strahler, ST_Collect(geometry) AS geometry
+      	FROM {LINES_RAW} GROUP BY strahler
+      ), local_linestrings AS (
+      	SELECT strahler, (ST_Dump(ST_LineMerge(geometry))).geom AS geometry FROM collected
+      ), local_linestrings_with_id AS (
+      	SELECT row_number() OVER (ORDER BY strahler) AS id, * FROM local_linestrings
+      ), local_linestrings_with_splitpoints AS (
+      	SELECT
+      		l.id AS id,
+      		l.strahler AS strahler,
+      		ST_AsText(l.geometry) AS geometry,
+      		r.id AS r_id,
+      		r.strahler AS r_strahler,
+      		ST_AsText(r.geometry) AS r_geometry,
+      		ST_AsText(ST_Intersection(l.geometry, r.geometry)) AS common_geometry
+      	FROM local_linestrings_with_id AS l
+      	CROSS JOIN local_linestrings_with_id AS r
+      	WHERE 
+      		(
+      			l.strahler < r.strahler
+      			AND
+      			ST_Touches(l.geometry, r.geometry)
+      			AND
+      			l.id != r.id
+      		)
+      ), local_linestrings_splitted AS (
+      	SELECT 
+      		id AS old_id, 
+      		strahler,
+      		(ST_Dump(
+      			CASE WHEN ST_Equals(geometry, common_geometry) THEN 
+      				ST_ForceCollection(geometry)
+      			ELSE
+      				ST_Split(geometry, common_geometry)
+      			END
+      		)).geom
+      	AS geometry
+      	FROM local_linestrings_with_splitpoints
+      ), local_linestrings_without_splitpoints AS (
+      	SELECT * FROM local_linestrings_with_id
+      	WHERE
+      		NOT EXISTS (
+      		SELECT 
+      			1
+      		FROM
+      			local_linestrings_with_splitpoints
+      		WHERE 
+      			local_linestrings_with_splitpoints.id = local_linestrings_with_id.id)
+      )
+      SELECT * FROM local_linestrings_splitted
+      UNION
+      SELECT * FROM local_linestrings_without_splitpoints
+    "))
+  }
 
 read_lateral_position_stream_divide_distance_from_db <- 
   function(table_name_source_prefix, streamorder, depends_on = NULL) {

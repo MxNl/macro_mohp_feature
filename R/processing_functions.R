@@ -728,3 +728,271 @@ sfpolygon_to_raster <- function(sf_polygon, field_name) {
     fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
                          field = field_name)
 }
+
+impute_streamorder <-
+  function(sf_lines, studyarea) {
+    test <- FALSE
+    if(test){
+      sf_lines <- tar_read(river_networks_only_rivers) %>% 
+        mutate(strahler = if_else(feature_id %in% c(212, 113, 202, 89), -9999, strahler))
+      studyarea <- tar_read(selected_studyarea) %>% st_cast("LINESTRING")
+    }
+    sf_lines <- 
+      sf_lines %>% 
+      mutate(strahler = as.integer(strahler))
+    
+    lines_na_streamorder <-
+      sf_lines %>%
+      filter(strahler %in% INVALID_STRAHLER_VALUES)
+    
+    lines_valid_streamorder <-
+      sf_lines %>%
+      anti_join(as_tibble(lines_na_streamorder), by = "feature_id")
+    
+    endpoints_one_side <-
+      lines_na_streamorder %>%
+      st_endpoint() %>%
+      st_as_sf() %>%
+      mutate(side = "one")
+    
+    endpoints_other_side <-
+      lines_na_streamorder %>%
+      st_startpoint() %>%
+      st_as_sf() %>%
+      mutate(side = "other")
+    
+    endpoints <-
+      endpoints_one_side %>%
+      bind_rows(endpoints_other_side)
+    
+    lines_canals_endpoints_join <-
+      endpoints %>%
+      st_join(lines_na_streamorder) %>%
+      group_by(feature_id) %>%
+      group_split() %>% 
+      map(~ st_join(., lines_valid_streamorder))
+    
+    feature_id_order <- 
+      lines_canals_endpoints_join %>% 
+      map_int(~.x %>% slice(1) %>% pull(feature_id.x))
+    
+    impute_with <- 
+      lines_canals_endpoints_join %>%
+      map_int(impute_streamorder_by_case) %>% 
+      tibble(feature_id = feature_id_order,
+             strahler = .)
+    
+    lines_na_streamorder %>%
+      select(-strahler) %>% 
+      left_join(impute_with, by = "feature_id") %>%
+      bind_rows(lines_valid_streamorder) %>%
+      arrange(feature_id) %>% 
+      relocate(feature_id, strahler, everything())
+  }
+
+
+impute_streamorder_by_case <- 
+  function(x) {
+    
+    if(is_case_a(x, studyarea)){
+      impute_case_a(x)
+    } else if(is_case_b(x, studyarea)){
+      impute_case_b(x)
+    } else if(is_case_c(x)){
+      impute_case_c(x)
+    } else if(is_case_d(x)){
+      impute_case_d(x)
+    } else if(is_case_e(x)){
+      impute_case_e(x)
+    } else {
+      stop("no matching case")
+    }
+  }
+
+impute_case_a <- 
+  function(x) {
+    x %>% 
+      pull(strahler.y) %>% 
+      max(na.rm = TRUE) %>% 
+      as.integer()
+  }
+
+impute_case_b <- 
+  function(x) {
+    1L
+  }
+
+impute_case_c <- 
+  function(x) {
+    x %>% 
+      group_by(side) %>% 
+      summarise(n = n(),
+                strahler.y = str_c(strahler.y, collapse = ", "),
+                .groups = "drop") %>% 
+      filter(n == 1) %>% 
+      pull(strahler.y) %>% 
+      as.integer()
+  }
+
+impute_case_d <- 
+  function(x) {
+    x %>% 
+      pull(strahler.y) %>% 
+      unique() %>% 
+      as.integer()
+  }
+
+impute_case_e <- 
+  function(x) {
+    unique_streamorders <- 
+      x %>% 
+      pull(strahler.y) %>% 
+      unique()
+    
+    n_streamorders <- 
+      unique_streamorders %>% 
+      length()
+    
+    if(n_streamorders == 2){
+      unique_streamorders %>%
+        max(na.rm = TRUE) %>% 
+        as.integer()
+    } else if(n_streamorders == 3) {
+      unique_streamorders %>% 
+        sort() %>% 
+        magrittr::extract(2) %>% 
+        as.integer()
+    } else {
+      stop("More than 3 unique streamorders at junction. Investigate!")
+    }
+  }
+
+
+is_case_a <- 
+  function(x, studyarea) {
+    x %>% 
+      st_intersects(studyarea, sparse = FALSE) %>% 
+      as.vector() %>% 
+      any()
+  }
+
+is_case_b <- 
+  function(x, studyarea) {
+    
+    condition_a <- 
+      x %>% 
+      st_intersects(studyarea, sparse = FALSE) %>% 
+      as.vector() %>% 
+      any() %>% 
+      isFALSE()
+    
+    x <- 
+      x %>% 
+      filter(!is.na(feature_id.y))
+    
+    condition_b <- 
+      x %>% 
+      distinct(side) %>% 
+      nrow() %>% 
+      magrittr::equals(1)
+    
+    condition_a & condition_b
+  }
+
+is_case_c <- 
+  function(x) {
+    
+    x <- 
+      x %>% 
+      filter(!is.na(feature_id.y))
+    
+    precondition <- 
+      x %>% 
+      distinct(side) %>% 
+      nrow() %>% 
+      magrittr::equals(2)
+    
+    if(precondition){
+      n_touching_segments_per_endpoint <- 
+        x %>% 
+        group_by(side) %>% 
+        count() %>% 
+        pull(n)
+      
+      condition_a <- 
+        n_touching_segments_per_endpoint %>% 
+        magrittr::equals(1) %>% 
+        any()
+      
+      condition_b <- 
+        n_touching_segments_per_endpoint %>% 
+        magrittr::is_weakly_greater_than(2) %>% 
+        any()
+      
+      condition_a & condition_b
+    } else {
+      return(precondition)
+    }
+  }
+
+is_case_d <- 
+  function(x) {
+    
+    x <- 
+      x %>% 
+      filter(!is.na(feature_id.y))
+    
+    condition_a <- 
+      x %>% 
+      group_by(side) %>% 
+      count() %>% 
+      pull(n) %>% 
+      all.equal(c(1, 1)) %>% 
+      isTRUE()
+    
+    if(condition_a) {
+      condition_b <- 
+        x %>% 
+        group_by(side) %>% 
+        summarise(n = n(),
+                  strahler = unique(strahler.y),
+                  .groups = "drop") %>% 
+        pull(n) %>% 
+        all.equal(c(1, 1)) %>% 
+        isTRUE()
+      
+      condition_b
+    } else {
+      condition_a
+    }
+  }
+
+is_case_e <- 
+  function(x) {
+    
+    x <- 
+      x %>% 
+      filter(!is.na(feature_id.y))
+    
+    condition_a <- 
+      x %>% 
+      distinct(side) %>% 
+      nrow() %>% 
+      magrittr::equals(2)
+    
+    if(condition_a){
+      condition_b <- 
+        x %>% 
+        group_by(side) %>% 
+        count() %>% 
+        pull(n) %>% 
+        magrittr::is_weakly_greater_than(2) %>% 
+        all()
+      
+      condition_b
+    } else {
+      return(condition_a)
+    }
+  }
+
+
