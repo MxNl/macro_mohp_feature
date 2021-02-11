@@ -150,16 +150,19 @@ nearest_neighbours_between <- function(
   right_table,
   right_columns = NULL,
   stream_order_id = NULL,
-  right_table_is_long_format = FALSE,
   n = 1,
   depends_on
 ) {
   length(depends_on)
   connection <- connect_to_database()
 
+  if (length(intersection(left_columns, right_columns)) > 0){
+    stop('Ambiguous column names provided.')
+  }
+
   format_select <- function(table, columns) {
     validate(table, columns)
-    select_statements <- paste0(table, '.', columns, ' AS ', table, '_', columns)
+    select_statements <- paste0(table, '.', columns)
     paste0(select_statements, collapse = ', ')
   }
 
@@ -200,14 +203,14 @@ nearest_neighbours_between <- function(
         ) AS {right_table}
      );
   ")
-  # print(query)
+  print(query)
   create_table(query, table_destination)
   Sys.time()
 }
 
 composite_name <- 
   function(table_name, stream_order_id) {
-  ifelse(is.null(stream_order_id), table_name, glue::glue('{table_name}_id_{stream_order_id}'))
+    ifelse(is.null(stream_order_id), table_name, glue::glue('{table_name}_id_{stream_order_id}'))
 }
 
 geometry_of <- 
@@ -234,7 +237,7 @@ make_thiessen_catchments <- function(stream_order_id, depends_on) {
 	  	GROUP BY 1
     );
   ")
-  # print(query)
+  print(query)
   create_table(query, table_name_destination)
   set_geo_index(connection, table_name_destination)
   Sys.time()

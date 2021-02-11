@@ -120,8 +120,7 @@ preprocessing_targets <-
             river_network = river_networks_strahler_merge,
             stream_order = .x
           )
-        ) %>% 
-        bind_rows()
+        )
     ),
     
     # tar_target(
@@ -135,10 +134,11 @@ preprocessing_targets <-
     
     tar_target(
       db_river_network_by_streamorder,
-      write_to_table(
-        river_network_by_streamorder,
-        LINES_BY_STREAMORDER
-      )
+      write_by_streamorder(
+        streamorders,
+        river_network_by_streamorder
+      ),
+      pattern = map(streamorders)
     ),
     
     tar_force(

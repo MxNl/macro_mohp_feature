@@ -1,4 +1,3 @@
-
 connect_to_database <- 
   function() {
     DBI::dbConnect(
@@ -50,6 +49,7 @@ write_to_table <-
     if(!is.null(index_column)){
       set_index(connection, table_name_destination, index_column)
     }
+    # TODO: add geoindex here if provided
   }
 
 prepare_lines <- 

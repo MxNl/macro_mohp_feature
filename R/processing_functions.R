@@ -1,7 +1,16 @@
+write_by_streamorder <- function(streamorder, river_networks_by_streamorder) {
+  table <- composite_name(LINES_BY_STREAMORDER, streamorder)
+  
+  river_networks_by_streamorder %>% 
+    chuck(streamorder) %>% 
+    write_to_table(table)
+}
+
 clip_river_networks <-
   function(
     river_networks,
-    studyarea) {
+    studyarea
+    ) {
     ###### Test
     # river_networks <- tar_read(river_networks)
     # river_basins <- tar_read(selected_studyarea)

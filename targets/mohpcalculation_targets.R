@@ -7,11 +7,10 @@ mohpcalculation_targets <-
       nearest_neighbours_between(
         table_name_destination = NN_GRID_RIVERS_TABLE,
         left_table = GRID_CENTROIDS,
-        right_table = LINES_BY_STREAMORDER,
+        right_table = composite_name(LINES_BY_STREAMORDER, streamorders),
         left_columns = c("grid_id", "geometry"),
         right_columns = c("feature_id", "strahler", "stream_order_id"),
         stream_order_id = streamorders,
-        right_table_is_long_format = TRUE,
         depends_on = list(
           db_river_network_by_streamorder,
           db_grid
