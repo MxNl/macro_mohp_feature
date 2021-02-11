@@ -1,12 +1,5 @@
 drop_disconnected_river_networks <-
   function(river_networks, studyarea, table_name_read, depends_on = NULL) {
-    test <- FALSE
-    if (test) {
-      river_networks <- tar_read(river_networks_clean)
-      studyarea <- tar_read(studyarea_outline)
-      table_name <- LINES_CLEAN
-    }
-
     length(depends_on)
 
     get_table_from_postgress(table_name_read) %>%
@@ -156,7 +149,7 @@ nearest_neighbours_between <- function(
   length(depends_on)
   connection <- connect_to_database()
 
-  if (length(intersection(left_columns, right_columns)) > 0){
+  if (length(intersect(left_columns, right_columns)) > 0){
     stop('Ambiguous column names provided.')
   }
 
@@ -179,7 +172,7 @@ nearest_neighbours_between <- function(
   by_streamorder <- ifelse(is.null(stream_order_id), FALSE, TRUE)
 
   distance <- glue::glue('ST_Distance({left_geometry}, {right_geometry}) AS distance_meters')
-  by_streamorder_clause <- ifelse(by_streamorder & right_table_is_long_format, glue::glue("AND {right_table}.stream_order_id = {stream_order_id}"), '')
+  by_streamorder_clause <- glue::glue("AND {right_table}.stream_order_id = {stream_order_id}")
   table_destination <- composite_name(table_name_destination, stream_order_id)
   
   query <- glue::glue("
