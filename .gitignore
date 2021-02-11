@@ -11,3 +11,4 @@ output_data
 qgis
 .tmp
 .idea
+config.yml
