@@ -11,6 +11,7 @@ drop_disconnected_river_networks <-
 
     get_table_from_postgress(table_name_read) %>%
       query_result_as_sf() %>%
+      st_sf(crs = CRS_REFERENCE) %>% 
       filter(st_intersects(., st_cast(studyarea, "MULTILINESTRING"), sparse = FALSE)[, 1]) %>%
       select(-connected_id) %>%
       st_intersection(river_networks) %>%
@@ -48,6 +49,7 @@ run_query_connected <-
 	      GROUP BY {table_name_destination}
       )
     ")
+    print(query)
     create_table(query, table_name_destination)
   }
 
