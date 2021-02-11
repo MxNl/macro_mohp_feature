@@ -1,10 +1,15 @@
 import_targets <-
   list(
 
-    tar_target( #TODO tar_force or tar_target with format = "file
+    tar_target(
+      directory_river_networks,
+      DIRECTORY_RIVER_NETWORKS,
+      format = "file"
+    ),
+
+    tar_target(
       river_networks_files,
-      list_river_network_files(DIRECTORY_RIVER_NETWORKS),
-      # format = "file"
+      list_river_network_files(directory_river_networks),
     ),
     
     tar_target(
