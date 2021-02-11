@@ -1,84 +1,57 @@
-connect_to_database <- 
-  function() {
-    DBI::dbConnect(
-      drv = RPostgres::Postgres(),
-      user = "postgres",
-      host = "localhost",
-      dbname = "postgis_test"
-    )
-  }
+connect_to_database <- function() {
+  DBI::dbConnect(
+    drv = RPostgres::Postgres(),
+    user = "postgres",
+    host = "localhost",
+    dbname = "postgis_test"
+  )
+}
 
-initiate_database <- 
-  function(river_networks, table_name) {
-    #### Test
-    # river_networks <- tar_read(river_networks_clip)
-    # table_name <- "testi"
-    # connection <- connect_to_database()
-    ####
-    connection <- connect_to_database()
-    
-    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name}"))
-    
-    river_networks %>% 
-      write_to_table(
-        connection = connection,
-        table_name = table_name
-      )
-    
-    return(river_networks)
-  }
+create_table <- function(query, table, index_column = NULL) {
+  connection <- connect_to_database()
+  db_execute(glue::glue("DROP TABLE IF EXISTS {table}"), connection = connection)
+  db_execute(query, connection = connection)
 
-create_table <- 
-  function(query, table_name_destination, index_column = NULL) {
-    connection <- connect_to_database()
-    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_destination}"))
-    DBI::dbExecute(connection, query)
-    
-    if(!is.null(index_column)){
-      set_index(connection, table_name_destination, index_column)
-    }
+  if (!is.null(index_column)) {
+    set_index(table, index_column, connection)
   }
+}
 
-write_to_table <- 
-  function(data, table_name_destination, append = FALSE, index_column = NULL) {
-    connection <- connect_to_database()
-    DBI::dbExecute(connection, glue::glue("DROP TABLE IF EXISTS {table_name_destination}"))
-    st_write(data, dsn = connection, layer = table_name_destination, 
-             append = append)
-    
-    if(!is.null(index_column)){
-      set_index(connection, table_name_destination, index_column)
-    }
-    # TODO: add geoindex here if provided
-  }
+write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
+  connection <- connect_to_database()
+  db_execute(glue::glue("DROP TABLE IF EXISTS {table}"), connection = connection)
+  st_write(data, dsn = connection, layer = table, append = append)
 
-prepare_lines <- 
-  function(x) {
-    # x <- tar_read(line_merge_by_streamorder_raw)
-    
-    x %>% 
-      query_result_as_sf() %>% 
-      select(-old_id) %>% 
-      add_feature_index_column()
-    
+  if (!is.null(index_column)) {
+    set_index(table, index_column, connection)
   }
+  # TODO: add geoindex here if provided
+}
 
-query_result_as_sf <- 
-  function(x) {
-    x %>% 
-      as_tibble() %>% 
-      mutate(geometry = convert_pq_geomentry(geometry)) %>%
-      st_as_sf()
-  }
+prepare_lines <- function(x) {
+  # x <- tar_read(line_merge_by_streamorder_raw)
 
-convert_pq_geomentry <- 
-  function(x) {
-    x %>%
-      st_as_sfc() %>%
-      st_sf() %>% 
-      as_tibble() %>% 
-      pull(geometry)
-  }
+  x %>%
+    query_result_as_sf() %>%
+    select(-old_id) %>%
+    add_feature_index_column()
+
+}
+
+query_result_as_sf <- function(x) {
+  x %>%
+    as_tibble() %>%
+    mutate(geometry = convert_pq_geomentry(geometry)) %>%
+    st_as_sf()
+}
+
+convert_pq_geomentry <- function(x) {
+  x %>%
+    st_as_sfc() %>%
+    st_sf() %>%
+    as_tibble() %>%
+    pull(geometry)
+}
 
 # add_feature_id <- 
 #   function(x) {
@@ -88,27 +61,37 @@ convert_pq_geomentry <-
 #       mutate(feature_id = as.character(feature_id))
 #   }
 
-get_table_from_postgress <-
-  function(table_name_read) {
-    DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name_read}"))
-  }
+get_table_from_postgress <- function(table_name_read) {
+  DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name_read}"))
+}
 
 
-write_as_lines_to_db <- 
-  function(sf_lines, table_name_destination){
-    sf_lines %>% 
-      st_cast("LINESTRING") %>%
-      write_to_table(table_name_destination)
-    Sys.time()
-  }
+write_as_lines_to_db <- function(sf_lines, table_name_destination) {
+  sf_lines %>%
+    st_cast("LINESTRING") %>%
+    write_to_table(table_name_destination)
+  Sys.time()
+}
 
-hash_of_db <- 
-  function(table_name) {
-    get_table_from_postgress(table_name) %>% 
-      fastdigest::fastdigest()
-  }
+hash_of_db <- function(table_name) {
+  get_table_from_postgress(table_name) %>%
+    fastdigest::fastdigest()
+}
 
-table_doesnt_exist <- 
-  function(table_name_source) {
-    !DBI::dbExistsTable(connect_to_database(), table_name_source)
-  }
+exists_table <- function(table_name_source) {
+  !DBI::dbExistsTable(connect_to_database(), table_name_source)
+}
+
+drop_all_tables <- function() {
+  RESERVED_OBJECTS <- c(
+    'geometry_columns',
+    'geography_columns',
+    'spatial_ref_sys',
+    'raster_columns',
+    'raster_overviews'
+  )
+  connection <- connect_to_database()
+  DBI::dbListTables(connection) %>%
+    discard(. %in% RESERVED_OBJECTS) %>%
+    walk(~DBI::dbExecute(connection, glue::glue("DROP TABLE {.};")))
+}

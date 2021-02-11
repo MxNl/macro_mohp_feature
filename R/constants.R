@@ -37,14 +37,3 @@ STREAM_TYPE_TO_INCLUDE <- c(
   "Ditches_l",
   "River_Net_l"
 )
-
-logging::basicConfig()
-logging::addHandler(
-  logging::writeToFile,
-  file=here::here(
-    'logs',
-    stringr::str_replace_all(lubridate::now(), ' |:', '-')), 
-  level='INFO'
-)
-
-logging::loginfo(paste("Area: ", AREA, " Cellsize: ", CELLSIZE))

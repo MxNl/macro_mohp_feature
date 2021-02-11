@@ -49,9 +49,9 @@ write_connected_but_merged_river_networks <-
   function(table_name_read, table_name_destination, depends_on) {
     length(depends_on)
     run_query_connected(
-      table_name_read, 
+      table_name_read,
       table_name_destination
-      )
+    )
     Sys.time()
   }
 
@@ -69,7 +69,7 @@ merge_same_strahler_segments <-
       prepare_lines()
   }
 
-write_selected_studyarea <- 
+write_selected_studyarea <-
   function(x, table_name_destination, index_column = NULL) {
     write_to_table(
       x,
@@ -79,17 +79,17 @@ write_selected_studyarea <-
     Sys.time()
   }
 
-make_grid_polygons_in_db <- 
+make_grid_polygons_in_db <-
   function(
-    grid_over_polygon, 
-    table_name_destination, 
-    index_column = NULL, 
+    grid_over_polygon,
+    table_name_destination,
+    index_column = NULL,
     depends_on = NULL
-    ){
-    
+  ) {
+
     length(depends_on)
-    
-    query <- 
+
+    query <-
       glue::glue("
         CREATE TABLE {table_name_destination} AS (
           with grid AS (
@@ -103,24 +103,24 @@ make_grid_polygons_in_db <-
           	FROM grid
           )
         ")
-    
+
     connection <- connect_to_database()
-    DBI::dbExecute(connection, "CREATE EXTENSION IF NOT EXISTS postgis_raster;")
+    db_execute("CREATE EXTENSION IF NOT EXISTS postgis_raster;", connection = connection)
     create_table(query, table_name_destination, index_column)
     Sys.time()
   }
 
-make_grid_centroids_in_db <- 
+make_grid_centroids_in_db <-
   function(
-    table_name_centroids_basis, 
-    table_name_destination, 
-    index_column = NULL, 
+    table_name_centroids_basis,
+    table_name_destination,
+    index_column = NULL,
     depends_on = NULL
-    ){
-    
+  ) {
+
     length(depends_on)
-    
-    query <- 
+
+    query <-
       glue::glue("
         CREATE TABLE {table_name_destination} AS (
           SELECT 
@@ -129,11 +129,10 @@ make_grid_centroids_in_db <-
          FROM {table_name_centroids_basis}
         )
         ")
-    
+
     create_table(query, table_name_destination, index_column)
     Sys.time()
   }
-
 
 
 nearest_neighbours_between <- function(
@@ -149,7 +148,7 @@ nearest_neighbours_between <- function(
   length(depends_on)
   connection <- connect_to_database()
 
-  if (length(intersect(left_columns, right_columns)) > 0){
+  if (length(intersect(left_columns, right_columns)) > 0) {
     stop('Ambiguous column names provided.')
   }
 
@@ -159,14 +158,16 @@ nearest_neighbours_between <- function(
     paste0(select_statements, collapse = ', ')
   }
 
-  left_select <- format_select(left_table, left_columns) %>% 
+  left_select <- format_select(left_table, left_columns) %>%
     str_replace("grid_grid_id", "grid_id") #TODO how can we make this more elegant?
   right_select <- NULL
   if (!is.null(right_columns)) {
     right_select <- format_select(right_table, right_columns)
-  }  
-  select <- list(left_select, right_select) %>% compact() %>% str_c(collapse=', ')
-  
+  }
+  select <- list(left_select, right_select) %>%
+    compact() %>%
+    str_c(collapse = ', ')
+
   left_geometry <- geometry_of(left_table)
   right_geometry <- geometry_of(right_table)
   by_streamorder <- ifelse(is.null(stream_order_id), FALSE, TRUE)
@@ -174,7 +175,7 @@ nearest_neighbours_between <- function(
   distance <- glue::glue('ST_Distance({left_geometry}, {right_geometry}) AS distance_meters')
   by_streamorder_clause <- glue::glue("AND {right_table}.stream_order_id = {stream_order_id}")
   table_destination <- composite_name(table_name_destination, stream_order_id)
-  
+
   query <- glue::glue("
     CREATE TABLE {table_destination} AS (
       SELECT
@@ -196,20 +197,34 @@ nearest_neighbours_between <- function(
         ) AS {right_table}
      );
   ")
-  print(query)
-  create_table(query, table_destination)
+  create_table(query, table_destination, index_column = 'feature_id')
   Sys.time()
 }
 
-composite_name <- 
-  function(table_name, stream_order_id) {
-    ifelse(is.null(stream_order_id), table_name, glue::glue('{table_name}_id_{stream_order_id}'))
+composite_name <- function(table_name, stream_order_id) {
+  ifelse(is.null(stream_order_id), table_name, glue::glue('{table_name}_id_{stream_order_id}'))
 }
 
-geometry_of <- 
-  function(table) {
-    paste0(table, '.geometry')
-  }
+geometry_of <- function(table) { paste0(table, '.geometry') }
+
+grid_catchment_distance <- function(nn_grid, catchment, table, stream_order_id, depends_on = NULL) {
+  length(depends_on)
+  table <- composite_name(table, stream_order_id)
+  query <- glue::glue("
+    CREATE TABLE {table} AS (
+      SELECT
+        grid.grid_id,
+        ST_Distance(grid.geometry, catchment.geometry) AS distance_meters
+      FROM
+        {composite_name(nn_grid, stream_order_id)} AS grid
+        INNER JOIN
+        {composite_name(catchment, stream_order_id)} AS catchment
+        USING(feature_id)
+    );
+  ")
+  create_table(query, table)
+  Sys.time()
+}
 
 make_thiessen_catchments <- function(stream_order_id, depends_on) {
   length(depends_on)
@@ -217,58 +232,52 @@ make_thiessen_catchments <- function(stream_order_id, depends_on) {
 
   table_name_destination <- composite_name(THIESSEN_CATCHMENTS_TABLE, stream_order_id)
   nearest_neighbours <- composite_name(NN_GRID_RIVERS_TABLE, stream_order_id)
-  
+
   query <- glue::glue("
     CREATE TABLE {table_name_destination} AS (
     	SELECT 
-	  		nn.{LINES_BY_STREAMORDER}_feature_id,
+	  		nn.feature_id,
 	  		ST_ExteriorRing(ST_Union(grid.geometry)) AS geometry
 	  	FROM
-			  {GRID_POLYGONS_TABLE} AS grid
+			{GRID_POLYGONS_TABLE} AS grid
 	  		INNER JOIN {nearest_neighbours} AS nn
 	  		USING(grid_id)
 	  	GROUP BY 1
     );
   ")
-  print(query)
-  create_table(query, table_name_destination)
-  set_geo_index(connection, table_name_destination)
+  create_table(query, table_name_destination, index_column = 'feature_id')
   Sys.time()
 }
 
 validate <- function(table, columns) {
-  
+
   connection <- connect_to_database()
-  
+
   if (!DBI::dbExistsTable(connection, table)) { stop(paste("Table", table, "not in database")) }
-  
+
   present_columns <- DBI::dbListFields(connection, name = table)
   if (!('geometry' %in% present_columns)) { stop(paste("Table", table, "does not have column 'geometry'")) }
-  
+
   missing_columns <- setdiff(columns, present_columns)
-  
+
   if (length(missing_columns) != 0) {
     message <- paste('Invalid columns selected:', paste(missing_columns, collapse = ', '), 'not in', table)
     stop(message)
-    
+
   }
 }
 
-calculate_lateral_position_stream_divide_distance <- 
-  function(stream_order_id, 
-           depends_on = NULL) {
+calculate_lateral_position_stream_divide_distance <- function(stream_order_id, depends_on = NULL) {
   length(depends_on)
-  
-  connection <- connect_to_database()
-  
+
   catchments_table <- composite_name(NN_GRID_CATCHMENTS_TABLE, stream_order_id)
   rivers_table <- composite_name(NN_GRID_RIVERS_TABLE, stream_order_id)
-  table_name_destination <- composite_name(MOHP_FEATURES_TABLE, stream_order_id)
+  table <- composite_name(MOHP_FEATURES_TABLE, stream_order_id)
   query <- glue::glue("
-    CREATE TABLE {table_name_destination} AS (
+    CREATE TABLE {table} AS (
       SELECT
-        grid_polygons.grid_id,
-        grid_polygons.geometry,
+        {GRID_POLYGONS_TABLE}.grid_id,
+        {GRID_POLYGONS_TABLE}.geometry,
         rivers.distance_meters / (rivers.distance_meters + catchments.distance_meters) AS lateral_position,
         rivers.distance_meters + catchments.distance_meters AS divide_stream_distance
       FROM
@@ -277,12 +286,11 @@ calculate_lateral_position_stream_divide_distance <-
         INNER JOIN {GRID_POLYGONS_TABLE} USING(grid_id)
     );
   ")
-  # print(query)
-  create_table(query, table_name_destination)
+  create_table(query, table)
   Sys.time()
 }
 
-
+# TODO: delete when last one is in its own target
 set_geo_indices <- function(table_names, index_columns = NULL, depends_on) {
   length(depends_on)
 
@@ -290,26 +298,26 @@ set_geo_indices <- function(table_names, index_columns = NULL, depends_on) {
     index_columns <- rep("geometry", length(table_names))
   }
 
-  connection <- connect_to_database()
-  map2(table_names, index_columns, ~ set_geo_index(connection, .x, .y))
+  map2(table_names, index_columns, ~set_geo_index(.x, .y))
 }
 
-set_geo_index <- function(connection, table_name, index_column = "geometry") {
-  DBI::dbExecute(connection, glue::glue("DROP INDEX IF EXISTS {table_name}_geometry_idx;"))
-  DBI::dbExecute(connection, glue::glue("CREATE INDEX {table_name}_geometry_idx ON {table_name} USING GIST ({index_column});"))
+set_geo_index <- function(table, index_column = "geometry", connection = connect_to_database()) {
+  db_execute(glue::glue("DROP INDEX IF EXISTS {table}_geometry_idx;"), connection = connection)
+  db_execute(glue::glue("CREATE INDEX {table}_geometry_idx ON {table} USING GIST ({index_column});"), connection = connection)
 }
 
-set_index <- function(connection, table_name, column) {
-  index_command <- glue::glue("CREATE INDEX {column}_idx ON {table_name} ({column});")
-  logging::loginfo(index_command)
-  DBI::dbExecute(connection, glue::glue("DROP INDEX IF EXISTS {column}_idx;"))
-  DBI::dbExecute(connection, index_command)
+set_index <- function(table, column, connection) {
+  db_execute(glue::glue("DROP INDEX IF EXISTS {column}_idx;"), connection = connection)
+  db_execute(glue::glue("CREATE INDEX {column}_idx ON {table} ({column});"), connection = connection)
 }
 
+db_execute <- function(query, connection = connect_to_database()) {
+  #print(query)
+  DBI::dbExecute(connection, query)
+}
 
-run_query_linemerge_by_streamorder <- 
-  function(connection) {
-    DBI::dbGetQuery(connection, glue::glue("
+run_query_linemerge_by_streamorder <- function(connection) {
+  DBI::dbGetQuery(connection, glue::glue("
       WITH collected AS (
       	SELECT strahler, ST_Collect(geometry) AS geometry
       	FROM {LINES_RAW} GROUP BY strahler
@@ -319,16 +327,17 @@ run_query_linemerge_by_streamorder <-
       	SELECT row_number() OVER (ORDER BY strahler) AS id, * FROM local_linestrings
       ), local_linestrings_with_splitpoints AS (
       	SELECT
-      		l.id AS id,
-      		l.strahler AS strahler,
-      		ST_AsText(l.geometry) AS geometry,
-      		r.id AS r_id,
-      		r.strahler AS r_strahler,
-      		ST_AsText(r.geometry) AS r_geometry,
-      		ST_AsText(ST_Intersection(l.geometry, r.geometry)) AS common_geometry
-      	FROM local_linestrings_with_id AS l
-      	CROSS JOIN local_linestrings_with_id AS r
-      	WHERE 
+      	  l.id AS id,
+      	  l.strahler AS strahler,
+      	  ST_AsText(l.geometry) AS geometry,
+      	  r.id AS r_id,
+      	  r.strahler AS r_strahler,
+      	  ST_AsText(r.geometry) AS r_geometry,
+      	  ST_AsText(ST_Intersection(l.geometry, r.geometry)) AS common_geometry
+      	FROM
+      	  local_linestrings_with_id AS l
+      	  CROSS JOIN local_linestrings_with_id AS r
+      	  WHERE
       		(
       			l.strahler < r.strahler
       			AND
@@ -352,28 +361,27 @@ run_query_linemerge_by_streamorder <-
       ), local_linestrings_without_splitpoints AS (
       	SELECT * FROM local_linestrings_with_id
       	WHERE
-      		NOT EXISTS (
-      		SELECT 
-      			1
-      		FROM
-      			local_linestrings_with_splitpoints
-      		WHERE 
-      			local_linestrings_with_splitpoints.id = local_linestrings_with_id.id)
+      	  NOT EXISTS (
+            SELECT
+              1
+            FROM
+              local_linestrings_with_splitpoints
+            WHERE
+              local_linestrings_with_splitpoints.id = local_linestrings_with_id.id
+          )
       )
       SELECT * FROM local_linestrings_splitted
       UNION
       SELECT * FROM local_linestrings_without_splitpoints
     "))
-  }
+}
 
-read_lateral_position_stream_divide_distance_from_db <- 
-  function(table_name_source_prefix, streamorder, depends_on = NULL) {
-    
-    length(depends_on)
-    
-    composite_name(
-      table_name_source_prefix, 
-      streamorder) %>% 
-      get_table_from_postgress() %>% 
-      query_result_as_sf()
-  }
+read_lateral_position_stream_divide_distance_from_db <- function(table_name_source_prefix, streamorder, depends_on = NULL) {
+  length(depends_on)
+
+  composite_name(
+    table_name_source_prefix,
+    streamorder) %>%
+    get_table_from_postgress() %>%
+    query_result_as_sf()
+}
