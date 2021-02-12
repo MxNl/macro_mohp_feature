@@ -2,10 +2,8 @@ library(targets)
 library(tarchetypes)
 library(future)
 
-options(
-  tidyverse.quiet = TRUE,
-  future.globals.maxSize = 4E5 * 1024^2
-)
+options(tidyverse.quiet = TRUE,
+        future.globals.maxSize = 4E5 * 1024^2)
 
 tar_option_set(
   packages = c(
@@ -50,18 +48,9 @@ source("R/postgis_functions.R")
 source("R/export_functions.R")
 
 
+
+
 plan(multisession)
-
-logging::basicConfig()
-logging::addHandler(
-  logging::writeToFile,
-  file = here::here(
-    'logs',
-    stringr::str_replace_all(lubridate::now(), ' |:', '-')),
-  level = 'INFO'
-)
-
-logging::loginfo(paste("Area: ", AREA, " Cellsize: ", CELLSIZE))
 
 # Define targets
 c(

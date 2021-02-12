@@ -1,7 +1,6 @@
 library(targets)
 library(raster)
 library(sf)
-library(lwgeom)
 library(stars)
 library(furrr)
 library(janitor)
@@ -14,9 +13,6 @@ library(here)
 tar_read(river_networks_files) %>%
   map_dfr(read_sf) %>%
   names()
-
-DBI::dbExecute(connect_to_database(), "CREATE UNIQUE INDEX grid_id_idx ON grid (grid_id);")
-
 
 tar_read(filepath_canals_to_reclassify)
 tar_read(river_networks_clip)
@@ -52,49 +48,6 @@ tar_read(lateral_position_stream_divide_distance) %>%
   select(all_of("lateral_position")) %>%
   st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>%
   write_stars("output_data/300m_test.tiff")
-
-test <- tar_read(river_networks_only_rivers)
-studyarea <- tar_read(selected_studyarea)
-
-test <- 
-  test %>% 
-  mutate(strahler = if_else(feature_id %in% c(212, 113, 114, 202, 89), -9999, strahler))
-
-{test %>% 
-  ggplot() +
-  geom_sf(aes(colour = as.character(strahler))) +
-  # geom_sf_label(data = st_centroid(test), 
-  #               aes(label = feature_id, 
-  #                   colour = is.element(strahler, INVALID_STRAHLER_VALUES)), 
-  #               label.size = 0, 
-  #               alpha =.6) +
-  geom_sf(data = studyarea, fill = NA) +
-  theme(legend.position = "none")} %>% 
-  plotly::ggplotly()
-  
-
-{test %>% 
-  impute_streamorder(st_cast(studyarea, "LINESTRING")) %>% 
-  ggplot() +
-  geom_sf(aes(colour = as.character(strahler))) +
-  # geom_sf_label(data = st_centroid(test),
-  #               aes(label = feature_id,
-  #                   colour = is.element(strahler, INVALID_STRAHLER_VALUES)),
-  #               label.size = 0,
-  #               alpha =.6) +
-  geom_sf(data = studyarea, fill = NA)} %>% 
-  plotly::ggplotly()
-
-
-test %>% 
-  impute_streamorder(st_cast(studyarea, "LINESTRING")) %>% 
-  filter(feature_id == 113)
-  
-
-test %>% 
-  impute_streamorder(studyarea)
-
-
 
 
 glue::glue("
