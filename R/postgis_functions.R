@@ -11,9 +11,8 @@ drop_disconnected_river_networks <-
   }
 
 
-run_query_connected <-
-  function(table_name_read, table_name_destination) {
-    query <- glue::glue("
+run_query_connected <- function(table_name_read, table_name_destination) {
+  query <- glue::glue("
       CREATE TABLE {table_name_destination} AS (
 	      WITH endpoints AS (
 	        SELECT
@@ -41,56 +40,52 @@ run_query_connected <-
 	      GROUP BY {table_name_destination}
       )
     ")
-    print(query)
-    create_table(query, table_name_destination)
-  }
+  print(query)
+  create_table(query, table_name_destination)
+}
 
-write_connected_but_merged_river_networks <-
-  function(table_name_read, table_name_destination, depends_on) {
-    length(depends_on)
-    run_query_connected(
-      table_name_read,
-      table_name_destination
-    )
-    Sys.time()
-  }
+write_connected_but_merged_river_networks <- function(table_name_read, table_name_destination, depends_on) {
+  length(depends_on)
+  run_query_connected(
+    table_name_read,
+    table_name_destination
+  )
+  Sys.time()
+}
 
-merge_same_strahler_segments <-
-  function(depends_on) {
+merge_same_strahler_segments <- function(depends_on) {
 
-    length(depends_on)
+  length(depends_on)
 
-    ###### Test
-    # sf_lines <- tar_read(river_networks_dissolved_junctions_after)
-    # query <- tar_read(linemerge_query)
-    ###
-    connect_to_database() %>%
-      run_query_linemerge_by_streamorder() %>%
-      prepare_lines()
-  }
+  ###### Test
+  # sf_lines <- tar_read(river_networks_dissolved_junctions_after)
+  # query <- tar_read(linemerge_query)
+  ###
+  connect_to_database() %>%
+    run_query_linemerge_by_streamorder() %>%
+    prepare_lines()
+}
 
-write_selected_studyarea <-
-  function(x, table_name_destination, index_column = NULL) {
-    write_to_table(
-      x,
-      table_name_destination,
-      index_column = index_column
-    )
-    Sys.time()
-  }
-
-make_grid_polygons_in_db <-
-  function(
-    grid_over_polygon,
+write_selected_studyarea <- function(x, table_name_destination, index_column = NULL) {
+  write_to_table(
+    x,
     table_name_destination,
-    index_column = NULL,
-    depends_on = NULL
-  ) {
+    index_column = index_column
+  )
+  Sys.time()
+}
 
-    length(depends_on)
+make_grid_polygons_in_db <- function(
+  grid_over_polygon,
+  table_name_destination,
+  index_column = NULL,
+  depends_on = NULL
+) {
 
-    query <-
-      glue::glue("
+  length(depends_on)
+
+  query <-
+    glue::glue("
         CREATE TABLE {table_name_destination} AS (
           with grid AS (
           	SELECT 
@@ -104,24 +99,23 @@ make_grid_polygons_in_db <-
           )
         ")
 
-    connection <- connect_to_database()
-    db_execute("CREATE EXTENSION IF NOT EXISTS postgis_raster;", connection = connection)
-    create_table(query, table_name_destination, index_column)
-    Sys.time()
-  }
+  connection <- connect_to_database()
+  db_execute("CREATE EXTENSION IF NOT EXISTS postgis_raster;", connection = connection)
+  create_table(query, table_name_destination, index_column)
+  Sys.time()
+}
 
-make_grid_centroids_in_db <-
-  function(
-    table_name_centroids_basis,
-    table_name_destination,
-    index_column = NULL,
-    depends_on = NULL
-  ) {
+make_grid_centroids_in_db <- function(
+  table_name_centroids_basis,
+  table_name_destination,
+  index_column = NULL,
+  depends_on = NULL
+) {
 
-    length(depends_on)
+  length(depends_on)
 
-    query <-
-      glue::glue("
+  query <-
+    glue::glue("
         CREATE TABLE {table_name_destination} AS (
           SELECT 
 	         grid_id,
@@ -130,9 +124,9 @@ make_grid_centroids_in_db <-
         )
         ")
 
-    create_table(query, table_name_destination, index_column)
-    Sys.time()
-  }
+  create_table(query, table_name_destination, index_column)
+  Sys.time()
+}
 
 
 nearest_neighbours_between <- function(
@@ -173,7 +167,7 @@ nearest_neighbours_between <- function(
   by_streamorder <- ifelse(is.null(stream_order_id), FALSE, TRUE)
 
   distance <- glue::glue('ST_Distance({left_geometry}, {right_geometry}) AS distance_meters')
-  by_streamorder_clause <- glue::glue("AND {right_table}.stream_order_id = {stream_order_id}")
+  #by_streamorder_clause <- glue::glue("AND {right_table}.stream_order_id = {stream_order_id}")
   table_destination <- composite_name(table_name_destination, stream_order_id)
 
   query <- glue::glue("
@@ -188,8 +182,6 @@ nearest_neighbours_between <- function(
             *
           FROM
             {right_table}
-          WHERE
-            True {by_streamorder_clause}
           ORDER BY
             {left_geometry} <-> {right_geometry}
           LIMIT
@@ -197,6 +189,7 @@ nearest_neighbours_between <- function(
         ) AS {right_table}
      );
   ")
+  print(query)
   create_table(query, table_destination, index_column = 'feature_id')
   Sys.time()
 }

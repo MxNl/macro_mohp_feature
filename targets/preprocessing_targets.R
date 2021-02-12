@@ -1,13 +1,12 @@
 preprocessing_targets <- c(
   pipeline_for(AREA),
 
-  tar_force(
+  tar_target(
     db_selected_studyarea,
     write_selected_studyarea(
       selected_studyarea,
       SELECTED_STUDYAREA_TABLE
-    ),
-    force = TRUE
+    )
   ),
 
   tar_target(
