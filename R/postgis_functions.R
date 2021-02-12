@@ -307,8 +307,8 @@ set_geo_index <- function(table, index_column = "geometry", connection = connect
 }
 
 set_index <- function(table, column, connection) {
-  db_execute(glue::glue("DROP INDEX IF EXISTS {column}_idx;"), connection = connection)
-  db_execute(glue::glue("CREATE INDEX {column}_idx ON {table} ({column});"), connection = connection)
+  db_execute(glue::glue("DROP INDEX IF EXISTS {table}_{column}_idx;"), connection = connection)
+  db_execute(glue::glue("CREATE INDEX {table}_{column}_idx ON {table} ({column});"), connection = connection)
 }
 
 db_execute <- function(query, connection = connect_to_database()) {

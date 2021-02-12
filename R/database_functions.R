@@ -19,7 +19,7 @@ create_table <- function(query, table, index_column = NULL) {
 
 write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
   connection <- connect_to_database()
-  db_execute(glue::glue("DROP TABLE IF EXISTS {table}"), connection = connection)
+  db_execute(glue::glue("DROP TABLE IF EXISTS {table};"), connection = connection)
   st_write(data, dsn = connection, layer = table, append = append)
 
   if (!is.null(index_column)) {
