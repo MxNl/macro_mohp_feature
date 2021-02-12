@@ -4,7 +4,6 @@ YML_CONFIG <- yaml::read_yaml('config.yml')
 AREA <- purrr::chuck(YML_CONFIG, "area")
 CELLSIZE <- purrr::chuck(YML_CONFIG, "cellsize")
 FILEPATH_PREFIX_SPATIAL_COVERAGE <- paste0("mohp_", AREA)
-message("Area: ", AREA, " Cellsize: ", CELLSIZE)
 
 # Directories
 FILEPATH_STUDYAREA_GERMANY <- "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/germany_buffer/time_invariant/shape/self_processed/data/buffer_germany_point6.shp"
@@ -37,4 +36,3 @@ STREAM_TYPE_TO_INCLUDE <- c(
   "Ditches_l",
   "River_Net_l"
 )
-
