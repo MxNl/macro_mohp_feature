@@ -191,7 +191,7 @@ nearest_neighbours_between <- function(
      );
   ")
   print(query)
-  create_table(query, table_destination, index_column = 'feature_id')
+  create_table(query, table_destination, index_column = c("feature_id", "grid_id"))
   Sys.time()
 }
 
@@ -302,11 +302,6 @@ set_geo_indices <- function(table_names, index_columns = NULL, depends_on) {
 set_geo_index <- function(table, index_column = "geometry", connection = connect_to_database()) {
   db_execute(glue::glue("DROP INDEX IF EXISTS {table}_geometry_idx;"), connection = connection)
   db_execute(glue::glue("CREATE INDEX {table}_geometry_idx ON {table} USING GIST ({index_column});"), connection = connection)
-}
-
-set_index <- function(table, column, connection) {
-  db_execute(glue::glue("DROP INDEX IF EXISTS {table}_{column}_idx;"), connection = connection)
-  db_execute(glue::glue("CREATE INDEX {table}_{column}_idx ON {table} ({column});"), connection = connection)
 }
 
 db_execute <- function(query, connection = connect_to_database()) {

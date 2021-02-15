@@ -696,7 +696,6 @@ calculate_stream_divide_distance_grid <-
     return(filepath)
   }
 
-
 sfpolygon_to_raster <- function(sf_polygon, field_name) {
   sf_polygon %>%
     fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),

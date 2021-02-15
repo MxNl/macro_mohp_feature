@@ -13,11 +13,19 @@ create_table <- function(query, table, index_column = NULL, geo_index_column = N
   db_execute(query, connection = connection)
 
   if (!is.null(index_column)) {
-    set_index(table, index_column, connection)
+    index_column %>% 
+      map(
+        ~ set_index(table, .x, connection)
+      )
   }
   if (!is.null(geo_index_column)) {
     set_geo_index(table, geo_index_column, connection)
   }
+}
+
+set_index <- function(table, column, connection) {
+  db_execute(glue::glue("DROP INDEX IF EXISTS {table}_{column}_idx;"), connection = connection)
+  db_execute(glue::glue("CREATE INDEX {table}_{column}_idx ON {table} ({column});"), connection = connection)
 }
 
 write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
