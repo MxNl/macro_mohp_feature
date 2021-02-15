@@ -82,6 +82,13 @@ exists_table <- function(table_name_source) {
   !DBI::dbExistsTable(connect_to_database(), table_name_source)
 }
 
+exist_tables_with_prefix <- function(table_name_source_prefix, streamorder) {
+  table_names <- composite_name(table_name_source_prefix, streamorder)
+  table_names %>%
+    map_lgl(~!DBI::dbExistsTable(connect_to_database(), .x)) %>% 
+    any()
+}
+
 drop_all_tables <- function() {
   RESERVED_OBJECTS <- c(
     'geometry_columns',

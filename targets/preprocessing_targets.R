@@ -1,12 +1,13 @@
 preprocessing_targets <- c(
   pipeline_for(AREA),
 
-  tar_target(
+  tar_force(
     db_selected_studyarea,
     write_selected_studyarea(
       selected_studyarea,
       SELECTED_STUDYAREA_TABLE
-    )
+    ),
+    force = exists_table(SELECTED_STUDYAREA_TABLE)
   ),
 
   tar_target(
@@ -36,15 +37,16 @@ preprocessing_targets <- c(
     clean_river_networks(river_networks_valid_strahler)
   ),
 
-  tar_target(
+  tar_force(
     db_river_networks_clean,
     write_as_lines_to_db(
       river_networks_clean,
       LINES_CLEAN
-    )
+    ),
+    force = exists_table(LINES_CLEAN)
   ),
 
-  tar_target(
+  tar_force(
     db_connected_but_merged_river_networks,
     write_connected_but_merged_river_networks(
       LINES_CLEAN,
@@ -52,7 +54,8 @@ preprocessing_targets <- c(
       depends_on = list(
         db_river_networks_clean
       )
-    )
+    ),
+    force = exists_table(LINES_CONNECTED_ID)
   ),
 
   tar_target(
@@ -83,11 +86,12 @@ preprocessing_targets <- c(
     dissolve_line_features_between_junctions(river_networks_without_brackets)
   ),
 
-  tar_target(
+  tar_force(
     db_river_networks_dissolved_junctions_after,
     write_as_lines_to_db(
       river_networks_dissolved_junctions_after,
-      LINES_RAW)
+      LINES_RAW),
+    force = exists_table(LINES_RAW)
   ),
 
   tar_target(
@@ -130,6 +134,7 @@ preprocessing_targets <- c(
     ),
     pattern = map(streamorders)
   ),
+  
   # TODO: make dependent on config.yml
   tar_force(
     cellsize,

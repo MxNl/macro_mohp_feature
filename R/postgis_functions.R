@@ -195,7 +195,11 @@ nearest_neighbours_between <- function(
 }
 
 composite_name <- function(table_name, stream_order_id) {
-  ifelse(is.null(stream_order_id), table_name, glue::glue('{table_name}_id_{stream_order_id}'))
+  if(is.null(stream_order_id)){
+    table_name
+  } else {
+    glue::glue('{table_name}_id_{stream_order_id}')
+  }
 }
 
 geometry_of <- function(table) { paste0(table, '.geometry') }
