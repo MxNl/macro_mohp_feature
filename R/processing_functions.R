@@ -88,9 +88,15 @@ clean_river_networks <-
 
     river_network %>%
       keep_relevant_columns() %>%
-      remove_invalid_streamorder_values() %>%
       st_zm() %>%
+      streamorder_as_integer() %>% 
       add_feature_index_column()
+  }
+
+streamorder_as_integer <- 
+  function(river_network) {
+    river_network %>% 
+      mutate(strahler = as.integer(strahler))
   }
 
 split_river_network <-
