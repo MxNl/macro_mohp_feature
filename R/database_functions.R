@@ -3,7 +3,7 @@ connect_to_database <- function() {
     drv = RPostgres::Postgres(),
     user = "postgres",
     host = "localhost",
-    dbname = "postgis"
+    dbname = DATABASENAME
   )
 }
 
