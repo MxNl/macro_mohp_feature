@@ -7,13 +7,16 @@ connect_to_database <- function() {
   )
 }
 
-create_table <- function(query, table, index_column = NULL) {
+create_table <- function(query, table, index_column = NULL, geo_index_column = NULL) {
   connection <- connect_to_database()
   db_execute(glue::glue("DROP TABLE IF EXISTS {table}"), connection = connection)
   db_execute(query, connection = connection)
 
   if (!is.null(index_column)) {
     set_index(table, index_column, connection)
+  }
+  if (!is.null(geo_index_column)) {
+    set_geo_index(table, geo_index_column, connection)
   }
 }
 

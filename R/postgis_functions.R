@@ -109,6 +109,7 @@ make_grid_centroids_in_db <- function(
   table_name_centroids_basis,
   table_name_destination,
   index_column = NULL,
+  geo_index_column = NULL,
   depends_on = NULL
 ) {
 
@@ -124,7 +125,7 @@ make_grid_centroids_in_db <- function(
         )
         ")
 
-  create_table(query, table_name_destination, index_column)
+  create_table(query, table_name_destination, index_column, geo_index_column)
   Sys.time()
 }
 
