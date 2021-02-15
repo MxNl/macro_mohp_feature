@@ -47,38 +47,6 @@ reclassify_relevant_canals_and_ditches_and_drop_others <-
       add_feature_index_column()
   }
 
-
-impute_line_features_with_invalid_strahler_value <-
-  function(river_network) {
-    ### Test
-    # river_network <- tar_read(river_networks_only_rivers)
-    ###
-    features_with_invalid_strahler <-
-      river_network %>%
-        filter(strahler %in% INVALID_STRAHLER_VALUES)
-
-    valid_strahler <-
-      features_with_invalid_strahler %>%
-        select(strahler, inspire_id) %>%
-        st_join(select(river_network, strahler), .predicate = st_touches) %>%
-        as_tibble() %>%
-        mutate(geometry = as.character(geometry)) %>%
-        filter(!(strahler.y %in% INVALID_STRAHLER_VALUES)) %>%
-        group_by(geometry, strahler.y) %>%
-        summarise(n = n(), inspire_id = unique(inspire_id)) %>%
-        arrange(n) %>%
-        slice(1) %>%
-        ungroup() %>%
-        select(inspire_id, strahler.y)
-
-    river_network %>%
-      left_join(valid_strahler, by = "inspire_id") %>%
-      mutate(strahler = if_else(is.na(strahler.y), strahler, strahler.y)) %>%
-      select(-strahler.y) %>%
-      add_feature_index_column()
-  }
-
-
 clean_river_networks <-
   function(river_network) {
     #### Test
@@ -88,9 +56,15 @@ clean_river_networks <-
 
     river_network %>%
       keep_relevant_columns() %>%
-      remove_invalid_streamorder_values() %>%
       st_zm() %>%
+      streamorder_as_integer() %>% 
       add_feature_index_column()
+  }
+
+streamorder_as_integer <- 
+  function(river_network) {
+    river_network %>% 
+      mutate(strahler = as.integer(strahler))
   }
 
 split_river_network <-
@@ -411,7 +385,6 @@ drop_shorter_bracket_line_features <-
       slice(1) %>%
       ungroup() %>%
       select(
-        # connected_feature_id, 
         strahler) %>%
       add_feature_index_column()
   }
@@ -734,10 +707,15 @@ impute_streamorder <-
   function(sf_lines, studyarea) {
     test <- FALSE
     if (test) {
-      sf_lines <- tar_read(river_networks_only_rivers) %>%
-        mutate(strahler = if_else(feature_id %in% c(212, 113, 202, 89), -9999, strahler))
-      studyarea <- tar_read(selected_studyarea) %>% st_cast("LINESTRING")
+      sf_lines <- tar_read(river_networks_dissolved_junctions_after) %>%
+        mutate(strahler = if_else(feature_id %in% c(212, 113, 202, 89), -9999L, strahler))
+      studyarea <- tar_read(selected_studyarea)
     }
+    
+    studyarea <- 
+      studyarea %>%
+      st_cast("LINESTRING")
+    
     sf_lines <-
       sf_lines %>%
         mutate(strahler = as.integer(strahler))
@@ -779,7 +757,7 @@ impute_streamorder <-
 
     impute_with <-
       lines_canals_endpoints_join %>%
-        map_int(impute_streamorder_by_case) %>%
+        map_int(impute_streamorder_by_case, studyarea) %>%
         tibble(feature_id = feature_id_order,
                strahler = .)
 
@@ -793,7 +771,7 @@ impute_streamorder <-
 
 
 impute_streamorder_by_case <-
-  function(x) {
+  function(x, studyarea) {
 
     if (is_case_a(x, studyarea)) {
       impute_case_a(x)

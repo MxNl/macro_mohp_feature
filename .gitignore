@@ -12,3 +12,4 @@ qgis
 .tmp
 .idea
 logs
+*.yml

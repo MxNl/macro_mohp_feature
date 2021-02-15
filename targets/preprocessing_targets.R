@@ -1,19 +1,19 @@
 preprocessing_targets <- c(
   pipeline_for(AREA),
 
-  tar_target(
+  tar_force(
     db_selected_studyarea,
     write_selected_studyarea(
       selected_studyarea,
       SELECTED_STUDYAREA_TABLE
-    )
+    ),
+    force = exists_table(SELECTED_STUDYAREA_TABLE)
   ),
 
   tar_target(
     river_networks_clip,
     clip_river_networks(
       river_networks,
-      #river_basins,
       selected_studyarea
     )
   ),
@@ -27,24 +27,20 @@ preprocessing_targets <- c(
   ),
 
   tar_target(
-    river_networks_valid_strahler,
-    impute_line_features_with_invalid_strahler_value(river_networks_only_rivers)
-  ),
-
-  tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_valid_strahler)
+    clean_river_networks(river_networks_only_rivers)
   ),
 
-  tar_target(
+  tar_force(
     db_river_networks_clean,
     write_as_lines_to_db(
       river_networks_clean,
       LINES_CLEAN
-    )
+    ),
+    force = exists_table(LINES_CLEAN)
   ),
 
-  tar_target(
+  tar_force(
     db_connected_but_merged_river_networks,
     write_connected_but_merged_river_networks(
       LINES_CLEAN,
@@ -52,7 +48,8 @@ preprocessing_targets <- c(
       depends_on = list(
         db_river_networks_clean
       )
-    )
+    ),
+    force = exists_table(LINES_CONNECTED_ID)
   ),
 
   tar_target(
@@ -82,19 +79,28 @@ preprocessing_targets <- c(
     river_networks_dissolved_junctions_after,
     dissolve_line_features_between_junctions(river_networks_without_brackets)
   ),
-
+  
   tar_target(
-    db_river_networks_dissolved_junctions_after,
-    write_as_lines_to_db(
+    river_networks_valid_strahler,
+    impute_streamorder(
       river_networks_dissolved_junctions_after,
-      LINES_RAW)
+      selected_studyarea
+      )
+  ),
+
+  tar_force(
+    db_river_networks_valid_strahler,
+    write_as_lines_to_db(
+      river_networks_valid_strahler,
+      LINES_RAW),
+    force = exists_table(LINES_RAW)
   ),
 
   tar_target(
     river_networks_strahler_merge,
     merge_same_strahler_segments(
       depends_on = list(
-        db_river_networks_dissolved_junctions_after
+        db_river_networks_valid_strahler
       )
     )
   ),
@@ -130,6 +136,7 @@ preprocessing_targets <- c(
     ),
     pattern = map(streamorders)
   ),
+  
   # TODO: make dependent on config.yml
   tar_force(
     cellsize,
@@ -153,11 +160,12 @@ preprocessing_targets <- c(
       GRID_POLYGONS_TABLE,
       GRID_CENTROIDS,
       index_column = "grid_id",
+      geo_index_column = "geometry",
       depends_on = list(db_grid_polygons))
-  ),
-  # TODO: do in target above.
-  tar_target(
-    db_geo_indices,
-    set_geo_indices(GRID_CENTROIDS, depends_on = db_grid)
   )
+  # TODO: do in target above.
+  # tar_target(
+  #   db_geo_indices,
+  #   set_geo_indices(GRID_CENTROIDS, depends_on = db_grid)
+  # )
 )

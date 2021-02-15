@@ -109,6 +109,7 @@ make_grid_centroids_in_db <- function(
   table_name_centroids_basis,
   table_name_destination,
   index_column = NULL,
+  geo_index_column = NULL,
   depends_on = NULL
 ) {
 
@@ -124,7 +125,7 @@ make_grid_centroids_in_db <- function(
         )
         ")
 
-  create_table(query, table_name_destination, index_column)
+  create_table(query, table_name_destination, index_column, geo_index_column)
   Sys.time()
 }
 
@@ -195,7 +196,11 @@ nearest_neighbours_between <- function(
 }
 
 composite_name <- function(table_name, stream_order_id) {
-  ifelse(is.null(stream_order_id), table_name, glue::glue('{table_name}_id_{stream_order_id}'))
+  if(is.null(stream_order_id)){
+    table_name
+  } else {
+    glue::glue('{table_name}_id_{stream_order_id}')
+  }
 }
 
 geometry_of <- function(table) { paste0(table, '.geometry') }

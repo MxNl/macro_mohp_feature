@@ -3,17 +3,20 @@ connect_to_database <- function() {
     drv = RPostgres::Postgres(),
     user = "postgres",
     host = "localhost",
-    dbname = "postgis_test"
+    dbname = DATABASENAME
   )
 }
 
-create_table <- function(query, table, index_column = NULL) {
+create_table <- function(query, table, index_column = NULL, geo_index_column = NULL) {
   connection <- connect_to_database()
   db_execute(glue::glue("DROP TABLE IF EXISTS {table}"), connection = connection)
   db_execute(query, connection = connection)
 
   if (!is.null(index_column)) {
     set_index(table, index_column, connection)
+  }
+  if (!is.null(geo_index_column)) {
+    set_geo_index(table, geo_index_column, connection)
   }
 }
 
@@ -80,6 +83,13 @@ hash_of_db <- function(table_name) {
 
 exists_table <- function(table_name_source) {
   !DBI::dbExistsTable(connect_to_database(), table_name_source)
+}
+
+exist_tables_with_prefix <- function(table_name_source_prefix, streamorder) {
+  table_names <- composite_name(table_name_source_prefix, streamorder)
+  table_names %>%
+    map_lgl(~!DBI::dbExistsTable(connect_to_database(), .x)) %>% 
+    any()
 }
 
 drop_all_tables <- function() {
