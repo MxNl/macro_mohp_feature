@@ -702,12 +702,18 @@ sfpolygon_to_raster <- function(sf_polygon, field_name) {
                          field = field_name)
 }
 
+filter_intersecting_features <- 
+  function(x, y) {
+    x %>% 
+      filter(st_intersects(., y, sparse = FALSE) %>% apply(1, any))
+  }
+
 impute_streamorder <-
   function(sf_lines, studyarea) {
     test <- FALSE
     if (test) {
-      sf_lines <- tar_read(river_networks_dissolved_junctions_after) %>%
-        mutate(strahler = if_else(feature_id %in% c(212, 113, 202, 89), -9999L, strahler))
+      sf_lines <- tar_read(river_networks_dissolved_junctions_after)# %>%
+        # mutate(strahler = if_else(feature_id %in% c(212, 113, 202, 89), -9999L, strahler))
       studyarea <- tar_read(selected_studyarea)
     }
     
@@ -717,11 +723,13 @@ impute_streamorder <-
     
     sf_lines <-
       sf_lines %>%
-        mutate(strahler = as.integer(strahler))
+        mutate(strahler = replace_na(strahler, INVALID_STRAHLER_VALUES),
+               strahler = as.integer(strahler)
+               )
 
     lines_na_streamorder <-
       sf_lines %>%
-        filter(strahler %in% INVALID_STRAHLER_VALUES)
+        filter(strahler %in% as.integer(INVALID_STRAHLER_VALUES))
 
     lines_valid_streamorder <-
       sf_lines %>%
@@ -730,26 +738,37 @@ impute_streamorder <-
     endpoints_one_side <-
       lines_na_streamorder %>%
         st_endpoint() %>%
-        st_as_sf() %>%
-        mutate(side = "one")
-
+        st_as_sf()
+    
     endpoints_other_side <-
       lines_na_streamorder %>%
         st_startpoint() %>%
-        st_as_sf() %>%
-        mutate(side = "other")
-
+        st_as_sf()
+    
     endpoints <-
       endpoints_one_side %>%
-        bind_rows(endpoints_other_side)
+        bind_rows(endpoints_other_side) %>% 
+        distinct()
 
+    lines_valid_streamorder_filter <- 
+      lines_valid_streamorder %>% 
+      filter_intersecting_features(endpoints)
+
+    lines_filter <- 
+      sf_lines %>% 
+      filter_intersecting_features(endpoints)
+    
     lines_canals_endpoints_join <-
       endpoints %>%
-        st_join(lines_na_streamorder) %>%
+        st_join(lines_na_streamorder) %>% 
         group_by(feature_id) %>%
         group_split() %>%
-        map(~st_join(., lines_valid_streamorder))
-
+        map_dfr(~st_join(., lines_filter)) %>% 
+        filter(feature_id.x != feature_id.y) %>% 
+        group_by(feature_id.x) %>% 
+        group_split() %>% 
+        map(add_side_column)
+        
     feature_id_order <-
       lines_canals_endpoints_join %>%
         map_int(~.x %>% slice(1) %>% pull(feature_id.x))
@@ -768,22 +787,67 @@ impute_streamorder <-
       relocate(feature_id, strahler, everything())
   }
 
+add_side_column <-
+  function(x) {
+    x <-
+      x %>%
+      mutate(geometry_char = as.character(geometry))
+
+    unique_geometries <-
+      x %>%
+      pull(geometry_char) %>%
+      unique()
+
+    if (length(unique_geometries) == 1) {
+      x <- x %>%
+        mutate(side = "one", .before = 1)
+    } else if (length(unique_geometries) == 2) {
+      x <- x %>%
+        mutate(side = if_else(
+          geometry_char == unique_geometries[1],
+          "one",
+          "other"
+        ), .before = 1)
+    }
+    x %>%
+      select(-geometry_char)
+  }
 
 impute_streamorder_by_case <-
   function(x, studyarea) {
+    touches_n_other_feature_without_streamorder <-
+      x %>%
+      filter(strahler.y %in% INVALID_STRAHLER_VALUES) %>%
+      nrow()
 
-    if (is_case_a(x, studyarea)) {
-      impute_case_a(x)
-    } else if (is_case_b(x, studyarea)) {
-      impute_case_b(x)
-    } else if (is_case_c(x)) {
-      impute_case_c(x)
-    } else if (is_case_d(x)) {
-      impute_case_d(x)
-    } else if (is_case_e(x)) {
-      impute_case_e(x)
+    touches_no_other_feature_without_streamorder <-
+      touches_n_other_feature_without_streamorder %>%
+      magrittr::equals(0)
+
+    if (touches_no_other_feature_without_streamorder) {
+      if (is_case_a(x, studyarea)) {
+        impute_case_a(x)
+      } else if (is_case_b(x, studyarea)) {
+        impute_case_b(x)
+      } else if (is_case_c(x)) {
+        impute_case_c(x)
+      } else if (is_case_d(x)) {
+        impute_case_d(x)
+      } else if (is_case_d_sub(x)) {
+        impute_case_d_sub(x)
+      } else if (is_case_e(x)) {
+        impute_case_e(x)
+      } else {
+        stop("no matching case (inner for)")
+      }
+      # TODO This is just a dirt solution right now. Needs to be solved for features
+      # that are connected to other line segments without strahler
+    } else if (touches_n_other_feature_without_streamorder == nrow(x)) {
+      impute_case_f(x)
+    } else if (touches_n_other_feature_without_streamorder > 0) {
+      impute_case_g(x)
     } else {
-      stop("no matching case")
+      stop("no matching case (inner for)")
     }
   }
 
@@ -792,6 +856,21 @@ impute_case_a <-
     x %>%
       pull(strahler.y) %>%
       max(na.rm = TRUE) %>%
+      as.integer()
+  }
+
+impute_case_f <-
+  function(x) {
+    1L
+  }
+
+impute_case_g <-
+  function(x) {
+    x %>%
+      pull(strahler.y) %>%
+      unique() %>%
+      sort() %>%
+      magrittr::extract(2) %>%
       as.integer()
   }
 
@@ -820,6 +899,15 @@ impute_case_d <-
       as.integer()
   }
 
+impute_case_d_sub <-
+  function(x) {
+    x %>%
+      pull(strahler.y) %>%
+      unique() %>%
+      chuck(1) %>% 
+      as.integer()
+  }
+
 impute_case_e <-
   function(x) {
     unique_streamorders <-
@@ -831,15 +919,17 @@ impute_case_e <-
       unique_streamorders %>%
         length()
 
-    if (n_streamorders == 2) {
+    if(n_streamorders == 2) {
       unique_streamorders %>%
         max(na.rm = TRUE) %>%
         as.integer()
-    } else if (n_streamorders == 3) {
+    } else if(n_streamorders == 3) {
       unique_streamorders %>%
         sort() %>%
         magrittr::extract(2) %>%
         as.integer()
+    } else if(n_streamorders == 1) {
+      unique_streamorders
     } else {
       stop("More than 3 unique streamorders at junction. Investigate!")
     }
@@ -929,17 +1019,45 @@ is_case_d <-
         isTRUE()
 
     if (condition_a) {
-      condition_b <-
-        x %>%
-          group_by(side) %>%
-          summarise(n = n(),
-                    strahler = unique(strahler.y),
-                    .groups = "drop") %>%
-          pull(n) %>%
-          all.equal(c(1, 1)) %>%
-          isTRUE()
+      x %>%
+        group_by(side) %>%
+        summarise(n = n(),
+                  strahler = unique(strahler.y),
+                 .groups = "drop") %>%
+        pull(strahler) %>%
+        unique() %>% 
+        length() %>% 
+        magrittr::equals(1)
+    } else {
+      condition_a
+    }
+  }
 
-      condition_b
+is_case_d_sub <-
+  function(x) {
+    
+    x <-
+      x %>%
+      filter(!is.na(feature_id.y))
+    
+    condition_a <-
+      x %>%
+      group_by(side) %>%
+      count() %>%
+      pull(n) %>%
+      all.equal(c(1, 1)) %>%
+      isTRUE()
+    
+    if (condition_a) {
+      x %>%
+        group_by(side) %>%
+        summarise(n = n(),
+                  strahler = unique(strahler.y),
+                  .groups = "drop") %>%
+        pull(strahler) %>%
+        unique() %>% 
+        length() %>% 
+        magrittr::equals(2)
     } else {
       condition_a
     }
