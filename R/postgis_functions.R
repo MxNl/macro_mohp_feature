@@ -10,8 +10,16 @@ drop_disconnected_river_networks <-
       add_feature_index_column()
   }
 
+read_connected_river_networks <-
+  function(table_name_read, depends_on = NULL) {
+    length(depends_on)
+    
+    get_table_from_postgress(table_name_read) %>%
+      query_result_as_sf() %>%
+      add_feature_index_column()
+  }
 
-run_query_connected <- function(table_name_read, table_name_destination) {
+run_query_connected <- function(table_name_read, table_name_destination, table_name_studyarea) {
   query <- glue::glue("
       CREATE TABLE {table_name_destination} AS (
 	      WITH endpoints AS (
@@ -25,30 +33,46 @@ run_query_connected <- function(table_name_read, table_name_destination) {
 	        FROM endpoints
 	      ), clusters_with_ids AS (
 	        SELECT
-	          row_number() OVER () AS {table_name_destination},
+	          row_number() OVER () AS connected_id,
 	          ST_CollectionHomogenize(geometry) AS geometry
 	        FROM clusters
-	      )
+	      ), connected_merged AS (
       	SELECT
-		      {table_name_destination},
+		      connected_id,
 		      ST_Collect({table_name_read}.geometry) AS geometry
 	      FROM
 	        {table_name_read}
 	        LEFT JOIN
 	        clusters_with_ids
 	        ON ST_Intersects({table_name_read}.geometry, clusters_with_ids.geometry)
-	      GROUP BY {table_name_destination}
+	      GROUP BY connected_id
+        ), only_connected AS (
+	        SELECT
+		        a.geometry
+	        FROM connected_merged a, {table_name_studyarea} b
+	    	  WHERE ST_Intersects(a.geometry, ST_ExteriorRing(b.geometry))
+        )
+	      SELECT
+		      feature_id,
+	      	strahler,
+		      a.geometry AS geometry
+	      FROM {table_name_read} a, only_connected b
+		    WHERE ST_Within(a.geometry, b.geometry)
       )
     ")
   print(query)
   create_table(query, table_name_destination)
 }
 
-write_connected_but_merged_river_networks <- function(table_name_read, table_name_destination, depends_on) {
+write_connected_river_networks <- function(table_name_read,
+                                           table_name_destination,
+                                           table_name_studyarea,
+                                           depends_on) {
   length(depends_on)
   run_query_connected(
     table_name_read,
-    table_name_destination
+    table_name_destination,
+    table_name_studyarea
   )
   Sys.time()
 }

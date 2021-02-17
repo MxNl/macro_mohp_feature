@@ -76,7 +76,6 @@ get_table_from_postgress <- function(table_name_read) {
   DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name_read}"))
 }
 
-
 write_as_lines_to_db <- function(sf_lines, table_name_destination) {
   sf_lines %>%
     st_cast("LINESTRING") %>%

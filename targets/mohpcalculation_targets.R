@@ -2,6 +2,7 @@ mohpcalculation_targets <- list(
 
   tar_target(
     # TODO: rename to schema
+    # TODO: distances as integers in m to save disc space and memory
     db_nearest_neighbours,
     nearest_neighbours_between(
       table_name_destination = NN_GRID_RIVERS_TABLE,

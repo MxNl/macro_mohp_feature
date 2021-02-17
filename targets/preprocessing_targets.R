@@ -41,10 +41,11 @@ preprocessing_targets <- c(
   ),
 
   tar_force(
-    db_connected_but_merged_river_networks,
-    write_connected_but_merged_river_networks(
+    db_connected_river_networks,
+    write_connected_river_networks(
       LINES_CLEAN,
       LINES_CONNECTED_ID,
+      SELECTED_STUDYAREA_TABLE,
       depends_on = list(
         db_river_networks_clean
       )
@@ -54,13 +55,11 @@ preprocessing_targets <- c(
 
   tar_target(
     river_networks_only_connected,
-    drop_disconnected_river_networks(
-      river_networks_clean,
-      selected_studyarea,
+    read_connected_river_networks(
       LINES_CONNECTED_ID,
       depends_on = list(
         db_river_networks_clean,
-        db_connected_but_merged_river_networks
+        db_connected_river_networks
       )
     )
   ),
@@ -163,9 +162,4 @@ preprocessing_targets <- c(
       geo_index_column = "geometry",
       depends_on = list(db_grid_polygons))
   )
-  # TODO: do in target above.
-  # tar_target(
-  #   db_geo_indices,
-  #   set_geo_indices(GRID_CENTROIDS, depends_on = db_grid)
-  # )
 )

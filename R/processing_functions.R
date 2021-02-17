@@ -750,9 +750,9 @@ impute_streamorder <-
         bind_rows(endpoints_other_side) %>% 
         distinct()
 
-    lines_valid_streamorder_filter <- 
-      lines_valid_streamorder %>% 
-      filter_intersecting_features(endpoints)
+    # lines_valid_streamorder_filter <- 
+    #   lines_valid_streamorder %>% 
+    #   filter_intersecting_features(endpoints)
 
     lines_filter <- 
       sf_lines %>% 
