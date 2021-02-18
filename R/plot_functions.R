@@ -135,6 +135,25 @@ plot_before_vs_after <-
     return(plot)
   }
 
+plot_area_around_feature_id <- 
+  function(river_network, feature_id_buffer, buffer_distance = 1E3) {
+    
+    area <- 
+      river_network %>% 
+      filter(feature_id == feature_id_buffer) %>% 
+      st_buffer(dist = buffer_distance)
+    
+    river_network_in_area <- 
+      river_network %>% 
+      filter_intersecting_features(area) %>%
+      # st_intersection(area) %>% 
+      st_cast("LINESTRING")
+    
+    river_network_in_area %>% 
+        mutate(strahler = as.character(strahler)) %>% 
+        plot_lines_coloured_by_categorical_attribute(strahler) +
+        geom_sf_label(aes(label = feature_id))
+  }
 
 # stars::read_stars("output_data/mohp_germany_lp_order1_500m_res.tiff") %>% 
 #   plot()

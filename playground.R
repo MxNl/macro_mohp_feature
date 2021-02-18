@@ -11,11 +11,6 @@ library(tarchetypes)
 library(tidyverse)
 library(here)
 
-tar_read(river_networks_files) %>%
-  map_dfr(read_sf) %>%
-  names()
-
-DBI::dbExecute(connect_to_database(), "CREATE UNIQUE INDEX grid_id_idx ON grid (grid_id);")
 
 
 tar_read(filepath_canals_to_reclassify)
@@ -43,6 +38,83 @@ tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
+
+
+
+#TODO filter by streamorder
+rivers_test <- tar_read(river_networks_only_connected)
+rivers_merge_test <- 
+  get_table_from_postgress("merge_test") %>% 
+  query_result_as_sf() %>% 
+  add_feature_index_column()
+
+rivers_test %>% 
+  st_cast("MULTILINESTRING") %>% 
+  group_by(strahler) %>% 
+  summarise()
+
+
+
+
+rivers_merge_test %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
+
+rivers_test %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
+
+endpoints_one_side <-
+  rivers_test %>%
+  st_endpoint() %>%
+  st_as_sf()
+
+endpoints_other_side <-
+  rivers_test %>%
+  st_startpoint() %>%
+  st_as_sf()
+
+endpoints <-
+  endpoints_one_side %>%
+  bind_rows(endpoints_other_side) %>% 
+  distinct()
+
+rivers_test_filter <- 
+  rivers_test %>% 
+  filter_intersecting_features(endpoints)
+
+# lines_canals_endpoints_join <-
+  endpoints %>%
+  add_feature_index_column(column_name = "endpoint_id") %>% 
+  st_join(rivers_test) %>% 
+  group_by(endpoint_id) %>%
+  mutate(n_features = n()) %>% 
+  filter(n_features > 2) %>% 
+  mutate(n_distint_strahler = length(unique(strahler))) %>% 
+  filter(n_distint_strahler > 1)
+
+  group_split() %>%
+  map_dfr(~st_join(., lines_filter)) %>% 
+  filter(feature_id.x != feature_id.y) %>% 
+  group_by(feature_id.x) %>% 
+  group_split() %>% 
+  map(add_side_column)
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 tar_read(selected_studyarea) %>% 
   ggplot() +geom_sf()
@@ -97,6 +169,8 @@ test %>%
 
 
 
+
+
 glue::glue("
         CREATE EXTENSION postgis_raster;
         CREATE TABLE {GRID_POLYGONS_TABLE} AS (
@@ -116,10 +190,12 @@ glue::glue("
 tar_read(base_grid_centroids) %>% 
   as_tibble()
 
-get_table_from_postgress(GRID_CENTROIDS) %>% 
+get_table_from_postgress("merge_test") %>% 
   query_result_as_sf() %>% 
-  as_tibble() %>% 
-  distinct(grid_id)
+  add_feature_index_column() %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
+  plotly::ggplotly()
 
 
 test <- 
@@ -319,8 +395,9 @@ tar_read(river_networks_only_connected) %>%
 tar_read(river_networks_clean)
 
 
-tar_read(river_networks_strahler_merge) %>% 
-  plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
+tar_read(river_networks_only_connected) %>% 
+  mutate(strahler = as.character(strahler)) %>% 
+  plot_lines_coloured_by_categorical_attribute(strahler) %>% 
   plotly::ggplotly()
 
 list(
