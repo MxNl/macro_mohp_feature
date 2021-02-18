@@ -43,15 +43,82 @@ tar_read(river_networks_clean)
 
 #TODO filter by streamorder
 rivers_test <- tar_read(river_networks_only_connected)
-rivers_merge_test <- 
-  get_table_from_postgress("merge_test") %>% 
-  query_result_as_sf() %>% 
-  add_feature_index_column()
+streamorders <- tar_read(streamorders)
+# rivers_merge_test <- 
+#   get_table_from_postgress("merge_test") %>% 
+#   query_result_as_sf() %>% 
+#   add_feature_index_column()
 
-rivers_test %>% 
-  st_cast("MULTILINESTRING") %>% 
-  group_by(strahler) %>% 
-  summarise()
+# rivers_test %>% 
+#   st_cast("MULTILINESTRING") %>% 
+#   group_by(strahler) %>% 
+#   summarise()
+
+river_network <- rivers_test
+streamorder <- 1
+table_name_destination_prefix <- "river_networks_merge_single_streamorder"
+table_name_read <- LINES_CONNECTED_ID
+
+
+
+merge_connected_lines_by_streamorder <- 
+  function(table_name_read,
+           table_name_destination_prefix,
+           streamorder) {
+    
+    table_name_destination <- 
+      composite_name(table_name_destination_prefix, streamorder)
+    
+    run_query_connected_single_streamorder(
+      table_name_read,
+      table_name_destination,
+      streamorder
+    )
+  }
+
+run_query_connected_single_streamorder <- 
+  function(table_name_read, 
+           table_name_destination, streamorder) {
+    query <- glue::glue("
+      CREATE TABLE {table_name_destination} AS (
+	      WITH single_streamorders AS (
+	        SELECT
+	          *
+	        FROM {table_name_read}
+	        WHERE strahler = {streamorder}
+	      ), endpoints AS (
+	        SELECT
+	          ST_Collect(ST_StartPoint(geometry),
+	          ST_EndPoint(geometry)) AS geometry
+	        FROM single_streamorders
+	      ), clusters AS (
+	        SELECT
+	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
+	        FROM endpoints
+	      ), clusters_with_ids AS (
+	        SELECT
+	          row_number() OVER () AS connected_id,
+	          ST_CollectionHomogenize(geometry) AS geometry
+	        FROM clusters
+	      )
+      	SELECT
+		      connected_id,
+		      ST_Collect(single_streamorders.geometry) AS geometry
+	      FROM
+	        single_streamorders
+	        LEFT JOIN
+	        clusters_with_ids
+	        ON ST_Intersects(single_streamorders.geometry, clusters_with_ids.geometry)
+	      GROUP BY connected_id
+	      )
+    ")
+    print(query)
+    create_table(query, table_name_destination)
+  }
+
+streamorders %>% 
+  map(~merge_connected_lines_by_streamorder(LINES_CONNECTED_ID, "river_networks_merge_single_streamorder", .x))
+
 
 
 
@@ -62,7 +129,8 @@ rivers_merge_test %>%
 
 rivers_test %>% 
   mutate(feature_id = as.character(feature_id)) %>% 
-  plot_lines_coloured_by_categorical_attribute(feature_id)
+  plot_lines_coloured_by_categorical_attribute(feature_id) +
+  facet_wrap(~strahler)
 
 endpoints_one_side <-
   rivers_test %>%
@@ -84,7 +152,7 @@ rivers_test_filter <-
   filter_intersecting_features(endpoints)
 
 # lines_canals_endpoints_join <-
-  endpoints %>%
+endpoints %>%
   add_feature_index_column(column_name = "endpoint_id") %>% 
   st_join(rivers_test) %>% 
   group_by(endpoint_id) %>%
@@ -93,7 +161,7 @@ rivers_test_filter <-
   mutate(n_distint_strahler = length(unique(strahler))) %>% 
   filter(n_distint_strahler > 1)
 
-  group_split() %>%
+group_split() %>%
   map_dfr(~st_join(., lines_filter)) %>% 
   filter(feature_id.x != feature_id.y) %>% 
   group_by(feature_id.x) %>% 
@@ -101,8 +169,8 @@ rivers_test_filter <-
   map(add_side_column)
 
 
-  
-  
+
+
 
 
 
@@ -133,35 +201,35 @@ test <-
   mutate(strahler = if_else(feature_id %in% c(212, 113, 114, 202, 89), -9999, strahler))
 
 {test %>% 
-  ggplot() +
-  geom_sf(aes(colour = as.character(strahler))) +
-  # geom_sf_label(data = st_centroid(test), 
-  #               aes(label = feature_id, 
-  #                   colour = is.element(strahler, INVALID_STRAHLER_VALUES)), 
-  #               label.size = 0, 
-  #               alpha =.6) +
-  geom_sf(data = studyarea, fill = NA) +
-  theme(legend.position = "none")} %>% 
+    ggplot() +
+    geom_sf(aes(colour = as.character(strahler))) +
+    # geom_sf_label(data = st_centroid(test), 
+    #               aes(label = feature_id, 
+    #                   colour = is.element(strahler, INVALID_STRAHLER_VALUES)), 
+    #               label.size = 0, 
+    #               alpha =.6) +
+    geom_sf(data = studyarea, fill = NA) +
+    theme(legend.position = "none")} %>% 
   plotly::ggplotly()
-  
+
 
 {test %>% 
-  impute_streamorder(st_cast(studyarea, "LINESTRING")) %>% 
-  ggplot() +
-  geom_sf(aes(colour = as.character(strahler))) +
-  # geom_sf_label(data = st_centroid(test),
-  #               aes(label = feature_id,
-  #                   colour = is.element(strahler, INVALID_STRAHLER_VALUES)),
-  #               label.size = 0,
-  #               alpha =.6) +
-  geom_sf(data = studyarea, fill = NA)} %>% 
+    impute_streamorder(st_cast(studyarea, "LINESTRING")) %>% 
+    ggplot() +
+    geom_sf(aes(colour = as.character(strahler))) +
+    # geom_sf_label(data = st_centroid(test),
+    #               aes(label = feature_id,
+    #                   colour = is.element(strahler, INVALID_STRAHLER_VALUES)),
+    #               label.size = 0,
+    #               alpha =.6) +
+    geom_sf(data = studyarea, fill = NA)} %>% 
   plotly::ggplotly()
 
 
 test %>% 
   impute_streamorder(st_cast(studyarea, "LINESTRING")) %>% 
   filter(feature_id == 113)
-  
+
 
 test %>% 
   impute_streamorder(studyarea)
@@ -215,10 +283,10 @@ tar_read(river_networks_without_brackets)
 test <- tar_read(river_networks_only_connected) %>% 
   # as_tibble() %>% 
   slice(1:5)
-  
+
 tar_read(river_networks_only_connected) %>% st_geometry_type()
-  
-  st_write("output_data/germany_rivers_only_connected.shp")
+
+st_write("output_data/germany_rivers_only_connected.shp")
 
 # rivers before calculation
 test <- 
@@ -316,27 +384,27 @@ river_basins <- tar_read(river_basins)
 studyarea <- tar_read(selected_studyarea)
 river_networks <- tar_read(river_networks)
 
-  relevant_river_basins <- 
-    river_basins %>%
-    filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
-    pull(river_basin_name)
-  
-  
-  river_networks %>%
-    # slice_sample(prop = .6) %>%
-    filter(river_basin_name %in% relevant_river_basins) %>%
-    filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>%
-    st_intersection(studyarea) %>% 
-    st_cast("MULTILINESTRING") %>% 
-    add_feature_index_column()
+relevant_river_basins <- 
+  river_basins %>%
+  filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>% 
+  pull(river_basin_name)
+
+
+river_networks %>%
+  # slice_sample(prop = .6) %>%
+  filter(river_basin_name %in% relevant_river_basins) %>%
+  filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>%
+  st_intersection(studyarea) %>% 
+  st_cast("MULTILINESTRING") %>% 
+  add_feature_index_column()
 
 tar_read(lateral_position_stream_divide_distance) %>% 
   pluck(3) %>% 
   select(lateral_position) %>% 
   st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
   plot()
-  
-  
+
+
 
 test_rivers <- 
   tar_read(river_networks_files_files) %>% 
@@ -366,19 +434,19 @@ thiessen_catchments <-
   test %>% 
   rename(nearest_feature = river_network_by_streamorder_feature_id) %>% 
   make_thiessen_catchments(tar_read(base_grid), .)
-  
+
 thiessen_catchments %>% 
   mutate(feature_id = as.character(row_number())) %>% 
   ggplot() +
   geom_sf(fill = NA)
 
 
-  
+
 test %>% 
   select(distance_meters) %>% 
   st_intersection(st_buffer(sample_n(., 1), dist = 1E4)) %>% 
   mapview::mapview(zcol = "distance_meters", alpha = 0)
-  
+
 
 area_test <- 
   studyarea_subset_plots %>% 
@@ -465,7 +533,7 @@ tar_read(river_networks_only_rivers) %>%
   plot_lines_coloured_by_categorical_attribute(strahler) +
   geom_sf(data = tar_read(studyarea_subset_plots), fill = NA) +
   theme(legend.position = "bottom")
-  
+
 plot_before_vs_after(tar_read(river_networks_clean), tar_read(river_networks_strahler_merge))
 
 log(1:6)+1
@@ -581,7 +649,7 @@ river_networks_strahler_merge %>%
 st_distance(
   filter(river_networks_clean, feature_id == 2) %>% summarise(),
   filter(river_networks_clean, feature_id == 12) %>% summarise()
-  )
+)
 
 # tar_read(coastline) %>% 
 #   # slice(1:5) %>% 
@@ -592,11 +660,11 @@ tar_read(river_networks_strahler_merge) %>%
 
 
 river_networks_strahler_merge %>% 
-    st_as_sf() %>%
-    mutate(id = as.character(1:n())) %>%
-    ggplot() +
-    geom_sf(aes(colour = id))
-  ggplot()
+  st_as_sf() %>%
+  mutate(id = as.character(1:n())) %>%
+  ggplot() +
+  geom_sf(aes(colour = id))
+ggplot()
 
 testplot <-
   ggplot() +
@@ -653,7 +721,7 @@ testplot1 + testplot2
 
 river_network_by_streamorder[[1]] %>% 
   mutate(test = river_network_by_streamorder[[1]] %>% 
-  st_touches(sparse = FALSE))
+           st_touches(sparse = FALSE))
 
 test <- river_network_by_streamorder[[1]] %>% 
   st_touches()
@@ -902,30 +970,30 @@ test_intersection <-
 grid_lateral_position[[1]] %>% 
   sfpolygon_to_raster %>% 
   writeRaster(str_c("output_data/", "mohp_germany_", "order", 1, "_", CELLSIZE, "m_res", ".tif"))
-  
-  fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
-                       field = "lateral_position") %>% 
+
+fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
+                     field = "lateral_position") %>% 
   raster::plot()
 
 test_raster <- 
   test_intersection %>% 
   fasterize::fasterize(raster = raster::raster(., res = 100),
                        field = "lateral_position")
-  # raster::projectRaster(crs = "+init=epsg:25832")
-  raster::plot(test_raster)
-  raster::plot(tar_read(river_network_by_streamorder) %>% sf::st_transform(crs = sf::st_crs(test)), add = TRUE)
+# raster::projectRaster(crs = "+init=epsg:25832")
+raster::plot(test_raster)
+raster::plot(tar_read(river_network_by_streamorder) %>% sf::st_transform(crs = sf::st_crs(test)), add = TRUE)
 
 # stars::st_rasterize()
-  # stars::write_stars("output/test.tiff")
-  # raster::as.raster() %>% 
-  # raster::writeRaster("output/test.tif")
-  plot()
+# stars::write_stars("output/test.tiff")
+# raster::as.raster() %>% 
+# raster::writeRaster("output/test.tif")
+plot()
 
 raster::raster("output/test.tiff") %>% 
   
   ggplot() +
   geom_raster()
-  
+
 
 segment_colours <- 
   tar_read(thiessen_catchments) %>% 
@@ -974,9 +1042,9 @@ polygon %>%
 
 # features_to_reclassify <- 
 #   features_to_reclassify %>% 
-  # mutate(unique_feature_id = str_c(source_id, objectid, sep = "_"),
-  #        .before = 1) %>% 
-  
+# mutate(unique_feature_id = str_c(source_id, objectid, sep = "_"),
+#        .before = 1) %>% 
+
 
 add_source_id <- 
   function(x, index) {
@@ -1010,7 +1078,7 @@ tar_read(river_networks_clean) %>%
   dissolve_line_features_between_junctions() %>% 
   add_feature_index_column() %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id)
-  
+
 
 
 
@@ -1025,6 +1093,6 @@ tar_read(river_networks_dissolved) %>%
 
 
 {tar_read(river_networks_dissolved) %>% 
-  ggplot() +
-  geom_sf() +
-  geom_sf(data = split_points, size = 3)} %>% plotly::ggplotly()
+    ggplot() +
+    geom_sf() +
+    geom_sf(data = split_points, size = 3)} %>% plotly::ggplotly()
