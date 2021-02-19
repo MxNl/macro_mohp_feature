@@ -9,8 +9,9 @@ import_targets <-
     
     tar_target(
       directory_river_networks,
-      DIRECTORY_RIVER_NETWORKS,
-      format = "file"
+      DIRECTORY_RIVER_NETWORKS#,
+      # TODO uncomment for final run
+      # format = "file"
     ),
     
     tar_target(
