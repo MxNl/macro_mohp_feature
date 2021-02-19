@@ -14,15 +14,14 @@ import_targets <-
       # format = "file"
     ),
     
-    tar_target(
-      river_networks_files,
-      list_river_network_files(directory_river_networks),
-    ),
+    # tar_target(
+    #   river_networks_files,
+    #   list_river_network_files(directory_river_networks),
+    # ),
     
     tar_target(
-      river_networks,
-      river_networks_files %>% 
-        future_map_dfr(read_river_networks)
+      river_networks_simple,
+      generate_lines()
     ),
     
     # tar_target(
