@@ -50,7 +50,7 @@ source("R/postgis_functions.R")
 source("R/export_functions.R")
 
 
-plan(multisession)
+# plan(multisession)
 
 logging::basicConfig()
 logging::addHandler(

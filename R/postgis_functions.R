@@ -108,12 +108,22 @@ make_grid_polygons_in_db <- function(
 
   length(depends_on)
 
+  if(CELLSIZE < 1) {
+    cellsize <- CELLSIZE
+  } else {
+    cellsize <- str_c(CELLSIZE, ".0")
+  }
+  
+  cellsize <- 
+    cellsize %>% 
+    as.character()
+  
   query <-
     glue::glue("
         CREATE TABLE {table_name_destination} AS (
           with grid AS (
           	SELECT 
-          	  (ST_PixelAsPolygons(ST_AsRaster(ST_Union(geometry), {CELLSIZE}.0,{CELLSIZE}.0))).geom AS geometry
+          	  (ST_PixelAsPolygons(ST_AsRaster(ST_Union(geometry), {cellsize},{cellsize}))).geom AS geometry
           	FROM {grid_over_polygon}
           )
           	SELECT 
