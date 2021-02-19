@@ -300,8 +300,8 @@ calculate_lateral_position_stream_divide_distance <- function(stream_order_id, d
       SELECT
         {GRID_POLYGONS_TABLE}.grid_id,
         {GRID_POLYGONS_TABLE}.geometry,
-        rivers.distance_meters / (rivers.distance_meters + catchments.distance_meters) AS lateral_position,
-        rivers.distance_meters + catchments.distance_meters AS divide_stream_distance
+        ROUND(rivers.distance_meters / (rivers.distance_meters + catchments.distance_meters) * 100)::INTEGER AS lateral_position,
+        ROUND(rivers.distance_meters + catchments.distance_meters)::INTEGER AS divide_stream_distance
       FROM
         {catchments_table} AS catchments
         INNER JOIN {rivers_table} AS rivers USING(grid_id)

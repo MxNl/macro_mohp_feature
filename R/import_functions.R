@@ -14,15 +14,6 @@ list_river_network_files <-
       fs::path(directory, .)
   }
 
-list_river_basin_files <-
-  function(directory) {
-    directory %>%
-      list.files(recursive = TRUE) %>%
-      keep(str_detect(., ".gpkg$")) %>%
-      keep(str_detect(., "public")) %>%
-      str_c(directory, .)
-  }
-
 read_river_networks <- 
   function(file) {
     river_basin_name <-

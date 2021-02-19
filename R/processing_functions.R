@@ -67,13 +67,6 @@ streamorder_as_integer <-
       mutate(strahler = as.integer(strahler))
   }
 
-split_river_network <-
-  function(river_network) {
-    river_network %>%
-      group_by(connected_feature_id) %>%
-      group_split()
-  }
-
 determine_studyarea_outline_level_germany <-
   function(studyarea, coastline) {
     ### Test
@@ -105,11 +98,6 @@ determine_studyarea_outline_level_europe <-
       st_difference(coastline) %>%
       st_cast("POLYGON") %>%
       select(geometry)
-  }
-
-st_envelope <-
-  function(x) {
-    st_as_sfc(st_bbox(x))
   }
 
 remove_disconnected_line_segments <-
@@ -436,72 +424,6 @@ get_bracket_pairs <-
       select(-name)
   }
 
-get_unique_feature_ids <-
-  function(river_network) {
-    river_network %>%
-      as_tibble() %>%
-      distinct(feature_id) %>%
-      pull(feature_id)
-  }
-
-list_to_long_df <-
-  function(list) {
-    long_format <-
-      tibble(id_a = rep(seq_along(list), lengths(list)),
-             id = unlist(list))
-    return(long_format)
-  }
-
-
-extract_strahler_by_index <-
-  function(sf_lines, index_vector) {
-    sf_lines %>%
-      as_tibble() %>%
-      slice(index_vector) %>%
-      pull(strahler) %>%
-      as.numeric()
-  }
-
-determine_segments_to_merge <-
-  function(index_vector,
-           adjacent_segments_list,
-           adjacent_strahler,
-           segment_strahler) {
-    ##### Test
-    # index <- sample(1:162, 1)
-    # adjacent_strahler <- adjacent_strahler_list[[index]]
-    # segment_strahler <- segment_strahler_list[[index]]
-    ###
-
-    if ((segment_strahler %>% is_empty())) {
-      FALSE
-    }
-    else if (segment_strahler == max(adjacent_strahler, na.rm = TRUE)) {
-      adjacent_segments_list %>%
-        # pluck(index) %>%
-        magrittr::extract(adjacent_strahler == segment_strahler) %>%
-        c(index_vector) %>%
-        sort()
-    } else {
-      FALSE
-    }
-  }
-
-linked_rows <- function(data) {
-  ## helper function
-  ## returns a _function_ to compare two rows of data
-  ##  based on group membership.
-
-  ## Use Vectorize so it works even on vectors of indices
-  Vectorize(function(i, j) {
-    ## numeric: 1= i and j have overlapping group membership
-    common <- vapply(names(data), function(name)
-      data[i, name] == data[j, name],
-                     FUN.VALUE = FALSE)
-    as.numeric(any(common))
-  })
-}
-
 stream_order_filter <-
   function(river_network, stream_order) {
     river_network %>%
@@ -529,24 +451,6 @@ make_grid <-
       mutate(grid_id = row_number())
   }
 
-make_grid_centroids <-
-  function(grid) {
-    grid %>%
-      st_centroid()
-  }
-
-
-make_thiessen_catchments_centroids <-
-  function(river_network, grid, grid_centroids) {
-    grid_centroids %>%
-      mutate(
-        nearest_feature = grid_centroids %>%
-          st_nearest_feature(river_network) %>%
-          as.character(),
-        .before = 1
-      )
-  }
-
 centroids_to_grid <-
   function(centroids, grid) {
     grid %>%
@@ -563,44 +467,6 @@ centroids_to_grid <-
 #       st_geometry() %>%
 #       st_sf()
 #   }
-
-calculate_stream_distance_centroids <-
-  function(centroids, river_network) {
-    centroids %>%
-      mutate(
-        distance_stream = st_distance(.,
-                                      river_network %>%
-                                        slice(as.numeric(centroids$nearest_feature)),
-                                      by_element = TRUE
-        ),
-        .before = 2
-      ) %>%
-      mutate(distance_stream = as.numeric(distance_stream)) %>%
-      select(-nearest_feature)
-  }
-
-calculate_divide_distance_centroids <-
-  function(centroids, catchments) {
-    catchment_watershed <-
-      catchments %>%
-        st_cast("MULTILINESTRING")
-
-    nearest_features_indices <-
-      catchment_watershed %>%
-        st_nearest_feature(centroids, .)
-
-    centroids %>%
-      mutate(
-        distance_divide =
-          st_distance(., catchment_watershed %>% slice(nearest_features_indices),
-                      by_element = TRUE
-          ),
-        .before = 2
-      ) %>%
-      mutate(distance_divide = as.numeric(distance_divide)) %>%
-      select(-nearest_feature)
-  }
-
 
 generate_filepaths <- function(stream_order, abbreviation) {
   str_c(
