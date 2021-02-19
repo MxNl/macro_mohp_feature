@@ -7,12 +7,12 @@ import_targets <-
       format = "file"
     ),
     
-    tar_target(
-      directory_river_networks,
-      DIRECTORY_RIVER_NETWORKS#,
-      # TODO uncomment for final run
-      # format = "file"
-    ),
+    # tar_target(
+    #   directory_river_networks,
+    #   DIRECTORY_RIVER_NETWORKS#,
+    #   # TODO uncomment for final run
+    #   # format = "file"
+    # ),
     
     # tar_target(
     #   river_networks_files,
@@ -20,9 +20,9 @@ import_targets <-
     # ),
     
     tar_target(
-      river_networks_simple,
+      river_networks,
       generate_lines()
-    ),
+    )
     
     # tar_target(
     #   river_basins,
@@ -30,13 +30,13 @@ import_targets <-
     #     future_map_dfr(read_river_basins)
     # ),
     
-    tar_target(
-      directory_nonrivers_to_reclassify,
-      DIRECTORY_NONRIVERS_TO_RECLASSIFY,
-      format = "file"
-    ),
-    tar_target(
-      features_ids_to_reclassify,
-      get_feature_ids_to_reclassify(directory_nonrivers_to_reclassify)
-    )
+    # tar_target(
+    #   directory_nonrivers_to_reclassify,
+    #   DIRECTORY_NONRIVERS_TO_RECLASSIFY,
+    #   format = "file"
+    # ),
+    # tar_target(
+    #   features_ids_to_reclassify,
+    #   get_feature_ids_to_reclassify(directory_nonrivers_to_reclassify)
+    # )
   )

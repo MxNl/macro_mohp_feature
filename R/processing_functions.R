@@ -596,7 +596,11 @@ impute_streamorder <-
     lines_na_streamorder <-
       sf_lines %>%
         filter(strahler %in% as.integer(INVALID_STRAHLER_VALUES))
-
+    
+    if(lines_na_streamorder %>% nrow() %>% magrittr::equals(0)) {
+      sf_lines
+    } else {
+    
     lines_valid_streamorder <-
       sf_lines %>%
         anti_join(as_tibble(lines_na_streamorder), by = "feature_id")
@@ -651,6 +655,7 @@ impute_streamorder <-
       bind_rows(lines_valid_streamorder) %>%
       arrange(feature_id) %>%
       relocate(feature_id, strahler, everything())
+    }
   }
 
 add_side_column <-

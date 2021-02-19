@@ -89,3 +89,74 @@ get_feature_ids_to_reclassify <-
       pull(inspire_id) %>%
       as.character()
   }
+
+generate_lines <-
+  function() {
+    coordinates <- tribble(
+      ~x, ~y, ~feature_id, ~strahler,
+      # 6,0,1,3,
+      7, 1, 1, 3,
+      7, 3, 1, 3,
+      7, 3, 17, 3,#bracket
+      9, 4, 17, 3,#bracket
+      7, 5, 17, 3,#bracket
+      7, 3, 2, 3,
+      7, 5, 2, 3,
+      7, 5, 3, 2,
+      5, 5, 3, 2,
+      5, 5, 4, 2,
+      3, 5, 4, 2,
+      3, 5, 5, 1,
+      1, 5, 5, 1,
+      3, 5, 6, 1,
+      3, 7, 6, 1,
+      7, 5, 7, 3,
+      7, 7, 7, 3,
+      7, 7, 8, 2,
+      9, 7, 8, 2,
+      9, 7, 9, 2,
+      11, 7, 9, 2,
+      11, 7, 10, 1,
+      13, 7, 10, 1,
+      11, 7, 11, 1,
+      11, 9, 11, 1,
+      7, 7, 12, 2,
+      7, 9, 12, 2,
+      7, 9, 131, 1,
+      6, 9, 131, 1,
+      6, 9, 132, 1,
+      5, 9, 132, 1,
+      5, 9, 133, 1,
+      3, 9, 133, 1,
+      7, 9, 14, 2,
+      7, 11, 14, 2,
+      7, 11, 15, 1,
+      9, 11, 15, 1,
+      7, 11, 16, 1,
+      7, 13, 16, 1,
+    )
+    
+    # coordinates <- 
+    # coordinates %>% 
+    #   mutate(feature_id = rep(1:(nrow(coordinates)/2)))
+    
+    coordinates <-
+      coordinates %>%
+      mutate(type = "river") %>%
+      mutate(type = replace(type, feature_id == 14, "canal"))
+    
+    sf_lines <- 
+      coordinates %>% 
+      mutate(point = str_c(x, " ", y)) %>% 
+      group_by(feature_id, strahler) %>% 
+      summarise(point_collection = str_c(point, collapse = ", "), .groups = "drop") %>% 
+      mutate(geometry = str_c("LINESTRING (", point_collection, ")")) %>% 
+      select(-point_collection) %>% 
+      st_as_sf(wkt = "geometry") %>% 
+      mutate(across(all_of(c("feature_id", "strahler")), as.integer))
+    
+    st_crs(sf_lines) <- CRS_REFERENCE
+    
+    return(sf_lines)
+  }
+

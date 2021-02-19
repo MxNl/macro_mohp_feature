@@ -1,5 +1,13 @@
 preprocessing_targets <- c(
-  pipeline_for(AREA),
+  # pipeline_for(AREA),
+  tar_target(
+    selected_studyarea,
+    river_networks %>% 
+      st_combine() %>% 
+      st_convex_hull() %>% 
+      st_as_sf() %>% 
+      rename(geometry = x)
+  ),
   
   # tar_force(
   #   db_selected_studyarea,
@@ -25,17 +33,17 @@ preprocessing_targets <- c(
     )
   ),
   
-  tar_target(
-    river_networks_only_rivers,
-    reclassify_relevant_canals_and_ditches_and_drop_others(
-      river_networks_clip,
-      features_ids_to_reclassify
-    )
-  ),
+  # tar_target(
+  #   river_networks_only_rivers,
+  #   reclassify_relevant_canals_and_ditches_and_drop_others(
+  #     river_networks_clip,
+  #     features_ids_to_reclassify
+  #   )
+  # ),
   
   tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_only_rivers)
+    clean_river_networks(river_networks_clip)
   ),
   
   # tar_force(
@@ -148,7 +156,7 @@ preprocessing_targets <- c(
     river_network_by_streamorder,
     streamorders %>%
       as.vector() %>%
-      as.numeric() %>%
+      as.integer() %>%
       future_map(
         ~stream_order_filter(
           river_network = river_networks_strahler_merge,
