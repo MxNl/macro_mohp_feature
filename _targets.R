@@ -49,8 +49,8 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/export_functions.R")
 
-
-plan(multisession)
+# TODO uncomment
+# plan(multisession)
 
 logging::basicConfig()
 logging::addHandler(
