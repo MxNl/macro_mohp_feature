@@ -2,6 +2,12 @@ import_targets <-
   list(
 
     tar_target(
+      config,
+      FILEPATH_CONFIG,
+      format = "file"
+    ),
+    
+    tar_target(
       directory_river_networks,
       DIRECTORY_RIVER_NETWORKS,
       format = "file"

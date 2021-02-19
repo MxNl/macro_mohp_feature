@@ -12,12 +12,14 @@ FILEPATH_STUDYAREA_PIPELINETEST <- "J:/NUTZER/Noelscher.M/Studierende/Daten/stud
 DIRECTORY_RIVER_NETWORKS <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data"
 FILEPATH_COASTLINE <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
 DIRECTORY_NONRIVERS_TO_RECLASSIFY <- "qgis/line_features_to_reclassify"
+FILEPATH_CONFIG <- "config.yml"
 
 # Database Table Names
 LINES_RAW <- "lines_raw"
 LINES_CLEAN <- "lines_clean"
 LINES_CONNECTED_ID <- "connected_id"
 LINES_BY_STREAMORDER <- "river_network_by_streamorder"
+LINES_MERGE_SINGLE_STREAMORDER <- "river_networks_merge_single_streamorder"
 BRACKETS_TO_DROP <- "brackets_to_drop"
 SELECTED_STUDYAREA_TABLE <- "selected_studyarea"
 GRID_CENTROIDS <- "grid"
@@ -31,7 +33,7 @@ NN_GRID_RIVERS_TABLE <- "nn_grid_rivers"
 FEATURE_NAMES <- c("lateral_position", "divide_stream_distance")
 CRS_REFERENCE <- 3035
 CRS_LEAFLET <- 3857
-INVALID_STRAHLER_VALUES <- c(-9999)
+INVALID_STRAHLER_VALUES <- c(-9999L)
 STREAM_TYPE_TO_INCLUDE <- c(
   "Canals_l",
   "Ditches_l",

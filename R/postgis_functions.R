@@ -77,6 +77,64 @@ write_connected_river_networks <- function(table_name_read,
   Sys.time()
 }
 
+merge_connected_lines_by_streamorder <- 
+  function(table_name_read,
+           table_name_destination_prefix,
+           streamorder,
+           depends_on = NULL) {
+    
+    lenght(depends_on)
+    
+    table_name_destination <- 
+      composite_name(table_name_destination_prefix, streamorder)
+    
+    run_query_connected_single_streamorder(
+      table_name_read,
+      table_name_destination,
+      streamorder
+    )
+  }
+
+run_query_connected_single_streamorder <- 
+  function(table_name_read, 
+           table_name_destination, streamorder) {
+    query <- glue::glue("
+      CREATE TABLE {table_name_destination} AS (
+	      WITH single_streamorders AS (
+	        SELECT
+	          *
+	        FROM {table_name_read}
+	        WHERE strahler = {streamorder}
+	      ), endpoints AS (
+	        SELECT
+	          ST_Collect(ST_StartPoint(geometry),
+	          ST_EndPoint(geometry)) AS geometry
+	        FROM single_streamorders
+	      ), clusters AS (
+	        SELECT
+	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
+	        FROM endpoints
+	      ), clusters_with_ids AS (
+	        SELECT
+	          row_number() OVER () AS connected_id,
+	          ST_CollectionHomogenize(geometry) AS geometry
+	        FROM clusters
+	      )
+      	SELECT
+		      connected_id,
+		      ST_Collect(single_streamorders.geometry) AS geometry
+	      FROM
+	        single_streamorders
+	        LEFT JOIN
+	        clusters_with_ids
+	        ON ST_Intersects(single_streamorders.geometry, clusters_with_ids.geometry)
+	      GROUP BY connected_id
+	      )
+    ")
+    print(query)
+    create_table(query, table_name_destination)
+  }
+
 merge_same_strahler_segments <- function(depends_on) {
 
   length(depends_on)

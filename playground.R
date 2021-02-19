@@ -56,117 +56,151 @@ streamorders <- tar_read(streamorders)
 
 river_network <- rivers_test
 streamorder <- 1
-table_name_destination_prefix <- "river_networks_merge_single_streamorder"
-table_name_read <- LINES_CONNECTED_ID
+table_name_destination_prefix <- LINES_MERGE_SINGLE_STREAMORDER
+table_name_read_prefix <- LINES_MERGE_SINGLE_STREAMORDER
+river_networks_table_name_read <- LINES_CONNECTED_ID
 
 
-
-merge_connected_lines_by_streamorder <- 
-  function(table_name_read,
-           table_name_destination_prefix,
-           streamorder) {
-    
-    table_name_destination <- 
-      composite_name(table_name_destination_prefix, streamorder)
-    
-    run_query_connected_single_streamorder(
-      table_name_read,
-      table_name_destination,
-      streamorder
-    )
-  }
-
-run_query_connected_single_streamorder <- 
-  function(table_name_read, 
-           table_name_destination, streamorder) {
-    query <- glue::glue("
-      CREATE TABLE {table_name_destination} AS (
-	      WITH single_streamorders AS (
-	        SELECT
-	          *
-	        FROM {table_name_read}
-	        WHERE strahler = {streamorder}
-	      ), endpoints AS (
-	        SELECT
-	          ST_Collect(ST_StartPoint(geometry),
-	          ST_EndPoint(geometry)) AS geometry
-	        FROM single_streamorders
-	      ), clusters AS (
-	        SELECT
-	          unnest(ST_ClusterWithin(geometry, 1e-8)) AS geometry
-	        FROM endpoints
-	      ), clusters_with_ids AS (
-	        SELECT
-	          row_number() OVER () AS connected_id,
-	          ST_CollectionHomogenize(geometry) AS geometry
-	        FROM clusters
-	      )
-      	SELECT
-		      connected_id,
-		      ST_Collect(single_streamorders.geometry) AS geometry
-	      FROM
-	        single_streamorders
-	        LEFT JOIN
-	        clusters_with_ids
-	        ON ST_Intersects(single_streamorders.geometry, clusters_with_ids.geometry)
-	      GROUP BY connected_id
-	      )
-    ")
-    print(query)
-    create_table(query, table_name_destination)
-  }
 
 streamorders %>% 
   map(~merge_connected_lines_by_streamorder(LINES_CONNECTED_ID, "river_networks_merge_single_streamorder", .x))
 
+merge_and_split_connected_streamorders <- 
+  function(
+    river_networks_table_name_read,
+    table_name_read_prefix,
+    streamorders) {
+    
+    rivers_networks_collected <- 
+      streamorders %>% 
+      map_dfr(collect_tables_by_streamorder_from_postgres, table_name_read_prefix) %>% 
+      add_feature_index_column()
+    
+    river_networks <- 
+      river_networks_table_name_read %>% 
+      get_table_from_postgress() %>% 
+      query_result_as_sf()
+    
+    splitpoints <- 
+      river_networks %>% 
+      get_split_points() %>% 
+      mutate(type = "splitpoint")
+    
+    feature_id_vector <- 
+      rivers_networks_collected %>% 
+      pull(feature_id)
+    
+    endpoints <- 
+      rivers_networks_collected %>%
+      st_line_merge() %>% 
+      group_by(rownumber = row_number()) %>%
+      group_split() %>% 
+      map2_dfr(feature_id_vector, 
+           ~ {.x %>% get_start_and_endpoints() %>% mutate(feature_id = .y, .before = 1)}) %>% 
+      mutate(type = "endpoint")
+    
+    combined_points <- 
+      splitpoints %>% 
+      bind_rows(endpoints)
+    
+    rivers_networks_collected %>% 
+      st_join(combined_points) %>% 
+      filter(feature_id.x == feature_id.y | type == "splitpoint")
+    
+  }
 
+collect_tables_by_streamorder_from_postgres <- 
+  function(streamorder, table_name_read_prefix) {
+    table_name_read_prefix %>% 
+      composite_name(streamorder) %>% 
+      get_table_from_postgress() %>% 
+      query_result_as_sf() %>% 
+      select(-connected_id)
+  }
+# 
+rivers_networks_collected %>%
+  add_feature_index_column() %>%
+  mutate(feature_id = as.character(feature_id)) %>%
+  plot_lines_coloured_by_categorical_attribute(feature_id) +
+  geom_sf(data = combined_points, aes(size = type))
 
+combined_points %>% 
+  ggplot() +
+  geom_sf(aes(colour = type))
 
+splitpoints_snapped <- 
+  splitpoints %>% 
+  st_geometry() %>% 
+  st_snap(rivers_networks_collected, tol=1e-9)
 
-rivers_merge_test %>% 
-  mutate(feature_id = as.character(feature_id)) %>% 
+rivers_networks_collected %>% 
+  st_line_merge() %>%
+  st_cast("MULTILINESTRING") %>%
+  st_geometry() %>%
+  lwgeom::st_split(splitpoints_snapped) %>%
+  st_collection_extract("LINESTRING") %>%
+  # st_as_sf() %>%
+  add_feature_index_column() %>%
+  filter(feature_id == 71) %>% 
+  mutate(feature_id = as.character(feature_id)) %>%
+  plot_lines_coloured_by_categorical_attribute(feature_id) +
+  geom_sf(data = splitpoints)
+
+rivers_networks_collected %>%
+  add_feature_index_column() %>% 
+  mutate(feature_id = as.character(feature_id)) %>%
   plot_lines_coloured_by_categorical_attribute(feature_id)
 
-rivers_test %>% 
-  mutate(feature_id = as.character(feature_id)) %>% 
-  plot_lines_coloured_by_categorical_attribute(feature_id) +
-  facet_wrap(~strahler)
+# rivers_test %>% 
+#   mutate(feature_id = as.character(feature_id)) %>% 
+#   plot_lines_coloured_by_categorical_attribute(feature_id) +
+#   facet_wrap(~strahler)
 
-endpoints_one_side <-
-  rivers_test %>%
-  st_endpoint() %>%
-  st_as_sf()
 
-endpoints_other_side <-
-  rivers_test %>%
-  st_startpoint() %>%
-  st_as_sf()
+get_split_points <- 
+  function(river_networks) {
+    endpoints <- 
+      river_networks %>% 
+      get_start_and_endpoints()
+    
+    # river_networks_filter <- 
+    #   river_networks %>% 
+    #   filter_intersecting_features(endpoints)
+    # 
+    endpoints %>%
+      add_feature_index_column(column_name = "endpoint_id") %>% 
+      st_join(river_networks) %>% 
+      select(-feature_id) %>% 
+      group_by(endpoint_id) %>%
+      filter(n() > 2 & 
+               length(unique(strahler)) > 1) %>% 
+      group_by(endpoint_id, strahler) %>% 
+      mutate(n_strahler = n()) %>% 
+      group_by(endpoint_id) %>% 
+      filter(strahler == min(strahler) & n_strahler > 1) %>% 
+      slice(1) %>% 
+      select(geometry) %>%
+      ungroup()
+  }
 
-endpoints <-
-  endpoints_one_side %>%
-  bind_rows(endpoints_other_side) %>% 
-  distinct()
-
-rivers_test_filter <- 
-  rivers_test %>% 
-  filter_intersecting_features(endpoints)
-
-# lines_canals_endpoints_join <-
-endpoints %>%
-  add_feature_index_column(column_name = "endpoint_id") %>% 
-  st_join(rivers_test) %>% 
-  group_by(endpoint_id) %>%
-  mutate(n_features = n()) %>% 
-  filter(n_features > 2) %>% 
-  mutate(n_distint_strahler = length(unique(strahler))) %>% 
-  filter(n_distint_strahler > 1)
-
-group_split() %>%
-  map_dfr(~st_join(., lines_filter)) %>% 
-  filter(feature_id.x != feature_id.y) %>% 
-  group_by(feature_id.x) %>% 
-  group_split() %>% 
-  map(add_side_column)
+get_start_and_endpoints <- 
+  function(river_networks) {
+    
+    endpoints_one_side <-
+      river_networks %>%
+      st_endpoint() %>%
+      st_as_sf()
+    
+    endpoints_other_side <-
+      river_networks %>%
+      st_startpoint() %>%
+      st_as_sf()
+    
+    endpoints_one_side %>%
+      bind_rows(endpoints_other_side) %>% 
+      distinct(.keep_all = TRUE) %>%
+      rename(geometry = x)
+  }
 
 
 

@@ -294,7 +294,6 @@ dissolve_line_features_between_junctions <-
       add_feature_index_column()
   }
 
-
 dissolve_line_features_with_brackets <-
   function(river_networks) {
     ##### Test
