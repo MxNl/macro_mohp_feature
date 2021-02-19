@@ -41,6 +41,122 @@ tar_read(river_networks_clean)
 
 
 
+
+sequential_nearest_neighbours_with_maxdist <- 
+  function(
+    table_name_destination = "nn_test_maxdist",
+    left_table,
+    left_columns,
+    right_table,
+    right_columns = NULL,
+    streamorders = NULL,
+    n = 1,
+    depends_on
+  ) {
+    test <- FALSE
+    if(test){
+      table_name_destination <- "nn_test_maxdist"
+      left_table <- GRID_CENTROIDS
+      left_columns <- c("grid_id", "geometry")
+      right_table <- composite_name(LINES_BY_STREAMORDER, streamorders)
+      right_columns <- c("feature_id", "strahler", "stream_order_id")
+      streamorders <- 1:6
+      n <- 1
+    }
+    
+    max_distance <- FALSE
+    
+    for (i in sort(streamorders, decreasing = TRUE)) {
+      print(i)
+      
+      nearest_neighbours_between(
+        table_name_destination,
+        left_table,
+        right_table,
+        left_columns,
+        right_columns,
+        stream_order_id = i,
+        max_distance = max_distance
+      )
+    }
+    
+  }
+
+
+nearest_neighbours_between <- function(
+  table_name_destination,
+  left_table,
+  left_columns,
+  right_table,
+  right_columns = NULL,
+  stream_order_id = NULL,
+  n = 1,
+  max_distance
+) {
+  length(depends_on)
+  connection <- connect_to_database()
+  
+  if (length(intersect(left_columns, right_columns)) > 0) {
+    stop('Ambiguous column names provided.')
+  }
+  
+  format_select <- function(table, columns) {
+    validate(table, columns)
+    select_statements <- paste0(table, '.', columns)
+    paste0(select_statements, collapse = ', ')
+  }
+  
+  left_select <- format_select(left_table, left_columns) %>%
+    str_replace("grid_grid_id", "grid_id") #TODO how can we make this more elegant?
+  right_select <- NULL
+  if (!is.null(right_columns)) {
+    right_select <- format_select(right_table, right_columns)
+  }
+  select <- list(left_select, right_select) %>%
+    compact() %>%
+    str_c(collapse = ', ')
+  
+  left_geometry <- geometry_of(left_table)
+  right_geometry <- geometry_of(right_table)
+  by_streamorder <- ifelse(is.null(stream_order_id), FALSE, TRUE)
+  
+  distance <- glue::glue('ST_Distance({left_geometry}, {right_geometry}) AS distance_meters')
+  #by_streamorder_clause <- glue::glue("AND {right_table}.stream_order_id = {stream_order_id}")
+  table_destination <- composite_name(table_name_destination, stream_order_id)
+  
+  query <- glue::glue("
+    CREATE TABLE {table_destination} AS (
+      SELECT
+        {select},
+        {distance}
+      FROM
+        {left_table}
+        CROSS JOIN LATERAL (
+          SELECT
+            *
+          FROM
+            {right_table}
+          ORDER BY
+            {left_geometry} <-> {right_geometry}
+          LIMIT
+            {n}
+        ) AS {right_table}
+     );
+  ")
+  print(query)
+  create_table(query, table_destination, index_column = c("feature_id", "grid_id"))
+  Sys.time()
+}
+
+composite_name <- function(table_name, stream_order_id) {
+  if(is.null(stream_order_id)){
+    table_name
+  } else {
+    glue::glue('{table_name}_id_{stream_order_id}')
+  }
+}
+
+
 #TODO filter by streamorder
 rivers_test <- tar_read(river_networks_only_connected)
 streamorders <- tar_read(streamorders)
