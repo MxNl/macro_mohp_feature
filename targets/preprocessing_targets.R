@@ -101,20 +101,20 @@ preprocessing_targets <- c(
     dissolve_line_features_between_junctions(river_networks_only_connected)
   ),
   
-  tar_target(
-    river_networks_without_brackets,
-    drop_shorter_bracket_line_features(river_networks_dissolved_junctions)
-  ),
-  
-  tar_target(
-    river_networks_dissolved_junctions_after,
-    dissolve_line_features_between_junctions(river_networks_without_brackets)
-  ),
+  # tar_target(
+  #   river_networks_without_brackets,
+  #   drop_shorter_bracket_line_features(river_networks_dissolved_junctions)
+  # ),
+  # 
+  # tar_target(
+  #   river_networks_dissolved_junctions_after,
+  #   dissolve_line_features_between_junctions(river_networks_without_brackets)
+  # ),
   
   tar_target(
     river_networks_valid_strahler,
     impute_streamorder(
-      river_networks_dissolved_junctions_after,
+      river_networks_dissolved_junctions,
       selected_studyarea
     )
   ),
