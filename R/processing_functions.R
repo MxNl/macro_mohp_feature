@@ -34,15 +34,14 @@ clip_river_networks <-
     }
   }
 
-reclassify_relevant_canals_and_ditches_and_drop_others <-
-  function(river_network, id_to_reclassify) {
+filter_rivers <-
+  function(river_network) {
     ##### Test
     # river_network <- tar_read(river_networks_clip)
     # river_network <- tar_read(river_network_pipeline_test)
     # id_to_reclassify <- tar_read(features_ids_to_reclassify)
     ####
     river_network %>%
-      mutate(dfdd = if_else(inspire_id %in% id_to_reclassify, "BH140", dfdd)) %>%
       filter(dfdd == "BH140") %>%
       add_feature_index_column()
   }

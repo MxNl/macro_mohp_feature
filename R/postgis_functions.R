@@ -90,6 +90,20 @@ merge_same_strahler_segments <- function(depends_on) {
     prepare_lines()
 }
 
+is_pq_geometry <- 
+  function(column) { 
+    class(column) == "pq_geometry" 
+    }
+
+from_wkb <- purrr::partial(sf::st_as_sfc, EWKB = TRUE)
+
+convert_geometry <- 
+  function(x) {
+    x %>% 
+      as_tibble() %>% 
+      mutate(across(where(is_pq_geometry), from_wkb))
+  }
+
 write_selected_studyarea <- function(x, table_name_destination, index_column = NULL) {
   write_to_table(
     x,
@@ -345,11 +359,15 @@ db_execute <- function(query, connection = connect_to_database()) {
 
 run_query_linemerge_by_streamorder <- function(connection) {
   DBI::dbGetQuery(connection, glue::glue("
-      WITH collected AS (
-      	SELECT strahler, ST_Collect(geometry) AS geometry
-      	FROM {LINES_RAW} GROUP BY strahler
+    WITH collected AS (
+      SELECT
+        strahler,
+        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry,
+        GeometryType(ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry)))) 
+      FROM {LINES_CLEAN}
+      GROUP BY strahler
       ), local_linestrings AS (
-      	SELECT strahler, (ST_Dump(ST_LineMerge(geometry))).geom AS geometry FROM collected
+      	SELECT strahler, ST_LineMerge(geometry) AS geometry FROM collected
       ), local_linestrings_with_id AS (
       	SELECT row_number() OVER (ORDER BY strahler) AS id, * FROM local_linestrings
       ), local_linestrings_with_splitpoints AS (
@@ -396,10 +414,16 @@ run_query_linemerge_by_streamorder <- function(connection) {
             WHERE
               local_linestrings_with_splitpoints.id = local_linestrings_with_id.id
           )
-      )
-      SELECT * FROM local_linestrings_splitted
-      UNION
-      SELECT * FROM local_linestrings_without_splitpoints
+      ), unioned AS (
+        SELECT * FROM local_linestrings_splitted
+        UNION
+        SELECT * FROM local_linestrings_without_splitpoints
+      ) 
+      SELECT
+        row_number() OVER (ORDER BY strahler) AS feature_id,
+        strahler,
+        geometry
+      FROM unioned
     "))
 }
 

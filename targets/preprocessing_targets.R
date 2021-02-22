@@ -1,5 +1,6 @@
 preprocessing_targets <- c(
   # pipeline_for(AREA),
+  
   tar_target(
     selected_studyarea,
     river_networks %>% 
@@ -35,9 +36,8 @@ preprocessing_targets <- c(
   
   # tar_target(
   #   river_networks_only_rivers,
-  #   reclassify_relevant_canals_and_ditches_and_drop_others(
-  #     river_networks_clip,
-  #     features_ids_to_reclassify
+  #   filter_rivers(
+  #     river_networks_clip
   #   )
   # ),
   
@@ -46,98 +46,20 @@ preprocessing_targets <- c(
     clean_river_networks(river_networks_clip)
   ),
   
-  # tar_force(
-  #   db_river_networks_clean,
-  #   write_as_lines_to_db(
-  #     river_networks_clean,
-  #     LINES_CLEAN
-  #   ),
-  #   force = exists_table(LINES_CLEAN)
-  # ),
-  tar_target(
+  tar_force(
     db_river_networks_clean,
     write_as_lines_to_db(
       river_networks_clean,
       LINES_CLEAN
-    )
-  ),
-  
-  # tar_force(
-  #   db_connected_river_networks,
-  #   write_connected_river_networks(
-  #     LINES_CLEAN,
-  #     LINES_CONNECTED_ID,
-  #     SELECTED_STUDYAREA_TABLE,
-  #     depends_on = list(
-  #       db_river_networks_clean
-  #     )
-  #   ),
-  #   force = exists_table(LINES_CONNECTED_ID)
-  # ),
-  tar_target(
-    db_connected_river_networks,
-    write_connected_river_networks(
-      LINES_CLEAN,
-      LINES_CONNECTED_ID,
-      SELECTED_STUDYAREA_TABLE,
-      depends_on = list(
-        db_river_networks_clean
-      )
-    )
-  ),
-  
-  tar_target(
-    river_networks_only_connected,
-    read_connected_river_networks(
-      LINES_CONNECTED_ID,
-      depends_on = list(
-        db_connected_river_networks
-      )
-    )
-  ),
-  
-  tar_target(
-    river_networks_dissolved_junctions,
-    dissolve_line_features_between_junctions(river_networks_only_connected)
-  ),
-  
-  # tar_target(
-  #   river_networks_without_brackets,
-  #   drop_shorter_bracket_line_features(river_networks_dissolved_junctions)
-  # ),
-  # 
-  # tar_target(
-  #   river_networks_dissolved_junctions_after,
-  #   dissolve_line_features_between_junctions(river_networks_without_brackets)
-  # ),
-  
-  tar_target(
-    river_networks_valid_strahler,
-    impute_streamorder(
-      river_networks_dissolved_junctions,
-      selected_studyarea
-    )
-  ),
-  
-  # tar_force(
-  #   db_river_networks_valid_strahler,
-  #   write_as_lines_to_db(
-  #     river_networks_valid_strahler,
-  #     LINES_RAW),
-  #   force = exists_table(LINES_RAW)
-  # ),
-  tar_target(
-    db_river_networks_valid_strahler,
-    write_as_lines_to_db(
-      river_networks_valid_strahler,
-      LINES_RAW)
+    ),
+    force = !exists_table(LINES_CLEAN)
   ),
   
   tar_target(
     river_networks_strahler_merge,
     merge_same_strahler_segments(
       depends_on = list(
-        db_river_networks_valid_strahler
+        db_river_networks_clean
       )
     )
   ),
@@ -174,23 +96,25 @@ preprocessing_targets <- c(
     pattern = map(streamorders)
   ),
   
-  tar_target( #TODO ST_AsRaster parameter touched=true setzen?! damit grid das polygon überlappt
+  tar_force( #TODO ST_AsRaster parameter touched=true setzen?! damit grid das polygon überlappt
     db_grid_polygons,
     make_grid_polygons_in_db(
       SELECTED_STUDYAREA_TABLE,
       GRID_POLYGONS_TABLE,
       index_column = "grid_id",
       depends_on = list(db_selected_studyarea, config)
-    )
+    ),
+    force = !exists_table(GRID_POLYGONS_TABLE)
   ),
   
-  tar_target(
+  tar_force(
     db_grid,
     make_grid_centroids_in_db(
       GRID_POLYGONS_TABLE,
       GRID_CENTROIDS,
       index_column = "grid_id",
       geo_index_column = "geometry",
-      depends_on = list(db_grid_polygons))
+      depends_on = list(db_grid_polygons)),
+    force = !exists_table(GRID_CENTROIDS)
   )
 )

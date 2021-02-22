@@ -43,9 +43,10 @@ prepare_lines <- function(x) {
   # x <- tar_read(line_merge_by_streamorder_raw)
 
   x %>%
-    query_result_as_sf() %>%
-    select(-old_id) %>%
-    add_feature_index_column()
+    convert_geometry() %>% 
+    st_as_sf() %>% 
+    st_cast("MULTILINESTRING") %>%
+    mutate(feature_id = as.integer(feature_id))
 
 }
 
