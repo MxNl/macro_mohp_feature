@@ -21,7 +21,8 @@ import_targets <-
     
     tar_target(
       river_networks,
-      generate_lines()
+      river_networks_files %>% 
+        future_map_dfr(read_river_networks)
     )
     
     # tar_target(

@@ -39,8 +39,46 @@ tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
 tar_read(river_networks_clean)
 
+test <- tar_read(river_networks) %>% 
+  as_tibble()
+
+test %>% 
+  filter(dfdd == "BH140" & strahler == -9999)
+
+tar_read(river_network_by_streamorder) %>% 
+  chuck(4) %>%
+  mutate(feature_id = as.character(feature_id)) %>% 
+  mutate(strahler = as.character(strahler)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
 
 
+tar_read(lateral_position_stream_divide_distance) %>% 
+  chuck(4) %>% 
+  select(all_of("lateral_position")) %>%
+  st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
+  plot()
+
+NN_GRID_RIVERS_TABLE %>% 
+  composite_name(tar_read(streamorders) %>% chuck(4)) %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf() %>% 
+  select(all_of("distance_meters")) %>%
+  st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
+  plot()
+
+NN_GRID_CATCHMENTS_TABLE %>% 
+  composite_name(tar_read(streamorders) %>% chuck(4)) %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf() %>% 
+  select(all_of("distance_meters")) %>%
+  st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
+  plot()
+
+THIESSEN_CATCHMENTS_TABLE %>% 
+  composite_name(tar_read(streamorders) %>% chuck(2)) %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf() %>% 
+  mapview()
 
 sequential_nearest_neighbours_with_maxdist <- 
   function(

@@ -60,7 +60,7 @@ run_query_connected <- function(table_name_read, table_name_destination, table_n
 		    WHERE ST_Within(a.geometry, b.geometry)
       )
     ")
-  print(query)
+  # print(query)
   create_table(query, table_name_destination)
 }
 
@@ -238,7 +238,7 @@ nearest_neighbours_between <- function(
         ) AS {right_table}
      );
   ")
-  print(query)
+  # print(query)
   create_table(query, table_destination, index_column = c("feature_id", "grid_id"))
   Sys.time()
 }
@@ -283,7 +283,7 @@ make_thiessen_catchments <- function(stream_order_id, depends_on) {
     CREATE TABLE {table_name_destination} AS (
     	SELECT 
 	  		nn.feature_id,
-	  		ST_ExteriorRing(ST_Union(grid.geometry)) AS geometry
+	  		ST_Boundary(ST_Union(grid.geometry)) AS geometry
 	  	FROM
 			{GRID_POLYGONS_TABLE} AS grid
 	  		INNER JOIN {nearest_neighbours} AS nn

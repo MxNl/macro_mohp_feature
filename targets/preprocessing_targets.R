@@ -1,31 +1,15 @@
 preprocessing_targets <- c(
-  # pipeline_for(AREA),
+  pipeline_for(AREA),
   
-  tar_target(
-    selected_studyarea,
-    river_networks %>% 
-      st_combine() %>% 
-      st_convex_hull() %>% 
-      st_as_sf() %>% 
-      rename(geometry = x)
-  ),
-  
-  # tar_force(
-  #   db_selected_studyarea,
-  #   write_selected_studyarea(
-  #     selected_studyarea,
-  #     SELECTED_STUDYAREA_TABLE
-  #   ),
-  #   force = exists_table(SELECTED_STUDYAREA_TABLE)
-  # ),
   tar_target(
     db_selected_studyarea,
     write_selected_studyarea(
       selected_studyarea,
       SELECTED_STUDYAREA_TABLE
     )
+    # force = !exists_table(SELECTED_STUDYAREA_TABLE)
   ),
-  
+
   tar_target(
     river_networks_clip,
     clip_river_networks(
@@ -34,25 +18,25 @@ preprocessing_targets <- c(
     )
   ),
   
-  # tar_target(
-  #   river_networks_only_rivers,
-  #   filter_rivers(
-  #     river_networks_clip
-  #   )
-  # ),
+  tar_target(
+    river_networks_only_rivers,
+    filter_rivers(
+      river_networks_clip
+    )
+  ),
   
   tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_clip)
+    clean_river_networks(river_networks_only_rivers)
   ),
   
-  tar_force(
+  tar_target(
     db_river_networks_clean,
     write_as_lines_to_db(
       river_networks_clean,
       LINES_CLEAN
-    ),
-    force = !exists_table(LINES_CLEAN)
+    )
+    # force = !exists_table(LINES_CLEAN)
   ),
   
   tar_target(
@@ -96,25 +80,25 @@ preprocessing_targets <- c(
     pattern = map(streamorders)
   ),
   
-  tar_force( #TODO ST_AsRaster parameter touched=true setzen?! damit grid das polygon überlappt
+  tar_target( #TODO ST_AsRaster parameter touched=true setzen?! damit grid das polygon überlappt
     db_grid_polygons,
     make_grid_polygons_in_db(
       SELECTED_STUDYAREA_TABLE,
       GRID_POLYGONS_TABLE,
       index_column = "grid_id",
       depends_on = list(db_selected_studyarea, config)
-    ),
-    force = !exists_table(GRID_POLYGONS_TABLE)
+    )
+    # force = !exists_table(GRID_POLYGONS_TABLE)
   ),
   
-  tar_force(
+  tar_target(
     db_grid,
     make_grid_centroids_in_db(
       GRID_POLYGONS_TABLE,
       GRID_CENTROIDS,
       index_column = "grid_id",
       geo_index_column = "geometry",
-      depends_on = list(db_grid_polygons)),
-    force = !exists_table(GRID_CENTROIDS)
+      depends_on = list(db_grid_polygons))
+    # force = !exists_table(GRID_CENTROIDS)
   )
 )

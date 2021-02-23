@@ -47,7 +47,6 @@ prepare_lines <- function(x) {
     st_as_sf() %>% 
     st_cast("MULTILINESTRING") %>%
     mutate(feature_id = as.integer(feature_id))
-
 }
 
 query_result_as_sf <- function(x) {
