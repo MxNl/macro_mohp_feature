@@ -5,6 +5,8 @@ write_by_streamorder <- function(streamorder, river_networks_by_streamorder) {
     chuck(streamorder) %>%
     write_to_table(table)
   set_geo_index(table)
+  
+  Sys.time()
 }
 
 clip_river_networks <-
@@ -43,6 +45,7 @@ filter_rivers <-
     ####
     river_network %>%
       filter(dfdd == "BH140") %>%
+      filter(hyp %in% HYP_CLASSES_TO_INCLUDE) %>% 
       add_feature_index_column()
   }
 

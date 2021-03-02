@@ -6,7 +6,7 @@ preprocessing_targets <- c(
     write_selected_studyarea(
       selected_studyarea,
       SELECTED_STUDYAREA_TABLE
-    )
+    )#,
     # force = !exists_table(SELECTED_STUDYAREA_TABLE)
   ),
 
@@ -19,7 +19,7 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
-    river_networks_only_rivers,
+    river_networks_only_non_dry_rivers,
     filter_rivers(
       river_networks_clip
     )
@@ -27,7 +27,7 @@ preprocessing_targets <- c(
   
   tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_only_rivers)
+    clean_river_networks(river_networks_only_non_dry_rivers)
   ),
   
   tar_target(
@@ -35,7 +35,7 @@ preprocessing_targets <- c(
     write_as_lines_to_db(
       river_networks_clean,
       LINES_CLEAN
-    )
+    )#,
     # force = !exists_table(LINES_CLEAN)
   ),
   

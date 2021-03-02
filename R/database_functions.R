@@ -30,6 +30,7 @@ set_index <- function(table, column, connection) {
 
 write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
   connection <- connect_to_database()
+  db_execute("CREATE EXTENSION IF NOT EXISTS postgis;", connection = connection)
   db_execute(glue::glue("DROP TABLE IF EXISTS {table};"), connection = connection)
   st_write(data, dsn = connection, layer = table, append = append)
 
@@ -111,4 +112,8 @@ drop_all_tables <- function() {
   DBI::dbListTables(connection) %>%
     discard(. %in% RESERVED_OBJECTS) %>%
     walk(~DBI::dbExecute(connection, glue::glue("DROP TABLE {.};")))
+}
+
+postgres_config_path <- function() {
+  DBI::dbGetQuery(connect_to_database(), 'SHOW config_file') %>% pull(config_file) %>% pluck(1)
 }

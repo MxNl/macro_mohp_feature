@@ -39,3 +39,6 @@ STREAM_TYPE_TO_INCLUDE <- c(
   "Ditches_l",
   "River_Net_l"
 )
+HYP_CLASSES_TO_INCLUDE <- c(
+  1, 2, 3
+)

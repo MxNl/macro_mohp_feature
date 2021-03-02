@@ -8,6 +8,7 @@ library(janitor)
 library(patchwork)
 library(assertr)
 library(tarchetypes)
+library(mapview)
 library(tidyverse)
 library(here)
 
@@ -37,7 +38,50 @@ tar_read(plot_subset_all_steps)
 tar_read(test_processed_river_network_plot)
 tar_read(test_catchments_plot)
 tar_read(grid_lateral_position)
-tar_read(river_networks_clean)
+tar_read(river_networks_clip)
+
+write_selected_studyarea(
+  tar_read(selected_studyarea),
+  SELECTED_STUDYAREA_TABLE
+)
+table <- SELECTED_STUDYAREA_TABLE
+connection <- connect_to_database()
+db_execute(glue::glue("DROP TABLE IF EXISTS {table};"), connection = connection)
+st_write(tar_read(selected_studyarea), dsn = connection, layer = table, append = FALSE)
+
+
+write_as_lines_to_db(
+  tar_read(river_networks_clean),
+  LINES_CLEAN
+)
+
+connection <- connect_to_database()
+table <- LINES_CLEAN
+
+db_execute(glue::glue("DROP TABLE IF EXISTS {table};"), connection = connection)
+
+tar_read(river_networks_clean) %>% 
+  st_cast("LINESTRING") %>%
+  write_to_table(table_name_destination)
+
+test <- tar_read(river_networks_files) %>% 
+  chuck(1) %>% 
+  map(
+    STREAM_TYPE_TO_INCLUDE,
+    read_sf,
+    dsn = .
+  ) %>%
+  reduce(bind_rows) %>%
+  st_zm() %>%
+  rename(geometry = Shape) %>% 
+  clean_names() %>%
+  # select(dfdd, inspire_id, strahler) %>%
+  transform_crs_if_required()
+
+test %>% 
+  as_tibble() %>% 
+  filter(hyp %in% 1:3) %>% 
+  filter(is.na(nextdownid))
 
 test <- tar_read(river_networks) %>% 
   as_tibble()
@@ -45,11 +89,6 @@ test <- tar_read(river_networks) %>%
 test %>% 
   filter(dfdd == "BH140" & strahler == -9999)
 
-tar_read(river_network_by_streamorder) %>% 
-  chuck(4) %>%
-  mutate(feature_id = as.character(feature_id)) %>% 
-  mutate(strahler = as.character(strahler)) %>% 
-  plot_lines_coloured_by_categorical_attribute(feature_id)
 
 
 tar_read(lateral_position_stream_divide_distance) %>% 
@@ -59,8 +98,8 @@ tar_read(lateral_position_stream_divide_distance) %>%
   plot()
 
 NN_GRID_RIVERS_TABLE %>% 
-  composite_name(tar_read(streamorders) %>% chuck(4)) %>% 
-  get_table_from_postgress() %>% 
+  composite_name(tar_read(streamorders) %>% chuck(1)) %>% 
+  get_table_from_postgress() %>%
   query_result_as_sf() %>% 
   select(all_of("distance_meters")) %>%
   st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
@@ -74,11 +113,116 @@ NN_GRID_CATCHMENTS_TABLE %>%
   st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>% 
   plot()
 
-THIESSEN_CATCHMENTS_TABLE %>% 
-  composite_name(tar_read(streamorders) %>% chuck(2)) %>% 
+tar_read(river_network_by_streamorder) %>% 
+  chuck(3) %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  mutate(strahler = as.character(strahler)) %>% 
+  ggplot() +geom_sf()
+
+streamorders <- tar_read(streamorders)
+
+thiessen_catchments <- 
+  streamorders %>% 
+  map(~ composite_name(THIESSEN_CATCHMENTS_TABLE, .x)) %>% 
+  map(get_table_from_postgress) %>% 
+  map(query_result_as_sf)
+
+river_network_by_streamorder <- tar_read(river_network_by_streamorder)
+river_networks_clean <- tar_read(river_networks_clean)
+river_networks_strahler_merge <- tar_read(river_networks_strahler_merge)
+plot1 <- river_networks_clean %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
+plot3 <- river_networks_clean %>% 
+  mutate(strahler = as.character(strahler)) %>% 
+  plot_lines_coloured_by_categorical_attribute(strahler)
+plot2 <- river_networks_strahler_merge %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id)
+
+plot1 | plot3 | plot2
+
+
+study_area <- tar_read(selected_studyarea)
+
+plot_test_catchments(river_network_by_streamorder, 
+                     thiessen_catchments, 
+                     streamorders, 
+                     study_area)
+
+rivers_plot <- 
+  LINES_BY_STREAMORDER %>% 
+  composite_name(tar_read(streamorders) %>% chuck(3)) %>% 
   get_table_from_postgress() %>% 
   query_result_as_sf() %>% 
-  mapview()
+  mutate(feature_id = as.character(feature_id)) %>% 
+  mutate(strahler = as.character(strahler))
+
+{rivers_plot %>% 
+  filter(feature_id %in% c("96", "97")) %>% 
+  mutate(feature_id = as.integer(feature_id)) %>% 
+  st_cast("MULTIPOINT") %>% 
+  ggplot(aes(colour = feature_id)) +
+  geom_sf() +
+  facet_wrap(~feature_id, ncol = 1)} %>% plotly::ggplotly()
+
+
+segment_six <- 
+  rivers_plot %>% 
+  filter(feature_id %in% c("96"))
+
+segment_seven <- 
+  rivers_plot %>% 
+  filter(feature_id %in% c("97"))
+
+unioned <- 
+  st_union(segment_six, segment_seven)
+
+st_difference(unioned, st_intersection(segment_six, segment_seven)) %>% 
+  st_cast("LINESTRING") %>% 
+  select(contains("feature_id"), geometry) %>% 
+  st_contains(segment_seven, ., sparse= FALSE)
+  ggplot() + geom_sf()
+  
+  
+tar_read(river_networks_clean) %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
+  plotly::ggplotly()
+  
+st_overlaps(segment_seven, segment_six, sparse = FALSE)
+st_overlaps(segment_six, segment_seven, sparse = FALSE)
+
+plotlist <- list()
+for(i in tar_read(streamorders)) {
+
+  rivers_plot <- 
+  LINES_BY_STREAMORDER %>% 
+  composite_name(tar_read(streamorders) %>% chuck(i)) %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf() %>% 
+  mutate(feature_id = as.character(feature_id)) %>% 
+  mutate(strahler = as.character(strahler))
+# 
+# rivers_plot %>% 
+#   mutate(length = st_length(geometry)) %>% 
+#   arrange(length) %>% 
+#   slice(1:2) %>% 
+#   ggplot() +geom_sf()
+
+
+plotlist[[i]] <- 
+  THIESSEN_CATCHMENTS_TABLE %>% 
+  composite_name(tar_read(streamorders) %>% chuck(i)) %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf() %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = rivers_plot, aes(colour = feature_id)) +
+  theme(legend.position = "none")
+}
+
+plotlist[[3]] %>% plotly::ggplotly()
 
 sequential_nearest_neighbours_with_maxdist <- 
   function(
@@ -193,6 +337,443 @@ composite_name <- function(table_name, stream_order_id) {
     glue::glue('{table_name}_id_{stream_order_id}')
   }
 }
+
+
+"
+CREATE TABLE raster_table_id_1 AS (
+	WITH raster AS(
+	SELECT
+		lateral_position,
+		geometry
+	FROM lateral_position_stream_divide_distance_id_1
+	)
+	SELECT
+	lateral_position,
+	ST_AsRaster(geometry, 200, 200)
+	FROM raster
+	);
+
+--\lo_export 147303 '/tmp/myraster.tiff'
+
+DROP TABLE IF EXISTS tmp_out ;
+
+CREATE TABLE tmp_out AS
+SELECT lo_from_bytea(0,
+       ST_AsGDALRaster(ST_UNiON(st_asraster), 'GTIFF')
+        ) AS loid
+  FROM raster_table_id_1;
+
+SELECT lo_export(loid, 'D:\Tmp\test.tiff')
+   FROM tmp_out;
+
+SELECT lo_unlink(loid)
+  FROM tmp_out;
+"
+
+
+
+
+library(tidyverse)
+library(sf)
+library(mapview)
+
+convert_geometry <- function(x) as_tibble(x) %>% dplyr::mutate(dplyr::across(where(is_pq_geometry), from_wkb))
+
+connection <- connect_to_database()
+
+tar_read(river_networks) %>% 
+  mapview(zcol='strahler', lwd = 6)
+
+
+get_split_points <- 
+  function(river_networks) {
+    endpoints <- 
+      river_networks %>% 
+      get_start_and_endpoints()
+    
+    # river_networks_filter <- 
+    #   river_networks %>% 
+    #   filter_intersecting_features(endpoints)
+    # 
+    endpoints %>%
+      add_feature_index_column(column_name = "endpoint_id") %>% 
+      st_join(river_networks) %>% 
+      select(-feature_id) %>% 
+      group_by(endpoint_id) %>%
+      filter(n() > 2 & 
+               length(unique(strahler)) > 1) %>% 
+      group_by(endpoint_id, strahler) %>% 
+      mutate(n_strahler = n()) %>% 
+      group_by(endpoint_id) %>% 
+      filter(strahler == min(strahler) & n_strahler > 1) %>% 
+      slice(1) %>% 
+      select(geometry) %>%
+      ungroup()
+  }
+
+get_start_and_endpoints <- 
+  function(river_networks) {
+    
+    endpoints_one_side <-
+      river_networks %>%
+      st_endpoint() %>%
+      st_as_sf()
+    
+    endpoints_other_side <-
+      river_networks %>%
+      st_startpoint() %>%
+      st_as_sf()
+    
+    endpoints_one_side %>%
+      bind_rows(endpoints_other_side) %>% 
+      distinct(.keep_all = TRUE) %>%
+      rename(geometry = x)
+  }
+
+
+DBI::dbGetQuery(conn = connection, "
+SELECT
+  strahler,
+  ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry,
+  GeometryType(ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry)))) 
+FROM lines_raw
+GROUP BY strahler
+") %>% 
+  convert_geometry() %>% 
+  print() %>% 
+  st_as_sf() %>% 
+  mapview(zcol='strahler', lwd = 6)
+
+split_points <- 
+  DBI::dbGetQuery(conn = connection, "
+WITH collected AS (
+  SELECT
+    strahler,
+    ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry,
+    GeometryType(ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry)))) 
+  FROM lines_clean
+  GROUP BY strahler
+      ), local_linestrings AS (
+      	SELECT strahler, ST_LineMerge(geometry) AS geometry FROM collected
+      ), local_linestrings_with_id AS (
+      	SELECT row_number() OVER (ORDER BY strahler) AS id, * FROM local_linestrings
+      )
+      	SELECT
+      	  l.id AS id,
+      	  l.strahler AS strahler,
+      	  ST_AsText(l.geometry) AS geometry,
+      	  r.id AS r_id,
+      	  r.strahler AS r_strahler,
+      	  ST_AsText(r.geometry) AS r_geometry,
+      	  ST_Intersection(l.geometry, r.geometry) AS common_geometry
+      	FROM
+      	  local_linestrings_with_id AS l
+      	  CROSS JOIN local_linestrings_with_id AS r
+      	  WHERE
+      		(
+      			l.strahler < r.strahler
+      			AND
+      			ST_Intersects(l.geometry, r.geometry)
+      			AND
+      			l.id != r.id
+      		)
+") %>% 
+  convert_geometry() %>% 
+  st_as_sf() %>% 
+  st_cast("MULTIPOINT") %>% 
+  mutate(id = as.character(id))
+
+split_points <- 
+  tar_read(river_networks_clean) %>% 
+  get_split_points()
+
+
+test_lines <- 
+  DBI::dbGetQuery(conn = connection, "
+WITH collected AS (
+    SELECT strahler,
+        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
+    FROM lines_clean
+    GROUP BY strahler
+),
+-- base table
+clusters AS (
+    SELECT row_number() OVER (
+            ORDER BY strahler
+        ) AS cluster_id,
+        strahler,
+        CASE
+            WHEN GeometryType(ST_LineMerge(geometry)) = 'MULTILINESTRING' THEN true
+            ELSE false
+        END AS is_multilinestring,
+        geometry
+    FROM collected
+),
+-- processing for clusters that are multilinestrings and have splitpoints
+cluster_lines_without_id AS (
+    SELECT cluster_id,
+        (ST_Dump(geometry)).geom AS geometry,
+        strahler,
+        is_multilinestring
+    FROM clusters
+),
+cluster_lines as (
+    SELECT row_number() OVER (
+            ORDER BY is_multilinestring
+        ) AS line_id,
+        *
+    FROM cluster_lines_without_id
+),
+split_points_single AS (
+    SELECT DISTINCT l.cluster_id AS cluster_id,
+        ST_Intersection(l.geometry, r.geometry) AS geometry
+    FROM cluster_lines AS l
+        CROSS JOIN cluster_lines AS r
+    WHERE (
+            l.strahler < r.strahler
+            AND ST_Intersects(l.geometry, r.geometry)
+            AND l.cluster_id != r.cluster_id
+        )
+),
+--Test for multiple splitpoints per cluster id
+split_points AS (
+    SELECT
+        cluster_id,
+        ST_CollectionHomogenize(ST_Collect(geometry)) AS geometry
+    FROM split_points_single
+    GROUP BY cluster_id
+),
+lines_touching_splitpoints AS (
+    SELECT cluster_lines.line_id,
+        cluster_lines.cluster_id,
+        cluster_lines.geometry
+    FROM cluster_lines
+        LEFT JOIN split_points USING (cluster_id)
+    WHERE ST_Intersects(cluster_lines.geometry, split_points.geometry)
+        AND is_multilinestring
+),
+lines_not_touching_splitpoints AS (
+    SELECT l.line_id,
+        l.cluster_id,
+        l.geometry AS geometry,
+        r.line_id as rid,
+        r.cluster_id as r_cl
+    FROM cluster_lines AS l
+        LEFT JOIN lines_touching_splitpoints AS r ON l.line_id = r.line_id
+    WHERE l.cluster_id IN (
+            SELECT cluster_id
+            FROM lines_touching_splitpoints
+        )
+        AND r.line_id IS NULL
+),
+lines_not_touching_splitpoints_clusters AS (
+    SELECT cluster_id,
+        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
+    FROM lines_not_touching_splitpoints
+    GROUP BY cluster_id
+),
+-- clusters that are multilinestrings and have splitpoints
+multinelinestring_clusters_splitted AS (
+    SELECT l.cluster_id,
+        ST_CollectionHomogenize(ST_Collect(l.geometry, r.geometry)) AS geometry
+    FROM lines_touching_splitpoints l
+        INNER JOIN lines_not_touching_splitpoints_clusters r USING(cluster_id)
+    WHERE ST_Intersects(l.geometry, r.geometry)
+),
+-- clusters that are single linestrings
+linestrings_clusters_splitted AS (
+    SELECT l.cluster_id,
+        (ST_Dump(ST_Split(ST_LineMerge(l.geometry), r.geometry))).geom AS geometry
+    FROM clusters l
+        INNER JOIN split_points r USING(cluster_id)
+    WHERE NOT l.is_multilinestring
+),
+-- clusters that are multilinestrings but do not have splitpoints
+multinelinestring_clusters_without_splitpoints AS (
+    select cluster_id,
+        ST_Multi(ST_CollectionHomogenize(geometry)) AS geometry
+    FROM clusters
+    WHERE is_multilinestring
+        AND cluster_id NOT IN (
+            SELECT DISTINCT cluster_id
+            FROM multinelinestring_clusters_splitted
+        )
+),
+unioned_without_strahler AS (
+    SELECT cluster_id,
+        geometry
+    FROM multinelinestring_clusters_splitted
+    UNION ALL
+    SELECT cluster_id,
+        geometry
+    FROM linestrings_clusters_splitted
+    UNION ALL
+    SELECT cluster_id,
+        geometry
+    FROM multinelinestring_clusters_without_splitpoints
+),
+unioned_without_feature_id AS (
+SELECT
+	l.cluster_id,
+    r.strahler,
+	l.geometry
+FROM unioned_without_strahler l
+    INNER JOIN (
+        SELECT DISTINCT ON (cluster_id)
+            cluster_id,
+            strahler
+        FROM clusters
+        ORDER BY cluster_id
+    ) r USING(cluster_id)
+	),
+	unioned_without_strahler_unique_cluster_ids AS (
+		SELECT
+			DISTINCT cluster_id
+		FROM unioned_without_strahler
+	),
+	linestrings_without_splitpoint AS (
+	SELECT
+		l.cluster_id,
+		strahler,
+		geometry
+	FROM clusters l
+		LEFT JOIN unioned_without_strahler_unique_cluster_ids r ON l.cluster_id = r.cluster_id
+    	WHERE r.cluster_id IS NULL
+	), 
+	linestrings_without_splitpoint_inserted AS (
+	SELECT
+		*
+    FROM linestrings_without_splitpoint
+    UNION ALL
+    SELECT
+		*
+    FROM unioned_without_feature_id
+	),
+	linestrings_without_splitpoint_inserted_with_feature_id AS (
+		SELECT
+			row_number() OVER (
+            	ORDER BY strahler
+        	) AS feature_id,
+			*
+		FROM linestrings_without_splitpoint_inserted
+	),
+	-- next steps are needed for union of overlapping lines that occur due to multipoint splitting
+	lines_overlapping AS (
+		SELECT
+			l.feature_id,
+			l.cluster_id
+		FROM linestrings_without_splitpoint_inserted_with_feature_id l
+		LEFT JOIN linestrings_without_splitpoint_inserted_with_feature_id r
+		ON ST_Overlaps(l.geometry, r.geometry)
+		WHERE l.cluster_id = r.cluster_id
+	), 
+	overlap_column AS (
+		SELECT 
+			*,
+			CASE
+				WHEN feature_id IN (SELECT feature_id FROM lines_overlapping) THEN true
+				ELSE false
+			END AS lines_overlap
+		FROM linestrings_without_splitpoint_inserted_with_feature_id
+	),
+	overlapping_lines_merged AS (
+		SELECT
+			cluster_id,
+			strahler,
+			ST_Union(geometry) AS geometry
+		FROM overlap_column
+		WHERE lines_overlap = true
+		GROUP BY cluster_id, strahler
+	),
+	lines_non_overlapping_reunion AS (
+		SELECT
+			*
+		FROM overlapping_lines_merged
+		UNION ALL
+		(SELECT 
+			cluster_id,
+			strahler,
+			geometry
+		FROM overlap_column
+		WHERE lines_overlap = false)
+	)
+	SELECT
+		row_number() OVER (
+            ORDER BY strahler
+        ) AS feature_id,
+		strahler,
+		ST_AsText(ST_Multi(ST_CollectionHomogenize(geometry))) AS geometry
+	FROM lines_non_overlapping_reunion	
+") %>% 
+  as_tibble() %>%  
+  st_as_sf(wkt = "geometry")
+mutate(feature_id = as.integer(feature_id))
+
+st_crs(test_lines) <- CRS_REFERENCE
+
+test_lines  %>% 
+  # print() %>%
+  mapview(zcol='feature_id', lwd = 6)# +
+# mapview(split_points, zcol = 'id')
+
+
+"
+WITH collected AS (
+  SELECT
+    strahler,
+    ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
+  FROM lines_clean
+  GROUP BY strahler
+      ), local_linestrings AS (
+      	SELECT strahler, ST_LineMerge(geometry) AS geometry FROM collected
+      ), local_linestrings_with_id AS (
+      	SELECT row_number() OVER (ORDER BY strahler) AS id, * FROM local_linestrings
+      ), local_linestrings_with_splitpoints AS (
+      	SELECT
+      	  l.id AS id,
+      	  l.strahler AS strahler,
+      	  l.geometry AS geometry,
+      	  r.id AS r_id,
+      	  r.strahler AS r_strahler,
+      	  r.geometry AS r_geometry,
+      	  ST_Intersection(l.geometry, r.geometry) AS common_geometry
+      	FROM
+      	  local_linestrings_with_id AS l
+      	  CROSS JOIN local_linestrings_with_id AS r
+      	  WHERE
+      		(
+      			l.strahler < r.strahler
+      			AND
+      			--ST_Intersects(l.geometry, r.geometry)
+				l.id 
+      			AND
+      			l.id != r.id
+      		)
+      )
+      	SELECT 
+      		id AS old_id, 
+      		strahler,
+      			CASE WHEN ST_Equals(geometry, common_geometry) THEN 
+      				ST_ForceCollection(geometry)
+      			ELSE
+      				ST_Split(geometry, common_geometry)
+      			END AS geometry,
+				GeometryType(CASE WHEN ST_Equals(geometry, common_geometry) THEN 
+      				ST_ForceCollection(geometry)
+      			ELSE
+      				ST_Split(geometry, common_geometry)
+      			END) AS type_geom,
+		  CASE WHEN ST_Equals(geometry, common_geometry) THEN 
+      				'ST_ForceCollection'
+      			ELSE
+      				'ST_Split'
+      			END AS funtion
+      	FROM local_linestrings_with_splitpoints
+      
+"
+
+
+
 
 
 #TODO filter by streamorder
