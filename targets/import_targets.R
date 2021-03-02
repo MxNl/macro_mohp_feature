@@ -9,9 +9,9 @@ import_targets <-
     
     tar_target(
       directory_river_networks,
-      DIRECTORY_RIVER_NETWORKS#,
+      DIRECTORY_RIVER_NETWORKS,
       # TODO uncomment for final run
-      # format = "file"
+      format = "file"
     ),
     
     tar_target(
@@ -24,10 +24,4 @@ import_targets <-
       river_networks_files %>% 
         future_map_dfr(read_river_networks)
     )
-    
-    # tar_target(
-    #   river_basins,
-    #   river_networks_files %>%
-    #     future_map_dfr(read_river_basins)
-    # )
   )
