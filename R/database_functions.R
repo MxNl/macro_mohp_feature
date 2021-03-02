@@ -30,6 +30,7 @@ set_index <- function(table, column, connection) {
 
 write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
   connection <- connect_to_database()
+  db_execute("CREATE EXTENSION IF NOT EXISTS postgis;", connection = connection)
   db_execute(glue::glue("DROP TABLE IF EXISTS {table};"), connection = connection)
   st_write(data, dsn = connection, layer = table, append = append)
 
@@ -43,10 +44,10 @@ prepare_lines <- function(x) {
   # x <- tar_read(line_merge_by_streamorder_raw)
 
   x %>%
-    query_result_as_sf() %>%
-    select(-old_id) %>%
-    add_feature_index_column()
-
+    convert_geometry() %>% 
+    st_as_sf() %>% 
+    st_cast("MULTILINESTRING") %>%
+    mutate(feature_id = as.integer(feature_id))
 }
 
 query_result_as_sf <- function(x) {
@@ -111,4 +112,8 @@ drop_all_tables <- function() {
   DBI::dbListTables(connection) %>%
     discard(. %in% RESERVED_OBJECTS) %>%
     walk(~DBI::dbExecute(connection, glue::glue("DROP TABLE {.};")))
+}
+
+postgres_config_path <- function() {
+  DBI::dbGetQuery(connect_to_database(), 'SHOW config_file') %>% pull(config_file) %>% pluck(1)
 }

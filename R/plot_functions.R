@@ -71,11 +71,12 @@ plot_test_single_catchment <-
     
     catchment <- 
       catchment %>% 
-      st_intersection(test_studyarea)
+      st_intersection(test_studyarea) %>% 
+      st_cast("POLYGON")
     
     ggplot() +
       geom_sf(data = catchment,
-              # fill = "grey",
+              fill = "grey",
               colour = "white") +
       geom_sf(data = river_network,
               aes(colour = strahler)) +

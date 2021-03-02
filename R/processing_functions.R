@@ -5,6 +5,8 @@ write_by_streamorder <- function(streamorder, river_networks_by_streamorder) {
     chuck(streamorder) %>%
     write_to_table(table)
   set_geo_index(table)
+  
+  Sys.time()
 }
 
 clip_river_networks <-
@@ -34,16 +36,16 @@ clip_river_networks <-
     }
   }
 
-reclassify_relevant_canals_and_ditches_and_drop_others <-
-  function(river_network, id_to_reclassify) {
+filter_rivers <-
+  function(river_network) {
     ##### Test
     # river_network <- tar_read(river_networks_clip)
     # river_network <- tar_read(river_network_pipeline_test)
     # id_to_reclassify <- tar_read(features_ids_to_reclassify)
     ####
     river_network %>%
-      mutate(dfdd = if_else(inspire_id %in% id_to_reclassify, "BH140", dfdd)) %>%
       filter(dfdd == "BH140") %>%
+      filter(hyp %in% HYP_CLASSES_TO_INCLUDE) %>% 
       add_feature_index_column()
   }
 
@@ -596,7 +598,11 @@ impute_streamorder <-
     lines_na_streamorder <-
       sf_lines %>%
         filter(strahler %in% as.integer(INVALID_STRAHLER_VALUES))
-
+    
+    if(lines_na_streamorder %>% nrow() %>% magrittr::equals(0)) {
+      sf_lines
+    } else {
+    
     lines_valid_streamorder <-
       sf_lines %>%
         anti_join(as_tibble(lines_na_streamorder), by = "feature_id")
@@ -651,6 +657,7 @@ impute_streamorder <-
       bind_rows(lines_valid_streamorder) %>%
       arrange(feature_id) %>%
       relocate(feature_id, strahler, everything())
+    }
   }
 
 add_side_column <-

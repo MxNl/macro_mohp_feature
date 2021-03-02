@@ -10,11 +10,11 @@ options(
 tar_option_set(
   packages = c(
     "here",
-    "igraph",
+    # "igraph",
     "DBI",
     "glue",
     "RPostgres",
-    "rmarkdown",
+    # "rmarkdown",
     "raster",
     "janitor",
     "rgdal",
@@ -30,7 +30,6 @@ tar_option_set(
   memory = "transient",
   garbage_collection = TRUE
 )
-
 
 source("R/constants.R")
 
@@ -49,19 +48,7 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/export_functions.R")
 
-# TODO uncomment
-# plan(multisession)
-
-logging::basicConfig()
-logging::addHandler(
-  logging::writeToFile,
-  file = here::here(
-    'logs',
-    stringr::str_replace_all(lubridate::now(), ' |:', '-')),
-  level = 'INFO'
-)
-
-logging::loginfo(paste("Area: ", AREA, " Cellsize: ", CELLSIZE))
+plan(multisession)
 
 # Define targets
 c(
