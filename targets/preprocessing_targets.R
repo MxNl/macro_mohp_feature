@@ -19,7 +19,7 @@ preprocessing_targets <- c(
   ),
 
   tar_target(
-    river_networks_non_dry_rivers_and_canals,
+    river_networks_non_dry_selected_streamtypes,
     filter_rivers(
       river_networks_clip
     )
@@ -28,7 +28,7 @@ preprocessing_targets <- c(
   tar_target(
     river_networks_imputed_streamorder_canals_as_1,
     impute_streamorder(
-      river_networks_non_dry_rivers_and_canals
+      river_networks_non_dry_selected_streamtypes
     )
   ),
   
