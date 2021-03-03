@@ -77,26 +77,276 @@ write_connected_river_networks <- function(table_name_read,
   Sys.time()
 }
 
-merge_same_strahler_segments <- function(depends_on = NULL) {
+merge_same_strahler_segments <- function(table_name_destination, table_source, depends_on = NULL) {
 
   length(depends_on)
-
-  ###### Test
-  # sf_lines <- tar_read(river_networks_dissolved_junctions_after)
-  # query <- tar_read(linemerge_query)
-  ###
-  lines_merged <- 
-    connect_to_database() %>%
-    run_query_linemerge_by_streamorder() %>%
-    as_tibble() %>% 
-    st_as_sf(wkt = "geometry") %>%
-    mutate(feature_id = as.integer(feature_id))
   
-  st_crs(lines_merged) <- CRS_REFERENCE
-  
-  return(lines_merged)
+  query <- 
+    glue::glue("
+    CREATE TABLE {table_name_destination} AS (
+    WITH collected AS (
+    SELECT strahler,
+        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
+    FROM {table_source}
+    GROUP BY strahler
+),
+-- base table
+clusters AS (
+    SELECT row_number() OVER (
+            ORDER BY strahler
+        ) AS cluster_id,
+        strahler,
+        CASE
+            WHEN GeometryType(ST_LineMerge(geometry)) = 'MULTILINESTRING' THEN true
+            ELSE false
+        END AS is_multilinestring,
+        geometry
+    FROM collected
+),
+-- processing for clusters that are multilinestrings and have splitpoints
+cluster_lines_without_id AS (
+    SELECT cluster_id,
+        (ST_Dump(geometry)).geom AS geometry,
+        strahler,
+        is_multilinestring
+    FROM clusters
+),
+cluster_lines as (
+    SELECT row_number() OVER (
+            ORDER BY is_multilinestring
+        ) AS line_id,
+        *
+    FROM cluster_lines_without_id
+),
+split_points_single AS (
+    SELECT DISTINCT l.cluster_id AS cluster_id,
+        ST_Intersection(l.geometry, r.geometry) AS geometry
+    FROM cluster_lines AS l
+        CROSS JOIN cluster_lines AS r
+    WHERE (
+            l.strahler < r.strahler
+            AND ST_Intersects(l.geometry, r.geometry)
+            AND l.cluster_id != r.cluster_id
+        )
+),
+--Test for multiple splitpoints per cluster id
+split_points AS (
+    SELECT
+        cluster_id,
+        ST_CollectionHomogenize(ST_Collect(geometry)) AS geometry
+    FROM split_points_single
+    GROUP BY cluster_id
+),
+lines_touching_splitpoints AS (
+    SELECT cluster_lines.line_id,
+        cluster_lines.cluster_id,
+        cluster_lines.geometry
+    FROM cluster_lines
+        LEFT JOIN split_points USING (cluster_id)
+    WHERE ST_Intersects(cluster_lines.geometry, split_points.geometry)
+        AND is_multilinestring
+),
+lines_not_touching_splitpoints AS (
+    SELECT l.line_id,
+        l.cluster_id,
+        l.geometry AS geometry,
+        r.line_id as rid,
+        r.cluster_id as r_cl
+    FROM cluster_lines AS l
+        LEFT JOIN lines_touching_splitpoints AS r ON l.line_id = r.line_id
+    WHERE l.cluster_id IN (
+            SELECT cluster_id
+            FROM lines_touching_splitpoints
+        )
+        AND r.line_id IS NULL
+),
+lines_not_touching_splitpoints_clusters AS (
+    SELECT cluster_id,
+        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
+    FROM lines_not_touching_splitpoints
+    GROUP BY cluster_id
+),
+-- clusters that are multilinestrings and have splitpoints
+multinelinestring_clusters_splitted AS (
+    SELECT l.cluster_id,
+        ST_CollectionHomogenize(ST_Collect(l.geometry, r.geometry)) AS geometry
+    FROM lines_touching_splitpoints l
+        INNER JOIN lines_not_touching_splitpoints_clusters r USING(cluster_id)
+    WHERE ST_Intersects(l.geometry, r.geometry)
+),
+-- clusters that are single linestrings
+linestrings_clusters_splitted AS (
+    SELECT l.cluster_id,
+        (ST_Dump(ST_Split(ST_LineMerge(l.geometry), r.geometry))).geom AS geometry
+    FROM clusters l
+        INNER JOIN split_points r USING(cluster_id)
+    WHERE NOT l.is_multilinestring
+),
+-- clusters that are multilinestrings but do not have splitpoints
+multinelinestring_clusters_without_splitpoints AS (
+    select cluster_id,
+        ST_Multi(ST_CollectionHomogenize(geometry)) AS geometry
+    FROM clusters
+    WHERE is_multilinestring
+        AND cluster_id NOT IN (
+            SELECT DISTINCT cluster_id
+            FROM multinelinestring_clusters_splitted
+        )
+),
+unioned_without_strahler AS (
+    SELECT cluster_id,
+        geometry
+    FROM multinelinestring_clusters_splitted
+    UNION ALL
+    SELECT cluster_id,
+        geometry
+    FROM linestrings_clusters_splitted
+    UNION ALL
+    SELECT cluster_id,
+        geometry
+    FROM multinelinestring_clusters_without_splitpoints
+),
+unioned_without_feature_id AS (
+SELECT
+	l.cluster_id,
+    r.strahler,
+	l.geometry
+FROM unioned_without_strahler l
+    INNER JOIN (
+        SELECT DISTINCT ON (cluster_id)
+            cluster_id,
+            strahler
+        FROM clusters
+        ORDER BY cluster_id
+    ) r USING(cluster_id)
+	),
+	unioned_without_strahler_unique_cluster_ids AS (
+		SELECT
+			DISTINCT cluster_id
+		FROM unioned_without_strahler
+	),
+	linestrings_without_splitpoint AS (
+	SELECT
+		l.cluster_id,
+		strahler,
+		geometry
+	FROM clusters l
+		LEFT JOIN unioned_without_strahler_unique_cluster_ids r ON l.cluster_id = r.cluster_id
+    	WHERE r.cluster_id IS NULL
+	), 
+	linestrings_without_splitpoint_inserted AS (
+	SELECT
+		*
+    FROM linestrings_without_splitpoint
+    UNION ALL
+    SELECT
+		*
+    FROM unioned_without_feature_id
+	),
+	linestrings_without_splitpoint_inserted_with_feature_id AS (
+		SELECT
+			row_number() OVER (
+            	ORDER BY strahler
+        	) AS feature_id,
+			*
+		FROM linestrings_without_splitpoint_inserted
+	),
+	-- next steps are needed for union of overlapping lines that occur due to multipoint splitting
+	lines_overlapping AS (
+		SELECT
+			l.feature_id,
+			l.cluster_id
+		FROM linestrings_without_splitpoint_inserted_with_feature_id l
+		LEFT JOIN linestrings_without_splitpoint_inserted_with_feature_id r
+		ON ST_Overlaps(l.geometry, r.geometry)
+		WHERE l.cluster_id = r.cluster_id
+	), 
+	overlap_column AS (
+		SELECT 
+			*,
+			CASE
+				WHEN feature_id IN (SELECT feature_id FROM lines_overlapping) THEN true
+				ELSE false
+			END AS lines_overlap
+		FROM linestrings_without_splitpoint_inserted_with_feature_id
+	),
+	overlapping_lines_merged AS (
+		SELECT
+			cluster_id,
+			strahler,
+			ST_Union(geometry) AS geometry
+		FROM overlap_column
+		WHERE lines_overlap = true
+		GROUP BY cluster_id, strahler
+	),
+	lines_non_overlapping_reunion AS (
+		SELECT
+			*
+		FROM overlapping_lines_merged
+		UNION ALL
+		(SELECT 
+			cluster_id,
+			strahler,
+			geometry
+		FROM overlap_column
+		WHERE lines_overlap = false)
+	)
+	SELECT
+		row_number() OVER (
+            ORDER BY strahler
+        ) AS feature_id,
+		strahler,
+		ST_Multi(ST_CollectionHomogenize(geometry)) AS geometry
+	FROM lines_non_overlapping_reunion
+    )
+    ")
+  create_table(query, table_name_destination)
+  Sys.time()
 }
 
+get_unique_streamorders <- 
+  function(table_name_source, depends_on = NULL) {
+    
+    length(depends_on)
+    
+    query <- glue::glue(
+      "
+      SELECT
+        DISTINCT strahler
+      FROM {table_name_source}
+      ORDER BY strahler
+      "
+    )
+    connection <- connect_to_database()
+    DBI::dbGetQuery(connection, query) %>% 
+      as_vector() %>%
+      as.integer()
+  }
+
+streamorder_filter <-
+  function(table_name_prefix_destination,
+           table_name_source,
+           streamorder,
+           depends_on = NULL) {
+    
+    length(depends_on)
+    
+    table <- composite_name(table_name_prefix_destination, streamorder)
+    
+    query <- glue::glue(
+      "
+      CREATE TABLE {table} AS (
+          SELECT
+            *
+          FROM {table_name_source}
+          WHERE strahler >= {streamorder}
+      )
+      "
+    )
+    create_table(query, table, geo_index_column = "geometry")
+    Sys.time()
+  }
+  
 is_pq_geometry <- 
   function(column) { 
     class(column) == "pq_geometry" | class(column) == "pq_NA"
@@ -374,225 +624,6 @@ set_geo_index <- function(table, index_column = "geometry", connection = connect
 db_execute <- function(query, connection = connect_to_database()) {
   #print(query)
   DBI::dbExecute(connection, query)
-}
-
-run_query_linemerge_by_streamorder <- function(connection) {
-  DBI::dbGetQuery(connection, glue::glue("
-    WITH collected AS (
-    SELECT strahler,
-        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
-    FROM lines_clean
-    GROUP BY strahler
-),
--- base table
-clusters AS (
-    SELECT row_number() OVER (
-            ORDER BY strahler
-        ) AS cluster_id,
-        strahler,
-        CASE
-            WHEN GeometryType(ST_LineMerge(geometry)) = 'MULTILINESTRING' THEN true
-            ELSE false
-        END AS is_multilinestring,
-        geometry
-    FROM collected
-),
--- processing for clusters that are multilinestrings and have splitpoints
-cluster_lines_without_id AS (
-    SELECT cluster_id,
-        (ST_Dump(geometry)).geom AS geometry,
-        strahler,
-        is_multilinestring
-    FROM clusters
-),
-cluster_lines as (
-    SELECT row_number() OVER (
-            ORDER BY is_multilinestring
-        ) AS line_id,
-        *
-    FROM cluster_lines_without_id
-),
-split_points_single AS (
-    SELECT DISTINCT l.cluster_id AS cluster_id,
-        ST_Intersection(l.geometry, r.geometry) AS geometry
-    FROM cluster_lines AS l
-        CROSS JOIN cluster_lines AS r
-    WHERE (
-            l.strahler < r.strahler
-            AND ST_Intersects(l.geometry, r.geometry)
-            AND l.cluster_id != r.cluster_id
-        )
-),
---Test for multiple splitpoints per cluster id
-split_points AS (
-    SELECT
-        cluster_id,
-        ST_CollectionHomogenize(ST_Collect(geometry)) AS geometry
-    FROM split_points_single
-    GROUP BY cluster_id
-),
-lines_touching_splitpoints AS (
-    SELECT cluster_lines.line_id,
-        cluster_lines.cluster_id,
-        cluster_lines.geometry
-    FROM cluster_lines
-        LEFT JOIN split_points USING (cluster_id)
-    WHERE ST_Intersects(cluster_lines.geometry, split_points.geometry)
-        AND is_multilinestring
-),
-lines_not_touching_splitpoints AS (
-    SELECT l.line_id,
-        l.cluster_id,
-        l.geometry AS geometry,
-        r.line_id as rid,
-        r.cluster_id as r_cl
-    FROM cluster_lines AS l
-        LEFT JOIN lines_touching_splitpoints AS r ON l.line_id = r.line_id
-    WHERE l.cluster_id IN (
-            SELECT cluster_id
-            FROM lines_touching_splitpoints
-        )
-        AND r.line_id IS NULL
-),
-lines_not_touching_splitpoints_clusters AS (
-    SELECT cluster_id,
-        ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
-    FROM lines_not_touching_splitpoints
-    GROUP BY cluster_id
-),
--- clusters that are multilinestrings and have splitpoints
-multinelinestring_clusters_splitted AS (
-    SELECT l.cluster_id,
-        ST_CollectionHomogenize(ST_Collect(l.geometry, r.geometry)) AS geometry
-    FROM lines_touching_splitpoints l
-        INNER JOIN lines_not_touching_splitpoints_clusters r USING(cluster_id)
-    WHERE ST_Intersects(l.geometry, r.geometry)
-),
--- clusters that are single linestrings
-linestrings_clusters_splitted AS (
-    SELECT l.cluster_id,
-        (ST_Dump(ST_Split(ST_LineMerge(l.geometry), r.geometry))).geom AS geometry
-    FROM clusters l
-        INNER JOIN split_points r USING(cluster_id)
-    WHERE NOT l.is_multilinestring
-),
--- clusters that are multilinestrings but do not have splitpoints
-multinelinestring_clusters_without_splitpoints AS (
-    select cluster_id,
-        ST_Multi(ST_CollectionHomogenize(geometry)) AS geometry
-    FROM clusters
-    WHERE is_multilinestring
-        AND cluster_id NOT IN (
-            SELECT DISTINCT cluster_id
-            FROM multinelinestring_clusters_splitted
-        )
-),
-unioned_without_strahler AS (
-    SELECT cluster_id,
-        geometry
-    FROM multinelinestring_clusters_splitted
-    UNION ALL
-    SELECT cluster_id,
-        geometry
-    FROM linestrings_clusters_splitted
-    UNION ALL
-    SELECT cluster_id,
-        geometry
-    FROM multinelinestring_clusters_without_splitpoints
-),
-unioned_without_feature_id AS (
-SELECT
-	l.cluster_id,
-    r.strahler,
-	l.geometry
-FROM unioned_without_strahler l
-    INNER JOIN (
-        SELECT DISTINCT ON (cluster_id)
-            cluster_id,
-            strahler
-        FROM clusters
-        ORDER BY cluster_id
-    ) r USING(cluster_id)
-	),
-	unioned_without_strahler_unique_cluster_ids AS (
-		SELECT
-			DISTINCT cluster_id
-		FROM unioned_without_strahler
-	),
-	linestrings_without_splitpoint AS (
-	SELECT
-		l.cluster_id,
-		strahler,
-		geometry
-	FROM clusters l
-		LEFT JOIN unioned_without_strahler_unique_cluster_ids r ON l.cluster_id = r.cluster_id
-    	WHERE r.cluster_id IS NULL
-	), 
-	linestrings_without_splitpoint_inserted AS (
-	SELECT
-		*
-    FROM linestrings_without_splitpoint
-    UNION ALL
-    SELECT
-		*
-    FROM unioned_without_feature_id
-	),
-	linestrings_without_splitpoint_inserted_with_feature_id AS (
-		SELECT
-			row_number() OVER (
-            	ORDER BY strahler
-        	) AS feature_id,
-			*
-		FROM linestrings_without_splitpoint_inserted
-	),
-	-- next steps are needed for union of overlapping lines that occur due to multipoint splitting
-	lines_overlapping AS (
-		SELECT
-			l.feature_id,
-			l.cluster_id
-		FROM linestrings_without_splitpoint_inserted_with_feature_id l
-		LEFT JOIN linestrings_without_splitpoint_inserted_with_feature_id r
-		ON ST_Overlaps(l.geometry, r.geometry)
-		WHERE l.cluster_id = r.cluster_id
-	), 
-	overlap_column AS (
-		SELECT 
-			*,
-			CASE
-				WHEN feature_id IN (SELECT feature_id FROM lines_overlapping) THEN true
-				ELSE false
-			END AS lines_overlap
-		FROM linestrings_without_splitpoint_inserted_with_feature_id
-	),
-	overlapping_lines_merged AS (
-		SELECT
-			cluster_id,
-			strahler,
-			ST_Union(geometry) AS geometry
-		FROM overlap_column
-		WHERE lines_overlap = true
-		GROUP BY cluster_id, strahler
-	),
-	lines_non_overlapping_reunion AS (
-		SELECT
-			*
-		FROM overlapping_lines_merged
-		UNION ALL
-		(SELECT 
-			cluster_id,
-			strahler,
-			geometry
-		FROM overlap_column
-		WHERE lines_overlap = false)
-	)
-	SELECT
-		row_number() OVER (
-            ORDER BY strahler
-        ) AS feature_id,
-		strahler,
-		ST_AsText(ST_Multi(ST_CollectionHomogenize(geometry))) AS geometry
-	FROM lines_non_overlapping_reunion	
-    "))
 }
 
 read_lateral_position_stream_divide_distance_from_db <- function(table_name_source_prefix, streamorder, depends_on = NULL) {

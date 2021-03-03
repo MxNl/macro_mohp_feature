@@ -11,16 +11,12 @@ FILEPATH_STUDYAREA_GERMANY <- "J:/NUTZER/Noelscher.M/Studierende/Daten/study_are
 FILEPATH_STUDYAREA_PIPELINETEST <- "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/arbitrary/pipeline_test_studyarea/macro_datapreparation_pipeline_test_studyarea.shp"
 DIRECTORY_RIVER_NETWORKS <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data"
 FILEPATH_COASTLINE <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
-DIRECTORY_NONRIVERS_TO_RECLASSIFY <- "qgis/line_features_to_reclassify"
 FILEPATH_CONFIG <- "config.yml"
 
 # Database Table Names
-LINES_RAW <- "lines_raw"
 LINES_CLEAN <- "lines_clean"
-LINES_CONNECTED_ID <- "connected_id"
+LINES_MERGED <- "lines_merged"
 LINES_BY_STREAMORDER <- "river_network_by_streamorder"
-# LINES_MERGE_SINGLE_STREAMORDER <- "river_networks_merge_single_streamorder"
-# BRACKETS_TO_DROP <- "brackets_to_drop"
 SELECTED_STUDYAREA_TABLE <- "selected_studyarea"
 GRID_CENTROIDS <- "grid"
 GRID_POLYGONS_TABLE <- "grid_polygons"
@@ -42,3 +38,5 @@ STREAM_TYPE_TO_INCLUDE <- c(
 HYP_CLASSES_TO_INCLUDE <- c(
   1, 2, 3
 )
+DFDD_CANALS <- "BH020"
+DFDD_RIVERS <- "BH140"
