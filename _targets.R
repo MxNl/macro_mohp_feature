@@ -48,7 +48,7 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/export_functions.R")
 
-# plan(multisession)
+plan(multisession)
 
 # Define targets
 c(

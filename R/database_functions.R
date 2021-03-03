@@ -21,6 +21,7 @@ create_table <- function(query, table, index_column = NULL, geo_index_column = N
   if (!is.null(geo_index_column)) {
     set_geo_index(table, geo_index_column, connection)
   }
+  DBI::dbDisconnect(connection)
 }
 
 set_index <- function(table, column, connection) {
@@ -37,7 +38,7 @@ write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
   if (!is.null(index_column)) {
     set_index(table, index_column, connection)
   }
-  # TODO: add geoindex here if provided
+  DBI::dbDisconnect(connection)
 }
 
 prepare_lines <- function(x) {
@@ -74,7 +75,10 @@ convert_pq_geomentry <- function(x) {
 #   }
 
 get_table_from_postgress <- function(table_name_read) {
-  DBI::dbGetQuery(connect_to_database(), glue::glue("SELECT * FROM {table_name_read}"))
+  connection <- connect_to_database()
+  query_result <- DBI::dbGetQuery(connection, glue::glue("SELECT * FROM {table_name_read}"))
+  DBI::dbDisconnect(connection)
+  query_result
 }
 
 write_as_lines_to_db <- function(sf_lines, table_name_destination) {

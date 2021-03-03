@@ -318,9 +318,11 @@ get_unique_streamorders <-
       "
     )
     connection <- connect_to_database()
-    DBI::dbGetQuery(connection, query) %>% 
+    unique_streamorders <- DBI::dbGetQuery(connection, query) %>% 
       as_vector() %>%
       as.integer()
+    DBI::dbDisconnect(connection)
+    unique_streamorders
   }
 
 streamorder_filter <-
@@ -332,7 +334,6 @@ streamorder_filter <-
     length(depends_on)
     
     table <- composite_name(table_name_prefix_destination, streamorder)
-    
     query <- glue::glue(
       "
       CREATE TABLE {table} AS (
@@ -343,6 +344,7 @@ streamorder_filter <-
       )
       "
     )
+    print(query)
     create_table(query, table, geo_index_column = "geometry")
     Sys.time()
   }
@@ -418,6 +420,7 @@ make_grid_polygons_in_db <- function(
         ")
 
   create_table(query, table_name_destination, index_column)
+  DBI::dbDisconnect(connection)
   Sys.time()
 }
 
@@ -508,6 +511,7 @@ nearest_neighbours_between <- function(
   ")
   # print(query)
   create_table(query, table_destination, index_column = c("feature_id", "grid_id"))
+  DBI::dbDisconnect(connection)
   Sys.time()
 }
 
@@ -561,6 +565,7 @@ make_thiessen_catchments <- function(stream_order_id, depends_on) {
   ")
   # print(query)
   create_table(query, table_name_destination, index_column = 'feature_id')
+  DBI::dbDisconnect(connection)
   Sys.time()
 }
 
