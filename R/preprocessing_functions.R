@@ -33,7 +33,7 @@ filter_rivers <-
     # id_to_reclassify <- tar_read(features_ids_to_reclassify)
     ####
     river_network %>%
-      filter(dfdd %in% c(DFDD_CANALS, DFDD_RIVERS)) %>%
+      filter(dfdd %in% STREAM_TYPES_TO_USE) %>%
       filter(hyp %in% HYP_CLASSES_TO_INCLUDE)
   }
 
