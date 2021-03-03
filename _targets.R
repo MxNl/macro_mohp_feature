@@ -10,7 +10,6 @@ options(
 tar_option_set(
   packages = c(
     "here",
-    # "igraph",
     "DBI",
     "glue",
     "RPostgres",
