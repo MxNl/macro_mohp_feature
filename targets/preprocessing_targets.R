@@ -17,17 +17,24 @@ preprocessing_targets <- c(
       selected_studyarea
     )
   ),
-  
+
   tar_target(
-    river_networks_only_non_dry_rivers,
+    river_networks_non_dry_rivers_and_canals,
     filter_rivers(
       river_networks_clip
     )
   ),
   
   tar_target(
+    river_networks_imputed_streamorder_canals_as_1,
+    impute_streamorder(
+      river_networks_non_dry_rivers_and_canals
+    )
+  ),
+  
+  tar_target(
     river_networks_clean,
-    clean_river_networks(river_networks_only_non_dry_rivers)
+    clean_river_networks(river_networks_imputed_streamorder_canals_as_1)
   ),
   
   tar_target(
@@ -40,8 +47,10 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
-    river_networks_strahler_merge,
+    db_river_networks_strahler_merge,
     merge_same_strahler_segments(
+      LINES_MERGED,
+      LINES_CLEAN,  
       depends_on = list(
         db_river_networks_clean
       )
@@ -50,32 +59,19 @@ preprocessing_targets <- c(
   
   tar_target(
     streamorders,
-    river_networks_strahler_merge %>%
-      as_tibble() %>%
-      distinct(strahler) %>%
-      pull(strahler) %>%
-      as.numeric() %>%
-      sort()
-  ),
-  
-  tar_target(
-    river_network_by_streamorder,
-    streamorders %>%
-      as.vector() %>%
-      as.integer() %>%
-      future_map(
-        ~stream_order_filter(
-          river_network = river_networks_strahler_merge,
-          stream_order = .x
-        )
+    get_unique_streamorders(
+      LINES_MERGED,
+      depends_on = list(db_river_networks_strahler_merge)
       )
   ),
   
   tar_target(
     db_river_network_by_streamorder,
-    write_by_streamorder(
+    streamorder_filter(
+      LINES_BY_STREAMORDER,
+      LINES_MERGED,
       streamorders,
-      river_network_by_streamorder
+      depends_on = list(db_river_networks_strahler_merge)
     ),
     pattern = map(streamorders)
   ),

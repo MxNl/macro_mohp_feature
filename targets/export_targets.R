@@ -25,6 +25,7 @@ export_targets <-
         streamorders,
         feature_names
       ),
-      pattern = cross(streamorders, feature_names)
+      pattern = cross(streamorders, feature_names),
+      deployment = "main"
     )
   )

@@ -43,12 +43,12 @@ source("targets/export_targets.R")
 source("R/import_functions.R")
 source("R/plot_functions.R")
 source("R/directory_functions.R")
-source("R/processing_functions.R")
+source("R/preprocessing_functions.R")
 source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/export_functions.R")
 
-plan(multisession)
+# plan(multisession)
 
 # Define targets
 c(

@@ -8,7 +8,7 @@ mohpcalculation_targets <- list(
       left_table = GRID_CENTROIDS,
       right_table = composite_name(LINES_BY_STREAMORDER, streamorders),
       left_columns = c("grid_id", "geometry"),
-      right_columns = c("feature_id", "strahler", "stream_order_id"),
+      right_columns = c("feature_id", "strahler"),
       stream_order_id = streamorders,
       depends_on = list(
         db_river_network_by_streamorder,
