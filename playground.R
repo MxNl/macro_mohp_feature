@@ -394,7 +394,7 @@ CREATE TABLE raster_table_id_1 AS (
 	FROM raster
 	);
 
---\lo_export 147303 '/tmp/myraster.tiff'
+--\\lo_export 147303 '/tmp/myraster.tiff'
 
 DROP TABLE IF EXISTS tmp_out ;
 
@@ -404,7 +404,7 @@ SELECT lo_from_bytea(0,
         ) AS loid
   FROM raster_table_id_1;
 
-SELECT lo_export(loid, 'D:\Tmp\test.tiff')
+SELECT lo_export(loid, 'D:\\Tmp\\test.tiff')
    FROM tmp_out;
 
 SELECT lo_unlink(loid)
