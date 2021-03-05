@@ -73,7 +73,8 @@ determine_studyarea_outline_level_germany <-
       mutate(area = as.numeric(st_area(geometry))) %>%
       arrange(-area) %>%
       slice(1) %>%
-      select(geometry)
+      select(geometry) %>% 
+      mutate(id = 1L)
   }
 
 determine_studyarea_outline_level_europe <-
@@ -87,7 +88,8 @@ determine_studyarea_outline_level_europe <-
       summarise() %>%
       st_difference(coastline) %>%
       st_cast("POLYGON") %>%
-      select(geometry)
+      select(geometry) %>% 
+      mutate(id = 1L)
   }
 
 add_feature_index_column <-
@@ -219,4 +221,16 @@ impute_streamorder <-
       # verify(filter(dfdd == DFDD_RIVERS & is.na(strahler)) %>% nrow() %>% magrittr::equals(0)) %>% 
       mutate(strahler = replace_na(strahler, 1)) %>% 
       mutate(strahler = if_else(strahler %in% INVALID_STRAHLER_VALUES, 1, strahler))
+  }
+
+make_reference_raster <- 
+  function(studyarea, depends_on = NULL) {
+    
+    length(depends_on)
+    
+    base_raster <- studyarea %>% 
+      fasterize::raster(resolution = c(CELLSIZE, CELLSIZE))
+    
+    studyarea %>% 
+      fasterize::fasterize(base_raster)
   }

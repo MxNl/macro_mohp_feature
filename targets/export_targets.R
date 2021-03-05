@@ -23,7 +23,8 @@ export_targets <-
       write_raster_mohp_features(
         lateral_position_stream_divide_distance,
         streamorders,
-        feature_names
+        feature_names,
+        reference_raster
       ),
       pattern = cross(streamorders, feature_names),
       deployment = "main"
