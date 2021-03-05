@@ -1035,6 +1035,13 @@
       "Repository": "CRAN",
       "Hash": "a1958587eb651a02273d685fff3819b1"
     },
+    "tictoc": {
+      "Package": "tictoc",
+      "Version": "1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f8cc5adf4671b013434bbe127f35b28c"
+    },
     "tidyr": {
       "Package": "tidyr",
       "Version": "1.1.2",
