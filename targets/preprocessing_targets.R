@@ -76,13 +76,20 @@ preprocessing_targets <- c(
     pattern = map(streamorders)
   ),
   
-  tar_target( #TODO ST_AsRaster parameter touched=true setzen?! damit grid das polygon überlappt
+  tar_target(
+    reference_raster,
+    make_reference_raster(
+      selected_studyarea,
+      depends_on = list(config)
+    )
+  ),
+  
+  tar_target(
     db_grid_polygons,
-    make_grid_polygons_in_db(
-      SELECTED_STUDYAREA_TABLE,
+    make_grid_polygons_and_write_to_db(
+      reference_raster,
       GRID_POLYGONS_TABLE,
-      index_column = "grid_id",
-      depends_on = list(db_selected_studyarea, config)
+      selected_studyarea
     )
     # force = !exists_table(GRID_POLYGONS_TABLE)
   ),

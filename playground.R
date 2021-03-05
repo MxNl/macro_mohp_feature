@@ -40,6 +40,89 @@ tar_read(grid_lateral_position)
 tar_read(river_networks_clip)
 tar_read(river_networks_imputed_streamorder_canals_as_1)
 
+
+
+
+
+
+
+
+library(leaflet)
+library(leafgl)
+
+test_lines <- 
+  LINES_MERGED %>% 
+  get_table_from_postgress() %>% 
+  query_result_as_sf()
+
+
+test_lines <- 
+  test_lines %>% 
+  st_transform(4326) %>% 
+  st_cast("LINESTRING") %>% 
+  mutate(feature_id = as.character(feature_id))
+
+# tar_read(river_networks_clean) %>% 
+#   st_write("../lines_before_merge.shp")
+
+options(viewer = NULL)
+leaflet() %>% 
+  addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
+  addGlPolylines(data = test_lines)
+
+
+
+
+selected_studyarea <- tar_read(selected_studyarea) %>% 
+  mutate(id = 1L)
+
+rasterized <- 
+  selected_studyarea %>% 
+  fasterize::raster(resolution = c(25,25)) %>% 
+  setValues(1)
+
+rasterized_plus <- 
+  selected_studyarea %>% 
+  fasterize::fasterize(rasterized)
+
+rasterized_plus %>% plot()
+rasterized %>% plot()
+
+asstars <- 
+  rasterized %>% 
+  st_as_stars()
+connection
+
+tictoc::tic()
+grid_test <- 
+  rasterized %>% 
+  st_as_stars() %>% 
+  st_transform(CRS_REFERENCE) %>% 
+  st_as_sf()
+  # select(-values) %>%
+  # st_transform(CRS_REFERENCE) 
+  # filter_intersecting_features(selected_studyarea)
+  # write_to_table("testtest")
+tictoc::toc()
+
+grid_test %>% 
+  mapview()
+
+grid_test %>% st_crs()
+selected_studyarea %>% st_crs()
+
+"+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+
+tictoc::tic()
+assf <- asstars %>% 
+  st_as_sf(as_points = FALSE)
+tictoc::toc()
+
+assf
+
+assf %>% 
+  add_feature_index_column()
+
 write_selected_studyarea(
   tar_read(selected_studyarea),
   SELECTED_STUDYAREA_TABLE
@@ -264,16 +347,38 @@ sequential_nearest_neighbours_with_maxdist <-
     
   }
 
+library(leaflet)
+library(leafgl)
+studyarea_test <- tar_read(selected_studyarea)
+
+raster_test <- 
+  studyarea_test %>% 
+  raster::raster(crs = 3035, resolution = 100)
+
+points <- 
+  raster_test %>% 
+  rasterToPoints() %>% 
+  as_tibble() %>% 
+  st_as_sf(coords = c("x", "y"))
+
+st_crs(points) <- 3035
 
 
-composite_name <- function(table_name, stream_order_id) {
-  if(is.null(stream_order_id)){
-    table_name
-  } else {
-    glue::glue('{table_name}_id_{stream_order_id}')
-  }
-}
+points <- 
+  points %>% 
+  filter_intersecting_features(studyarea_test) %>% 
+  st_transform(4326)
 
+
+studyarea_test <- 
+  studyarea_test %>% 
+  st_transform(CRS_LEAFLET)
+
+options(viewer = NULL)
+leaflet() %>% 
+  addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
+  # addPolylines(data = studyarea_test) %>%
+  addGlPoints(data = points)
 
 "
 CREATE TABLE raster_table_id_1 AS (

@@ -1,8 +1,5 @@
 write_raster_mohp_features <-
-  function(lateral_position_stream_divide_distance, streamorder, feature_name) {
-    # lateral_position_stream_divide_distance <- tar_read(lateral_position_stream_divide_distance)
-    # streamorder <- 1
-    # feature_name <- "lateral_position"
+  function(lateral_position_stream_divide_distance, streamorder, feature_name, reference_raster) {
 
     if (feature_name == "lateral_position") {
       filepath_prefix_feature_name <- "lp"
@@ -38,7 +35,8 @@ write_raster_mohp_features <-
     
     lateral_position_stream_divide_distance %>%
       pluck(streamorder) %>%
-      select(all_of(feature_name)) %>%
-      st_rasterize(dx = CELLSIZE, dy = CELLSIZE) %>%
-      write_stars(filepath)
+      select(all_of(feature_name)) %>% 
+      fasterize::fasterize(reference_raster, field = feature_name) %>% 
+      writeRaster(filepath, overwrite = TRUE)
+      # gdalUtils::gdal_rasterize("output_data/test.tiff", output_Raster = TRUE, verbose = TRUE)
   }

@@ -1,23 +1,39 @@
-drop_disconnected_river_networks <-
-  function(river_networks, studyarea, table_name_read, depends_on = NULL) {
-    length(depends_on)
-
-    get_table_from_postgress(table_name_read) %>%
-      query_result_as_sf() %>%
-      filter(st_intersects(., st_cast(studyarea, "MULTILINESTRING"), sparse = FALSE)[, 1]) %>%
-      select(-connected_id) %>%
-      st_intersection(river_networks) %>%
-      add_feature_index_column()
-  }
-
-read_connected_river_networks <-
-  function(table_name_read, depends_on = NULL) {
+make_grid_polygons_and_write_to_db <- 
+  function(reference_raster, table_name_destination, studyarea, depends_on = NULL) {
+    
     length(depends_on)
     
-    get_table_from_postgress(table_name_read) %>%
-      query_result_as_sf() %>%
-      add_feature_index_column()
+    reference_raster %>% 
+      st_as_stars() %>% 
+      st_transform(CRS_REFERENCE) %>%
+      st_as_sf() %>% 
+      select(-layer) %>% 
+      write_to_table(table_name_destination)
+    
+      add_row_id_in_db_table(table_name_destination)
+    
+    Sys.time()
   }
+
+add_row_id_in_db_table <- 
+  function(table_name, column_name = "grid_id") {
+    query <- glue::glue(
+      "
+      ALTER TABLE {table_name}
+      ADD grid_id serial;
+      "
+      )
+    connection <- connect_to_database()
+    
+    DBI::dbExecute(connection, query)
+    
+    if (!is.null(column_name)) {
+      set_index(table_name, column_name, connection)
+    }
+    DBI::dbDisconnect(connection)
+      
+  } 
+
 
 run_query_connected <- function(table_name_read, table_name_destination, table_name_studyarea) {
   query <- glue::glue("
@@ -369,58 +385,6 @@ write_selected_studyarea <- function(x, table_name_destination, index_column = N
     table_name_destination,
     index_column = index_column
   )
-  Sys.time()
-}
-
-make_grid_polygons_in_db <- function(
-  grid_over_polygon,
-  table_name_destination,
-  index_column = NULL,
-  depends_on = NULL
-) {
-
-  length(depends_on)
-
-  if(CELLSIZE < 1) {
-    cellsize <- CELLSIZE
-  } else {
-    cellsize <- str_c(CELLSIZE, ".0")
-  }
-  
-  cellsize <- 
-    cellsize %>% 
-    as.character()
-  
-  query <- 
-    glue::glue("
-      CREATE TABLE empty_raster AS (
-        SELECT
-          ST_AsRaster(ST_Union(geometry), {cellsize},{cellsize}) AS rast
-        FROM {grid_over_polygon}
-      )
-               ")
-  
-  connection <- connect_to_database()
-  db_execute("CREATE EXTENSION IF NOT EXISTS postgis_raster;", connection = connection)
-  create_table(query, "empty_raster")
-  
-  query <-
-    glue::glue("
-        CREATE TABLE {table_name_destination} AS (
-          with grid AS (
-          	SELECT 
-          	  (ST_PixelAsPolygons(rast)).geom AS geometry
-          	FROM empty_raster
-          )
-          	SELECT 
-            	geometry, 
-            	row_number() OVER (ORDER BY geometry) AS grid_id 
-          	FROM grid
-          )
-        ")
-
-  create_table(query, table_name_destination, index_column)
-  DBI::dbDisconnect(connection)
   Sys.time()
 }
 

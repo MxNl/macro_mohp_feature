@@ -8,7 +8,8 @@ pipeline_for <- function(area) {
       ),
       tar_target(
         selected_studyarea,
-        read_studyarea(filepath_studyarea_pipelinetest)
+        read_studyarea(filepath_studyarea_pipelinetest) %>% 
+        mutate(id = 1L)
       )
     ),
     germany = list(
