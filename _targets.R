@@ -4,7 +4,7 @@ library(future)
 
 options(
   tidyverse.quiet = TRUE,
-  future.globals.maxSize = 4E5 * 1024^2
+  future.globals.maxSize = 1E5 * 1024^2
 )
 
 tar_option_set(
