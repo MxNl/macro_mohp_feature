@@ -13,3 +13,7 @@ qgis
 .idea
 logs
 *.yml
+junk
+.idea/*
+docker-mount/*
+renv/library/*

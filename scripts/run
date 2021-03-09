@@ -1,0 +1,15 @@
+#!/bin/bash -e
+
+USERNAME=apprunner
+CONTAINER_TAG=ubuntu-test
+
+docker build \
+  --build-arg=USERNAME=$USERNAME \
+  --tag $CONTAINER_TAG \
+  .
+
+docker run \
+  --user $USERNAME \
+  -v "$(pwd)/docker-mount/":/home/${USERNAME}/docker-mount \
+  $CONTAINER_TAG \
+  scripts/run-in-docker

@@ -8,6 +8,11 @@ import_targets <-
     ),
     
     tar_target(
+      data_import_test,
+      read_sf("docker-mount/river_data/test_data/river_network_pipeline_test.shp")
+    ),
+    
+    tar_target(
       directory_river_networks,
       DIRECTORY_RIVER_NETWORKS#,
       # TODO uncomment for final run
