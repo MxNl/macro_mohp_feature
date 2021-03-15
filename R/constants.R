@@ -26,7 +26,7 @@ THIESSEN_CATCHMENTS_TABLE <- "thiessen_catchments"
 NN_GRID_RIVERS_TABLE <- "nn_grid_rivers"
 
 #Other Constants
-FEATURE_NAMES <- c("lateral_position", "divide_stream_distance")
+FEATURE_NAMES <- c("divide_stream_distance", "lateral_position")
 CRS_REFERENCE <- 3035
 CRS_LEAFLET <- 3857
 INVALID_STRAHLER_VALUES <- c(-9999L)

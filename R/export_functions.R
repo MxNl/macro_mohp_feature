@@ -1,5 +1,5 @@
 write_raster_mohp_features <-
-  function(lateral_position_stream_divide_distance, streamorder, feature_name, reference_raster) {
+  function(feature_name, streamorder) {
 
     if (feature_name == "lateral_position") {
       filepath_prefix_feature_name <- "lp"
@@ -33,10 +33,7 @@ write_raster_mohp_features <-
       fs::file_delete(filepath)  
     }
     
-    lateral_position_stream_divide_distance %>%
-      pluck(streamorder) %>%
-      select(all_of(feature_name)) %>% 
-      fasterize::fasterize(reference_raster, field = feature_name) %>% 
-      writeRaster(filepath, overwrite = TRUE)
-      # gdalUtils::gdal_rasterize("output_data/test.tiff", output_Raster = TRUE, verbose = TRUE)
+    execGRASS("r.out.gdal",
+              input = feature_name,
+              output = filepath)
   }

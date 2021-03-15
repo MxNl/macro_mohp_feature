@@ -76,32 +76,32 @@ preprocessing_targets <- c(
     pattern = map(streamorders)
   ),
   
+  # tar_target(
+  #   river_network_by_streamorder,
+  #   get_river_networks_from_db(
+  #     LINES_BY_STREAMORDER,
+  #     streamorders,
+  #     depends_on = list(db_river_network_by_streamorder)
+  #   ),
+  #   pattern = map(streamorders)
+  # ),
+  
   tar_target(
     reference_raster,
     make_reference_raster(
       selected_studyarea,
       depends_on = list(config)
     )
-  ),
-  
-  tar_target(
-    db_grid_polygons,
-    make_grid_polygons_and_write_to_db(
-      reference_raster,
-      GRID_POLYGONS_TABLE,
-      selected_studyarea
-    )
-    # force = !exists_table(GRID_POLYGONS_TABLE)
-  ),
-  
-  tar_target(
-    db_grid,
-    make_grid_centroids_in_db(
-      GRID_POLYGONS_TABLE,
-      GRID_CENTROIDS,
-      index_column = "grid_id",
-      geo_index_column = "geometry",
-      depends_on = list(db_grid_polygons))
-    # force = !exists_table(GRID_CENTROIDS)
   )
+  
+  # tar_target(
+  #   grass_init,
+  #   link2GI::linkGRASS7(reference_raster,
+  #                       default_GRASS7 = c(
+  #                         "C:\\Program Files\\GRASS GIS 7.8",
+  #                         "GRASS GIS 7.8",
+  #                         "NSIS"
+  #                       )
+  #   )
+  # ),
 )
