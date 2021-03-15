@@ -4,12 +4,28 @@ write_objects_to_grassdb <-
     
     length(depends_on)
     
+    
+    if (!fs::dir_exists(GRASS_DIRECTORY)) {
+      fs::dir_create(GRASS_DIRECTORY)
+    }
+
+    grass_streamorder_directory <-
+      GRASS_STREAMORDER_DIRECTORY %>%
+      composite_name(streamorder) %>%
+      str_c(GRASS_DIRECTORY, ., sep = "/")
+
+    if (!fs::dir_exists(GRASS_DIRECTORY)) {
+      fs::dir_create(GRASS_DIRECTORY)
+    }
+    
     link2GI::linkGRASS7(reference_raster,
                         default_GRASS7 = c(
                           "C:\\Program Files\\GRASS GIS 7.8",
                           "GRASS GIS 7.8",
                           "NSIS"
-                        )
+                        ),
+                        gisdbase = grass_streamorder_directory,
+                        location = grass_streamorder_directory
     )
     
     use_sf()
@@ -61,6 +77,7 @@ write_objects_to_grassdb <-
     
     use_sf()
     readVECT("thiessen_catchments") %>% 
+      sf::st_buffer(dist = 0) %>% 
       st_intersection(st_transform(studyarea, crs=st_crs(.))) %>%
       st_cast("MULTILINESTRING") %>% 
       writeVECT("thiessen_catchments_lines", v.in.ogr_flags = c("overwrite"))
@@ -70,7 +87,8 @@ write_objects_to_grassdb <-
               output = "thiessen_catchments_lines_raster", 
               use = "attr",
               attribute_column = "value",
-              flags = c("overwrite"))
+              flags = c("overwrite"),
+              memory = GRASS_MAX_MEMORY)
     
     execGRASS("r.mapcalc",
               expression = "thiessen_catchments_lines_raster = round(thiessen_catchments_lines_raster)",
@@ -99,10 +117,4 @@ write_objects_to_grassdb <-
     
     FEATURE_NAMES %>%
       map(write_raster_mohp_features, streamorder)
-    
-    rgrass7::use_sp()
-    rgrass7::readRAST("lateral_position") %>% 
-      # raster() %>% 
-      # raster::mask(raster) %>% 
-      plot()
   }

@@ -1,12 +1,16 @@
 write_raster_mohp_features <-
   function(feature_name, streamorder) {
 
+    if (!fs::dir_exists(OUTPUT_DIRECTORY)) {
+      fs::dir_create(OUTPUT_DIRECTORY) 
+    }
+    
     if (feature_name == "lateral_position") {
       filepath_prefix_feature_name <- "lp"
-      directory <- "output_data/lateral_position/"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
     } else if (feature_name == "divide_stream_distance") {
       filepath_prefix_feature_name <- "dsd"
-      directory <- "output_data/divide_stream_distance/"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
     } else {
       stop("Provide valid value for the argument feature_name")
     }
@@ -25,7 +29,7 @@ write_raster_mohp_features <-
         "_",
         filepath_prefix_spatial_resolution,
         "m",
-        ".tiff"
+        ".tif"
       ) %>%
       fs::path(directory, .)
     

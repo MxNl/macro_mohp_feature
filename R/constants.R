@@ -12,6 +12,9 @@ FILEPATH_STUDYAREA_PIPELINETEST <- "J:/NUTZER/Noelscher.M/Studierende/Daten/stud
 DIRECTORY_RIVER_NETWORKS <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data"
 FILEPATH_COASTLINE <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
 FILEPATH_CONFIG <- "config.yml"
+GRASS_DIRECTORY <- "grass"
+GRASS_STREAMORDER_DIRECTORY <- "grass_streamorder"
+OUTPUT_DIRECTORY <- "output_data"
 
 # Database Table Names
 LINES_CLEAN <- "lines_clean"
@@ -41,3 +44,4 @@ HYP_CLASSES_TO_INCLUDE <- c(
 DFDD_CANALS <- "BH020"
 DFDD_RIVERS <- "BH140"
 STREAM_TYPES_TO_USE <- c(DFDD_RIVERS)
+GRASS_MAX_MEMORY <- 1E4
