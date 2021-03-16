@@ -15,7 +15,7 @@ initiate_grass_db <-
     execGRASS("g.region", flags = c("quiet"), 
               n = as.character(b_box["ymax"]), s = as.character(b_box["ymin"]), 
               e = as.character(b_box["xmax"]), w = as.character(b_box["xmin"]), 
-              res = as.character(res(reference_raster)[1]))
+              res = as.character(CELLSIZE))
   }
 
 write_objects_to_grassdb <- 
