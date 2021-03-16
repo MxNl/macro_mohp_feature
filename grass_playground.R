@@ -14,22 +14,35 @@ lines <- LINES_BY_STREAMORDER %>%
   mutate(feature_id = as.integer(feature_id))
 
 lines %>% plot()
-
 raster %>% plot()
-link2GI::findGRASS()
-Sys.setenv(GRASS_ADDON_PATH="C:\\Noelscher.M\\Anwendungsdaten\\GRASS7\\addons")
+
+# Sys.setenv(GRASS_ADDON_PATH="C:\\Noelscher.M\\Anwendungsdaten\\GRASS7\\addons")
+
 initGRASS(gisBase = "C:/Program Files/GRASS GIS 7.8",
           addon_base = "C:/Noelscher.M/Anwendungsdaten/GRASS7/addons",
-          mapset = "PERMANENT",
+          # home parameter necessary under UNIX-based systems
+          home = tempdir(),
+          gisDbase = tempdir(), 
+          location = "test", 
+          mapset = "PERMANENT", 
           override = TRUE)
-link2GI::linkGRASS7(
-  raster,
-  default_GRASS7 = c(
-    "C:\\Program Files\\GRASS GIS 7.8",
-    "GRASS GIS 7.8",
-    "NSIS"
-  )
-)
+
+execGRASS("g.proj", flags = c("c", "quiet"), 
+          proj4 = st_crs(lines)$proj4string)
+b_box = st_bbox(studyarea) 
+execGRASS("g.region", flags = c("quiet"), 
+          n = as.character(b_box["ymax"]), s = as.character(b_box["ymin"]), 
+          e = as.character(b_box["xmax"]), w = as.character(b_box["xmin"]), 
+          res = as.character(res(raster)[1]))
+# link2GI::linkGRASS7(
+#   raster,
+#   default_GRASS7 = c(
+#     "C:\\Program Files\\GRASS GIS 7.8",
+#     "GRASS GIS 7.8",
+#     "NSIS"
+#   )
+# )
+
 use_sf()
 writeVECT(st_transform(lines, crs(raster)), "river_network", v.in.ogr_flags = c("overwrite"))
 # writeVECT(st_transform(studyarea, crs(raster)), "studyarea", v.in.ogr_flags = c("overwrite"))
@@ -55,9 +68,8 @@ execGRASS("r.thin",
           output = "river_network_value_raster_thin",
           flags = c("overwrite"))
 
-# execGRASS("r.mask",
-#           raster = "reference_raster",
-#           maskcats = 1)
+execGRASS("r.mask",
+          raster = "reference_raster")
 
 # use_sp()
 # readRAST("reference_raster") %>% plot()
@@ -68,12 +80,12 @@ execGRASS("r.grow.distance",
           value = "river_network_value_raster", 
           flags = c("overwrite"))
 
-execGRASS("r.watershed",
-          elevation = "river_network_distance_raster_carved",
-          drainage = "test_direction_carved",
-          stream = "test_river_carved",
-          threshold = 100,
-          flags = c("overwrite"))
+# execGRASS("r.watershed",
+#           elevation = "river_network_distance_raster_carved",
+#           drainage = "test_direction_carved",
+#           stream = "test_river_carved",
+#           threshold = 100,
+#           flags = c("overwrite"))
 
 
 
@@ -103,7 +115,7 @@ execGRASS("r.mapcalc",
           flags = c("overwrite"))
 
 use_sp()
-readRAST("test_river_carved") %>%
+readRAST("river_network_distance_raster") %>%
   raster() %>% 
   plot()
 
@@ -139,13 +151,23 @@ execGRASS("r.to.vect",
           type = "area", 
           flags = c("overwrite"))
 
-# execGRASS("v.to.lines",
-#           input = "thiessen_catchments",
-#           output = "thiessen_catchments_outline",
-#           flags = c("overwrite"))
+execGRASS("v.to.lines",
+          input = "thiessen_catchments",
+          output = "thiessen_catchments_outline",
+          flags = c("overwrite"))
 
 use_sf()
-thiessen_catchments <- readVECT("thiessen_catchments")
+thiessen_catchments <- readVECT("thiessen_catchment")
+thiessen_catchments %>% 
+  as_tibble() %>% distinct(value)
+{lines %>% 
+    mutate(feature_id = as.character(feature_id)) %>% 
+    plot_lines_coloured_by_categorical_attribute(feature_id) +
+    # geom_sf(data = test_size, fill = NA, colour = "green") +
+    geom_sf(data = thiessen_catchments, aes(fill = value), alpha = .3)
+} %>% plotly::ggplotly()
+
+{thiessen_catchments %>% ggplot() + geom_sf() +geom_sf(data = lines, colour = "blue")} %>% plotly::ggplotly()
 thiessen_catchments %>% 
   st_intersection(st_transform(studyarea, crs=st_crs(thiessen_catchments))) %>%
   st_cast("MULTILINESTRING") %>% 
@@ -170,22 +192,17 @@ execGRASS("r.thin",
           output = "thiessen_catchments_lines_raster_thin",
           flags = c("overwrite"))
 
-execGRASS("r.clip",
-          input = "thiessen_catchments_lines_raster_thin",
-          output = "thiessen_catchments_lines_raster_clip",
-          flags = c("overwrite"))
-
 execGRASS("r.grow.distance",
           input = "thiessen_catchments_lines_raster_thin",
           distance = "thiessen_catchments_distance_raster",
           flags = c("overwrite"))
 
 execGRASS("r.mapcalc",
-          expression = "divide_stream_distance = river_network_distance_raster + thiessen_catchments_distance_raster",
+          expression = "divide_stream_distance = round(river_network_distance_raster + thiessen_catchments_distance_raster)",
           flags = c("overwrite"))
 
 execGRASS("r.mapcalc",
-          expression = "lateral_position = river_network_distance_raster/divide_stream_distance",
+          expression = "lateral_position = round((river_network_distance_raster/divide_stream_distance)*10000)",
           flags = c("overwrite"))
 
 rgrass7::use_sp()

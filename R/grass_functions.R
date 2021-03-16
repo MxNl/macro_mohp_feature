@@ -1,32 +1,41 @@
+initiate_grass_db <- 
+  function(reference_raster, studyarea) {
+    initGRASS(gisBase = "C:/Program Files/GRASS GIS 7.8",
+              addon_base = "C:/Noelscher.M/Anwendungsdaten/GRASS7/addons",
+              # home parameter necessary under UNIX-based systems
+              home = tempdir(),
+              gisDbase = tempdir(), 
+              location = "test", 
+              mapset = "PERMANENT", 
+              override = TRUE)
+    
+    execGRASS("g.proj", flags = c("c", "quiet"), 
+              proj4 = st_crs(studyarea)$proj4string)
+    b_box = st_bbox(studyarea) 
+    execGRASS("g.region", flags = c("quiet"), 
+              n = as.character(b_box["ymax"]), s = as.character(b_box["ymin"]), 
+              e = as.character(b_box["xmax"]), w = as.character(b_box["xmin"]), 
+              res = as.character(res(reference_raster)[1]))
+  }
 
 write_objects_to_grassdb <- 
   function(table_name, reference_raster, studyarea, streamorder, depends_on = NULL) {
     
     length(depends_on)
     
+    # fs::dir_delete(GRASS_DIRECTORY)
+    # fs::dir_create(GRASS_DIRECTORY)
+    # 
+    # grass_streamorder_directory <-
+    #   GRASS_STREAMORDER_DIRECTORY %>%
+    #   composite_name(streamorder) %>%
+    #   str_c(GRASS_DIRECTORY, ., sep = "/")
+    # 
+    # if (!fs::dir_exists(GRASS_DIRECTORY)) {
+    #   fs::dir_create(GRASS_DIRECTORY)
+    # }
     
-    if (!fs::dir_exists(GRASS_DIRECTORY)) {
-      fs::dir_create(GRASS_DIRECTORY)
-    }
-
-    grass_streamorder_directory <-
-      GRASS_STREAMORDER_DIRECTORY %>%
-      composite_name(streamorder) %>%
-      str_c(GRASS_DIRECTORY, ., sep = "/")
-
-    if (!fs::dir_exists(GRASS_DIRECTORY)) {
-      fs::dir_create(GRASS_DIRECTORY)
-    }
-    
-    link2GI::linkGRASS7(reference_raster,
-                        default_GRASS7 = c(
-                          "C:\\Program Files\\GRASS GIS 7.8",
-                          "GRASS GIS 7.8",
-                          "NSIS"
-                        ),
-                        gisdbase = grass_streamorder_directory,
-                        location = grass_streamorder_directory
-    )
+    initiate_grass_db(reference_raster, studyarea)
     
     use_sf()
     table_name %>% 
@@ -42,7 +51,11 @@ write_objects_to_grassdb <-
     use_sp()
     reference_raster %>% 
       as("SpatialGridDataFrame") %>% 
-      writeRAST("reference_raster")
+      writeRAST("reference_raster",
+                overwrite = TRUE)
+    
+    execGRASS("r.mask",
+              raster = "reference_raster")
     
     execGRASS("v.to.rast", 
               input = "river_network", 
@@ -108,11 +121,11 @@ write_objects_to_grassdb <-
               flags = c("overwrite"))
     
     execGRASS("r.mapcalc",
-              expression = glue::glue("{FEATURE_NAMES[1]} = river_network_distance_raster + thiessen_catchments_distance_raster"),
+              expression = glue::glue("{FEATURE_NAMES[1]} = round(river_network_distance_raster + thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
     
     execGRASS("r.mapcalc",
-              expression = glue::glue("{FEATURE_NAMES[2]} = river_network_distance_raster/{FEATURE_NAMES[1]}"),
+              expression = glue::glue("{FEATURE_NAMES[2]} = round((river_network_distance_raster/{FEATURE_NAMES[1]})*10000)"),
               flags = c("overwrite"))
     
     FEATURE_NAMES %>%
