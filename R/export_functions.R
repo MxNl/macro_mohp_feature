@@ -43,5 +43,6 @@ write_raster_mohp_features <-
     
     execGRASS("r.out.gdal",
               input = feature_name,
-              output = filepath)
+              output = filepath,
+              type = "Int32")
   }
