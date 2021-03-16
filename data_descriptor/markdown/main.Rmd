@@ -1,0 +1,16 @@
+---
+title: "Symposium on Data Science and Statistics (SDSS 2020)"
+subtitle: "Submission and Formatting Instructions for Extended Abstracts"
+output: 
+  bookdown::pdf_document2:
+    keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+We have based this SDSS template almost entirely on the template for
+the annual conference of the Association for Computational Linguistics (ACL), whose template includes the following paragraph of credits:
