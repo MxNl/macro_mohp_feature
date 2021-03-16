@@ -15,6 +15,10 @@ write_raster_mohp_features <-
       stop("Provide valid value for the argument feature_name")
     }
 
+    if (!fs::dir_exists(directory)) {
+      fs::dir_create(directory)
+    }
+    
     filepath_prefix_streamorder <- streamorder
     filepath_prefix_spatial_resolution <- CELLSIZE
 
