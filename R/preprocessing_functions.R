@@ -223,6 +223,19 @@ impute_streamorder <-
       mutate(strahler = if_else(strahler %in% INVALID_STRAHLER_VALUES, 1, strahler))
   }
 
+get_river_networks_from_db <- 
+  function(table_name, streamorder, depends_on = NULL) {
+    
+    length(depends_on)
+    
+    table_name %>% 
+      composite_name(streamorder) %>% 
+      get_table_from_postgress() %>% 
+      query_result_as_sf() %>% 
+      add_feature_index_column() %>% 
+      mutate(feature_id = as.integer(feature_id))
+  }
+
 make_reference_raster <- 
   function(studyarea, depends_on = NULL) {
     

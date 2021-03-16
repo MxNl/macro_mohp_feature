@@ -1,16 +1,24 @@
 write_raster_mohp_features <-
-  function(lateral_position_stream_divide_distance, streamorder, feature_name, reference_raster) {
+  function(feature_name, streamorder) {
 
+    if (!fs::dir_exists(OUTPUT_DIRECTORY)) {
+      fs::dir_create(OUTPUT_DIRECTORY) 
+    }
+    
     if (feature_name == "lateral_position") {
       filepath_prefix_feature_name <- "lp"
-      directory <- "output_data/lateral_position/"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
     } else if (feature_name == "divide_stream_distance") {
       filepath_prefix_feature_name <- "dsd"
-      directory <- "output_data/divide_stream_distance/"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
     } else {
       stop("Provide valid value for the argument feature_name")
     }
 
+    if (!fs::dir_exists(directory)) {
+      fs::dir_create(directory)
+    }
+    
     filepath_prefix_streamorder <- streamorder
     filepath_prefix_spatial_resolution <- CELLSIZE
 
@@ -25,7 +33,7 @@ write_raster_mohp_features <-
         "_",
         filepath_prefix_spatial_resolution,
         "m",
-        ".tiff"
+        ".tif"
       ) %>%
       fs::path(directory, .)
     
@@ -33,10 +41,7 @@ write_raster_mohp_features <-
       fs::file_delete(filepath)  
     }
     
-    lateral_position_stream_divide_distance %>%
-      pluck(streamorder) %>%
-      select(all_of(feature_name)) %>% 
-      fasterize::fasterize(reference_raster, field = feature_name) %>% 
-      writeRaster(filepath, overwrite = TRUE)
-      # gdalUtils::gdal_rasterize("output_data/test.tiff", output_Raster = TRUE, verbose = TRUE)
+    execGRASS("r.out.gdal",
+              input = feature_name,
+              output = filepath)
   }

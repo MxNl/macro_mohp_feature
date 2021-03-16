@@ -12,6 +12,7 @@ tar_option_set(
     "here",
     "DBI",
     "glue",
+    "rgrass7",
     "RPostgres",
     # "rmarkdown",
     "raster",
@@ -45,16 +46,17 @@ source("R/directory_functions.R")
 source("R/preprocessing_functions.R")
 source("R/database_functions.R")
 source("R/postgis_functions.R")
+source("R/grass_functions.R")
 source("R/export_functions.R")
 
-plan(multisession)
+# plan(multisession)
 
 # Define targets
 c(
   import_targets,
   preprocessing_targets,
-  mohpcalculation_targets,
-  export_targets # ,
+  mohpcalculation_targets
+  # export_targets # ,
   #TODO visualization_targets include again
 )
   
