@@ -295,8 +295,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "e75525c55c70e5f4f78c9960a4b402e9"
-<<<<<<< HEAD
-=======
     },
     "credentials": {
       "Package": "credentials",
@@ -304,7 +302,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "a96728288c75a814c900af9da84387be"
->>>>>>> 982717c227668c26a8df6dac984a784019c96ebb
     },
     "crosstalk": {
       "Package": "crosstalk",
@@ -711,16 +708,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "3471fb65971f1a7b2d4ae7848cf2db8d"
-<<<<<<< HEAD
-=======
-    },
-    "link2GI": {
-      "Package": "link2GI",
-      "Version": "0.4-5",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "591bd5deb49c22dee02bbab83877858f"
->>>>>>> 982717c227668c26a8df6dac984a784019c96ebb
     },
     "listenv": {
       "Package": "listenv",
