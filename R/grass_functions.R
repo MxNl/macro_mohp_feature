@@ -128,6 +128,10 @@ write_objects_to_grassdb <-
               expression = glue::glue("{FEATURE_NAMES[2]} = round((river_network_distance_raster/(river_network_distance_raster + thiessen_catchments_distance_raster))*10000)"),
               flags = c("overwrite"))
     
+    execGRASS("r.mapcalc",
+              expression = glue::glue("{FEATURE_NAMES[3]} = round(river_network_distance_raster)"),
+              flags = c("overwrite"))
+
     FEATURE_NAMES %>%
       map(write_raster_mohp_features, streamorder)
   }

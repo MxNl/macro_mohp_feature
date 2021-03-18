@@ -5,11 +5,14 @@ write_raster_mohp_features <-
       fs::dir_create(OUTPUT_DIRECTORY) 
     }
     
-    if (feature_name == "lateral_position") {
+    if (feature_name == FEATURE_NAMES[2]) {
       filepath_prefix_feature_name <- "lp"
       directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
-    } else if (feature_name == "divide_stream_distance") {
+    } else if (feature_name == FEATURE_NAMES[1]) {
       filepath_prefix_feature_name <- "dsd"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+    } else if (feature_name == FEATURE_NAMES[3]) {
+      filepath_prefix_feature_name <- "sd"
       directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
     } else {
       stop("Provide valid value for the argument feature_name")

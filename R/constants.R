@@ -25,7 +25,7 @@ SELECTED_STUDYAREA_TABLE <- "selected_studyarea"
 MOHP_FEATURES_TABLE <- "lateral_position_stream_divide_distance"
 
 #Other Constants
-FEATURE_NAMES <- c("divide_stream_distance", "lateral_position")
+FEATURE_NAMES <- c("divide_stream_distance", "lateral_position", "stream_distance")
 CRS_REFERENCE <- 3035
 CRS_LEAFLET <- 3857
 SCANDINAVIAN_BASINS_TO_EXCLUDE <- c("gota", "vorma", "angerman", "tana", "neva", "kemi", "iceland")
