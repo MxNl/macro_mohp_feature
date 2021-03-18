@@ -14,6 +14,15 @@ list_river_network_files <-
       fs::path(directory, .)
   }
 
+list_river_basin_files <-
+  function(directory) {
+    directory %>%
+      list.files(recursive = TRUE) %>%
+      keep(str_detect(., ".gpkg$")) %>%
+      keep(str_detect(., "drainage")) %>%
+      fs::path(directory, .)
+  }
+
 read_river_networks <- 
   function(file) {
     river_basin_name <-
@@ -61,6 +70,52 @@ read_river_basins <-
       st_zm() %>%
       rename(geometry = Shape) %>% 
       select(geometry) %>%
+      # st_make_valid() %>% 
+      # as_Spatial() %>% 
+      # gUnaryUnion() %>%
+      # st_as_sf() %>% 
+      mutate(river_basin_name = river_basin_name) %>%
+      transform_crs_if_required()
+  }
+
+parallel_read_river_basins_land <- 
+  function(filepaths) {
+    
+    plan(multisession, workers = length(filepaths))
+    
+    river_basins <- 
+      filepaths %>% 
+      future_map_dfr(read_river_basins_land)
+    
+    plan(sequential)
+    
+    return(river_basins)
+  }
+
+read_river_basins_land <-
+  function(file) {
+    river_basin_name <-
+      file %>% 
+      str_replace(".*(?=GPKG/drainage_network_)", "") %>% 
+      str_replace("(?=_public).*", "") %>% 
+      str_replace("GPKG/drainage_network_", "")
+    
+    if(river_basin_name == "fr_islands") {
+      gpkg_layer <- glue::glue("{river_basin_name}_eudem2_basins")
+    } else {
+      gpkg_layer <- glue::glue("{river_basin_name}_eudem2_basins_h1")
+    }
+    
+    file %>% 
+      read_sf(gpkg_layer) %>%
+      st_zm() %>%
+      rename(geometry = Shape) %>% 
+      select(geometry) %>%
+      st_make_valid() %>%
+      as_Spatial() %>%
+      gUnaryUnion() %>%
+      st_as_sf() %>%
+      st_cast("POLYGON") %>% 
       mutate(river_basin_name = river_basin_name) %>%
       transform_crs_if_required()
   }
@@ -70,7 +125,11 @@ read_coastline <-
     filepath %>%
       read_sf() %>%
       st_zm() %>% 
-      summarise() %>%
+      select(geometry) %>% 
+      # st_make_valid() %>% 
+      # as_Spatial() %>% 
+      # gUnaryUnion() %>%
+      # st_as_sf() %>% 
       transform_crs_if_required()
   }
 

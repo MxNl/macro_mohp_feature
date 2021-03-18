@@ -5,6 +5,7 @@ AREA <- purrr::chuck(YML_CONFIG, "area")
 CELLSIZE <- purrr::chuck(YML_CONFIG, "cellsize")
 FILEPATH_PREFIX_SPATIAL_COVERAGE <- paste0("mohp_", AREA)
 DATABASENAME <- purrr::chuck(YML_CONFIG, "database_name")
+EXCLUDE_SCANDINAVIAN_BASINS <- purrr::chuck(YML_CONFIG, "exclude_scandinavian_basins")
 
 # Directories
 FILEPATH_STUDYAREA_GERMANY <- "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/germany_buffer/time_invariant/shape/self_processed/data/buffer_germany_point6.shp"
@@ -27,6 +28,7 @@ MOHP_FEATURES_TABLE <- "lateral_position_stream_divide_distance"
 FEATURE_NAMES <- c("divide_stream_distance", "lateral_position")
 CRS_REFERENCE <- 3035
 CRS_LEAFLET <- 3857
+SCANDINAVIAN_BASINS_TO_EXCLUDE <- c("gota", "vorma", "angerman", "tana", "neva", "kemi", "iceland")
 INVALID_STRAHLER_VALUES <- c(-9999L)
 STREAM_TYPE_TO_INCLUDE <- c(
   "Canals_l",

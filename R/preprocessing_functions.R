@@ -18,7 +18,14 @@ clip_river_networks <-
         st_cast("MULTILINESTRING") %>%
         add_feature_index_column()
     } else if (AREA == "europe") {
+      
+      included_basins <- 
+        studyarea %>% 
+        pull(river_basin_name) %>% 
+        unique()
+      
       river_networks %>%
+        filter(river_basin_name %in% included_basins) %>% 
         add_feature_index_column()
     } else {
       stop("Please provide a valid character string for the AREA/area parameter in config.yml")
@@ -64,32 +71,79 @@ determine_studyarea_outline_level_germany <-
     # studyarea <- tar_read(studyarea_subset_plots)
     ###
 
-    studyarea_outline <-
-      studyarea %>%
-        st_difference(coastline) %>%
-        st_cast("POLYGON")
-
-    studyarea_outline %>%
+    studyarea %>%
+      st_make_valid() %>% 
+      as_Spatial() %>% 
+      rgeos::gDifference(
+        as_Spatial(
+          st_make_valid(coastline)
+          )
+        ) %>% 
+      st_as_sf() %>% 
+      st_make_valid() %>% 
+      st_cast("POLYGON") %>%
       mutate(area = as.numeric(st_area(geometry))) %>%
       arrange(-area) %>%
       slice(1) %>%
       select(geometry) %>% 
-      mutate(id = 1L)
+      mutate(id = 1L) %>% 
+      transform_crs_if_required()
   }
 
 determine_studyarea_outline_level_europe <-
-  function(studyarea, coastline) {
+  function(river_basins, river_networks) {
     ### Test
-    # coastline <- tar_read(coastline)
-    # studyarea <- tar_read(studyarea_subset_plots)
+    # river_basins <- tar_read(river_basins)
+    # river_networks <- tar_read(river_networks)
+    # river_networks_sub <-
+    #   river_networks %>%
+    #   slice_sample(n = 1000)
     ###
+    
+    if(EXCLUDE_SCANDINAVIAN_BASINS) {
+      river_basins <- 
+        river_basins %>%
+        filter(!(river_basin_name %in% SCANDINAVIAN_BASINS_TO_EXCLUDE))
+    }
+    
+    number_river_basins <- 
+      river_basins %>% 
+      pull(river_basin_name) %>% 
+      unique() %>% 
+      length()
+    
+    plan(multisession, workers = number_river_basins)
+    
+    per_basin_unioned <- 
+      river_basins %>%
+      group_by(river_basin_name) %>%
+      group_split() %>%
+      furrr::future_map_dfr(basinwise_union, select(river_networks, geometry)) %>% 
+      st_cast("MULTIPOLYGON") %>% 
+      mutate(id = 1L, .before = 1)
+    
+    plan(sequential)
+    
+    return(per_basin_unioned)
+  }
 
-    studyarea %>%
-      summarise() %>%
-      st_difference(coastline) %>%
-      st_cast("POLYGON") %>%
-      select(geometry) %>% 
-      mutate(id = 1L)
+basinwise_union <-
+  function(river_basin, river_networks) {
+    river_basin_name <- 
+      river_basin %>% 
+      slice(1) %>% 
+      pull(river_basin_name)
+    
+    river_basin %>%
+      filter_intersecting_features(river_networks) %>% 
+      st_as_sf() %>%
+      st_make_valid() %>%
+      st_collection_extract(type = "POLYGON") %>% 
+      as_Spatial() %>%
+      rgeos::gUnaryUnion() %>%
+      st_as_sf() %>%
+      transform_crs_if_required() %>% 
+      mutate(river_basin_name = river_basin_name, .before = 1)
   }
 
 add_feature_index_column <-

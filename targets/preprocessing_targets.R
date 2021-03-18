@@ -1,14 +1,14 @@
 preprocessing_targets <- c(
   pipeline_for(AREA),
   
-  tar_target(
-    db_selected_studyarea,
-    write_selected_studyarea(
-      selected_studyarea,
-      SELECTED_STUDYAREA_TABLE
-    )#,
-    # force = !exists_table(SELECTED_STUDYAREA_TABLE)
-  ),
+  # tar_target(
+  #   db_selected_studyarea,
+  #   write_selected_studyarea(
+  #     selected_studyarea,
+  #     SELECTED_STUDYAREA_TABLE
+  #   )#,
+  #   # force = !exists_table(SELECTED_STUDYAREA_TABLE)
+  # ),
 
   tar_target(
     river_networks_clip,

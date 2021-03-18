@@ -18,6 +18,7 @@ tar_option_set(
     "raster",
     "janitor",
     "rgdal",
+    "rgeos",
     "lwgeom",
     "assertr",
     "patchwork",

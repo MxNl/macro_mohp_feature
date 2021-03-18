@@ -37,23 +37,19 @@ pipeline_for <- function(area) {
     ),
     europe = list(
       tar_target(
-        filepath_coastline,
-        FILEPATH_COASTLINE
-      ),
-      tar_target(
-        coastline,
-        read_coastline(filepath_coastline)
+        river_basins_files,
+        list_river_basin_files(directory_river_networks)
       ),
       tar_target(
         river_basins,
-        river_networks_files %>%
-          future_map_dfr(read_river_basins)
+        river_basins_files %>%
+          parallel_read_river_basins_land()
       ),
       tar_target(
         selected_studyarea,
         determine_studyarea_outline_level_europe(
           river_basins,
-          coastline
+          river_networks
         )
       )
     )
