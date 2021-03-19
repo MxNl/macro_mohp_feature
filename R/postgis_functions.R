@@ -93,17 +93,27 @@ write_connected_river_networks <- function(table_name_read,
   Sys.time()
 }
 
-merge_same_strahler_segments <- function(table_name_destination, table_source, depends_on = NULL) {
+merge_same_strahler_segments <- function(table_name_destination, table_source, river_basin_name, depends_on = NULL) {
 
   length(depends_on)
   
+  table_name_destination <-
+    table_name_destination %>%
+    str_c(river_basin_name, sep = "_")
+
   query <- 
     glue::glue("
     CREATE TABLE {table_name_destination} AS (
-    WITH collected AS (
+    WITH filtered AS(
+      SELECT
+        *
+      FROM {table_source}
+      WHERE river_basin_name = '{river_basin_name}'
+    ),
+    collected AS (
     SELECT strahler,
         ST_CollectionExtract(unnest(ST_ClusterIntersecting(geometry))) AS geometry
-    FROM {table_source}
+    FROM filtered
     GROUP BY strahler
 ),
 -- base table
@@ -320,6 +330,30 @@ FROM unioned_without_strahler l
   Sys.time()
 }
 
+union_per_basin_merge <- function(table_name, river_basin_names, depends_on = NULL) {
+  ########## Test
+  table_name <- LINES_MERGED
+  river_basin_names <- tar_read(river_basin_names)
+  ####
+  
+  length(depends_on)
+  
+  table_name_source <- 
+    table_name %>% 
+    str_c(river_basin_names, sep = "_")
+  
+  union_query <- 
+    str_glue("SELECT * FROM {table_name_source} UNION ALL") %>% 
+    str_c(collapse = " ") %>% 
+    str_sub(end = -11)
+  
+  query <- 
+    str_glue("CREATE TABLE {table_name} AS ({union_query})")
+  
+  create_table(query, table_name)
+  Sys.time()
+}
+
 get_unique_streamorders <- 
   function(table_name_source, depends_on = NULL) {
     
@@ -360,7 +394,6 @@ streamorder_filter <-
       )
       "
     )
-    print(query)
     create_table(query, table, geo_index_column = "geometry")
     Sys.time()
   }

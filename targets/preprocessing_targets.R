@@ -20,16 +20,12 @@ preprocessing_targets <- c(
 
   tar_target(
     river_networks_non_dry_selected_streamtypes,
-    filter_rivers(
-      river_networks_clip
-    )
+    filter_rivers(river_networks_clip)
   ),
   
   tar_target(
     river_networks_imputed_streamorder_canals_as_1,
-    impute_streamorder(
-      river_networks_non_dry_selected_streamtypes
-    )
+    impute_streamorder(river_networks_non_dry_selected_streamtypes)
   ),
   
   tar_target(
@@ -38,21 +34,38 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
+    river_basin_names,
+    get_unique_basin_names(river_networks_clean)
+  ),
+  
+  tar_target(
     db_river_networks_clean,
     write_as_lines_to_db(
       river_networks_clean,
       LINES_CLEAN
-    )#,
-    # force = !exists_table(LINES_CLEAN)
+    )
   ),
   
   tar_target(
     db_river_networks_strahler_merge,
     merge_same_strahler_segments(
       LINES_MERGED,
-      LINES_CLEAN,  
+      LINES_CLEAN,
+      river_basin_names,
       depends_on = list(
         db_river_networks_clean
+      )
+    ),
+    pattern = map(river_basin_names)
+  ),
+  
+  tar_target(
+    db_river_networks_strahler_merge_union,
+    union_per_basin_merge(
+      LINES_MERGED,
+      river_basin_names,
+      depends_on = list(
+        db_river_networks_strahler_merge
       )
     )
   ),
@@ -61,7 +74,7 @@ preprocessing_targets <- c(
     streamorders,
     get_unique_streamorders(
       LINES_MERGED,
-      depends_on = list(db_river_networks_strahler_merge)
+      depends_on = list(db_river_networks_strahler_merge_union)
       )
   ),
   
@@ -71,7 +84,7 @@ preprocessing_targets <- c(
       LINES_BY_STREAMORDER,
       LINES_MERGED,
       streamorders,
-      depends_on = list(db_river_networks_strahler_merge)
+      depends_on = list(db_river_networks_strahler_merge_union)
     ),
     pattern = map(streamorders)
   ),

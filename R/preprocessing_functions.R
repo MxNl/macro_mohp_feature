@@ -154,7 +154,7 @@ add_feature_index_column <-
 
 keep_relevant_columns <-
   function(river_network,
-           relevant_columns = c("strahler")) {
+           relevant_columns = c("strahler", "river_basin_name")) {
 
     river_network %>%
       select(all_of(relevant_columns))
@@ -175,6 +175,15 @@ generate_filepaths <- function(stream_order, abbreviation) {
     ".tiff"
   )
 }
+
+get_unique_basin_names <-
+  function(river_network) {
+    
+    river_network %>%
+      as_tibble() %>% 
+      distinct(river_basin_name) %>% 
+      pull(river_basin_name)
+  }
 
 calculate_lateral_position_grid <- function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name, directory) {
   ###### test
