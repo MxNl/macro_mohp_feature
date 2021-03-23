@@ -1,16 +1,41 @@
 ---
-title: "Symposium on Data Science and Statistics (SDSS 2020)"
-subtitle: "Submission and Formatting Instructions for Extended Abstracts"
+title: "Multiorder Hydrologic Position in Europe as a Set of Metrics in Support of Groundwater Mapping at Regional and National Scales"
+author:
+  - name: Maximilian Noelscher
+    affiliation:
+    - Federal Institute for Geosciences and Natural Resources (BGR), Berlin, Germany
+abstract: |
+  This dataset (EU-MOHP v013.0.1) provides information on the multiorder hydrologic position of a geographic point within its respective river network or catchment. More precisely, it comprises the three measures “lateral position” as a relative measure of the position between the stream and the catchment boundary/ watershed, “divide stream distance” as an absolute distance measure that serves as a proxy for the position within the catchment and “stream distance” as an absolute measure of the distance to the nearest stream. These three measures were calculated for several hydrologic (stream) orders. Its spatial extent covers major parts of physiographical Europe and all of the 39 countries in European Economic Area (EEA39). Although there might be many potential use cases, this dataset serves predominantly as valuable input data for mapping tasks in the context of hydrogeology and subsurface characteristics in general. \cite{belitz_multiorder_2019}
 output: 
   bookdown::pdf_document2:
+    number_sections: FALSE
+    template: scienctific_data_template.tex
     keep_tex: yes
+bibliography: eumohp.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+options(tinytex.verbose = TRUE)
+
+library(DiagrammeR)
+library(DiagrammeRsvg)
+library(rsvg)
+
+source("../targets/R/visualization_functions.R")
 ```
 
-# Introduction
 
-We have based this SDSS template almost entirely on the template for
-the annual conference of the Association for Computational Linguistics (ACL), whose template includes the following paragraph of credits:
+<!--
+```{r eval=FALSE, code=readLines("../targets/R/visualization_functions.R")}
+ 
+```
+-->
+
+
+```{r, echo=FALSE}
+make_workflow_diagram("diagramms/flowchart.pdf")
+```
+
+
+
