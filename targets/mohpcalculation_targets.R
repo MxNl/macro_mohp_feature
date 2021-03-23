@@ -8,6 +8,7 @@ mohpcalculation_targets <- list(
       selected_studyarea,
       streamorders
     ),
-    pattern = map(streamorders)
+    pattern = map(streamorders),
+    deployment = "main"
   )
 )

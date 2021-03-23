@@ -110,6 +110,7 @@ read_river_basins_land <-
       read_sf(gpkg_layer) %>%
       st_zm() %>%
       rename(geometry = Shape) %>% 
+      filter(across(any_of("H1_ID"), ~.x != "EU4H100296")) %>% 
       select(geometry) %>%
       st_make_valid() %>%
       as_Spatial() %>%

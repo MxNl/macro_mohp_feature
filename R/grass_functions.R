@@ -47,23 +47,23 @@ write_objects_to_grassdb <-
       st_transform(crs(reference_raster)) %>% 
       writeVECT("river_network", 
                 v.in.ogr_flags = c("overwrite"))
-    
+    message("river_network")
     use_sp()
     reference_raster %>% 
       as("SpatialGridDataFrame") %>% 
       writeRAST("reference_raster",
                 overwrite = TRUE)
-    
+    message("reference_raster")
     execGRASS("r.mask",
               raster = "reference_raster")
-    
+    message("r.mask")
     execGRASS("v.to.rast", 
               input = "river_network", 
               output = "river_network_raster", 
               use = "attr",
               attribute_column = "feature_id",
               flags = c("overwrite"))
-    
+    message("v.to.rast")
     execGRASS("r.mapcalc",
               expression = "river_network_raster = round(river_network_raster)",
               flags = c("overwrite"))
@@ -75,13 +75,13 @@ write_objects_to_grassdb <-
               input = "river_network_raster",
               output = "river_network_value_raster_thin",
               flags = c("overwrite"))
-    
+    message("r.thin")
     execGRASS("r.grow.distance",
               input = "river_network_value_raster_thin",
               distance = "river_network_distance_raster", 
               value = "river_network_value_raster", 
               flags = c("overwrite"))
-    
+    message("r.grow.distance")
     execGRASS("r.to.vect",
               input = "river_network_value_raster",
               output = "thiessen_catchments", 
@@ -131,7 +131,7 @@ write_objects_to_grassdb <-
     execGRASS("r.mapcalc",
               expression = glue::glue("{FEATURE_NAMES[3]} = round(river_network_distance_raster)"),
               flags = c("overwrite"))
-
+    
     FEATURE_NAMES %>%
       map(write_raster_mohp_features, streamorder)
   }

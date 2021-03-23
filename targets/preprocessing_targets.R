@@ -14,7 +14,8 @@ preprocessing_targets <- c(
     river_networks_clip,
     clip_river_networks(
       river_networks,
-      selected_studyarea
+      selected_studyarea,
+      river_basin_names
     )
   ),
 
@@ -31,11 +32,6 @@ preprocessing_targets <- c(
   tar_target(
     river_networks_clean,
     clean_river_networks(river_networks_imputed_streamorder_canals_as_1)
-  ),
-  
-  tar_target(
-    river_basin_names,
-    get_unique_basin_names(river_networks_clean)
   ),
   
   tar_target(

@@ -46,10 +46,15 @@ pipeline_for <- function(area) {
           parallel_read_river_basins_land()
       ),
       tar_target(
+        river_basin_names,
+        get_unique_basin_names(river_basins)
+      ),
+      tar_target(
         selected_studyarea,
         determine_studyarea_outline_level_europe(
           river_basins,
-          river_networks
+          river_networks,
+          river_basin_names
         )
       )
     )
