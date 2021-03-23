@@ -15,3 +15,8 @@ logs
 *.yml
 junk
 grass
+diagramms
+*.log
+*.pdf
+*.bbl
+*.synctex.gz
