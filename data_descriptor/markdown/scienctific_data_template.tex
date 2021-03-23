@@ -2,6 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lineno}
+\usepackage{float}
 \linenumbers
 
 $if(highlighting-macros)$
@@ -36,56 +37,8 @@ $abstract$
 
 \thispagestyle{empty}
 
-
-\section*{Background \& Summary}
-
-In recent years, data science tools such as machine learning are increasingly applied to and specifically developed for hydro(geo)logical challenges and research questions. In the field of hydrogeology, machine learning has been used successfully for groundwater level prediction and a variety of mapping  tasks. Since machine learning models are traditionally based purely on data with no built-in knowledge of physical processes, it is important to provide as many variables (predictor variables/ explanatory variables/ features) as possible that have an impact on the target variable to potentially enable the machine learning algorithm to reproduce the result of the underlying  process. For surface and near-surface processes, this criterion may be more or less satisfiable through the availability of remote sensing data, whereas for modelling subsurface processes such as in hydrogeology, this poses a serious challenge. \cite{desimone_machine-learning_2020, belitz_multiorder_2019}
-
-\section*{Methods}
-
-Text.
-
-\section*{Data Records}
-
-Text.
-
-\section*{Technical Validation}
-
-Text.
-
-\section*{Usage Notes}
-
-Text.
-
-\section*{Code availability}
-
-Text.
-
-% $body$
-
+$body$
 
 \bibliography{$bibliography$}
-
-
-\section*{Acknowledgements} (not compulsory)
-
-Text.
-
-\section*{Author contributions statement}
-
-Text.
-
-\section*{Competing interests} (mandatory statement)
-
-Text.
-
-\section*{Figures \& Tables}
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.7\linewidth]{"diagramms/flowchart.pdf"}
-\caption{Abstracted workflow}
-\label{fig:abstracted_workflow}
-\end{figure}
 
 \end{document}

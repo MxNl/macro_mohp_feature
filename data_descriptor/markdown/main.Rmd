@@ -15,12 +15,13 @@ bibliography: eumohp.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.pos = "H")
 options(tinytex.verbose = TRUE)
 
 library(DiagrammeR)
 library(DiagrammeRsvg)
 library(rsvg)
+library(knitr)
 
 source("../targets/R/visualization_functions.R")
 ```
@@ -38,4 +39,49 @@ make_workflow_diagram("diagramms/flowchart.pdf")
 ```
 
 
+# Background & Summary
 
+In recent years, data science tools such as machine learning are increasingly applied to and specifically developed for hydro(geo)logical challenges and research questions. In the field of hydrogeology, machine learning has been used successfully for groundwater level prediction and a variety of mapping  tasks. Since machine learning models are traditionally based purely on data with no built-in knowledge of physical processes, it is important to provide as many variables (predictor variables/ explanatory variables/ features) as possible that have an impact on the target variable to potentially enable the machine learning algorithm to reproduce the result of the underlying  process. For surface and near-surface processes, this criterion may be more or less satisfiable through the availability of remote sensing data, whereas for modelling subsurface processes such as in hydrogeology, this poses a serious challenge. \cite{desimone_machine-learning_2020, belitz_multiorder_2019}
+
+```{r}
+asd <- "sdf"
+```
+
+# Methods {-}
+
+Text.
+\@ref(fig:flowchart)
+
+# Data Records {-}
+
+Text.
+
+# Technical Validation {-}
+
+Text.
+
+# Usage Notes {-}
+
+Text.
+
+# Code availability {-}
+
+Text.
+
+# Acknowledgements {-}
+
+Text.
+
+# Author contributions statement {-}
+
+Text.
+
+# Competing interests {-}
+
+Text.
+
+# Figures \& Tables {-}
+
+```{r flowchart, echo=FALSE, out.width = "70%", fig.cap= "sdf"}
+include_graphics("diagramms/flowchart.pdf") 
+```

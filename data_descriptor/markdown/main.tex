@@ -2,8 +2,49 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lineno}
+\usepackage{float}
 \linenumbers
 
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
 
 \newlength{\cslhangindent}
 \setlength{\cslhangindent}{1.5em}
@@ -23,7 +64,7 @@
 
 
 \begin{abstract}
-This dataset (EU-MOHP v013.0.1) provides information on the multiorder hydrologic position of a geographic point within its respective river network or catchment. More precisely, it comprises the three measures ``lateral position'' as a relative measure of the position between the stream and the catchment boundary/ watershed, ``divide stream distance'' as an absolute distance measure that serves as a proxy for the position within the catchment and ``stream distance'' as an absolute measure of the distance to the nearest stream. These three measures were calculated for several hydrologic (stream) orders. Its spatial extent covers major parts of physiographical Europe and all of the 39 countries in European Economic Area (EEA39). Although there might be many potential use cases, this dataset serves predominantly as valuable input data for mapping tasks in the context of hydrogeology and subsurface characteristics in general. Belitz et al. (2019)
+This dataset (EU-MOHP v013.0.1) provides information on the multiorder hydrologic position of a geographic point within its respective river network or catchment. More precisely, it comprises the three measures ``lateral position'' as a relative measure of the position between the stream and the catchment boundary/ watershed, ``divide stream distance'' as an absolute distance measure that serves as a proxy for the position within the catchment and ``stream distance'' as an absolute measure of the distance to the nearest stream. These three measures were calculated for several hydrologic (stream) orders. Its spatial extent covers major parts of physiographical Europe and all of the 39 countries in European Economic Area (EEA39). Although there might be many potential use cases, this dataset serves predominantly as valuable input data for mapping tasks in the context of hydrogeology and subsurface characteristics in general. \cite{belitz_multiorder_2019}
 \end{abstract}
 \begin{document}
 
@@ -33,65 +74,79 @@ This dataset (EU-MOHP v013.0.1) provides information on the multiorder hydrologi
 
 \thispagestyle{empty}
 
+\hypertarget{background-summary}{%
+\section{Background \& Summary}\label{background-summary}}
 
-\section*{Background \& Summary}
+In recent years, data science tools such as machine learning are increasingly applied to and specifically developed for hydro(geo)logical challenges and research questions. In the field of hydrogeology, machine learning has been used successfully for groundwater level prediction and a variety of mapping tasks. Since machine learning models are traditionally based purely on data with no built-in knowledge of physical processes, it is important to provide as many variables (predictor variables/ explanatory variables/ features) as possible that have an impact on the target variable to potentially enable the machine learning algorithm to reproduce the result of the underlying process. For surface and near-surface processes, this criterion may be more or less satisfiable through the availability of remote sensing data, whereas for modelling subsurface processes such as in hydrogeology, this poses a serious challenge. \cite{desimone_machine-learning_2020, belitz_multiorder_2019}
 
-In recent years, data science tools such as machine learning are increasingly applied to and specifically developed for hydro(geo)logical challenges and research questions. In the field of hydrogeology, machine learning has been used successfully for groundwater level prediction and a variety of mapping  tasks. Since machine learning models are traditionally based purely on data with no built-in knowledge of physical processes, it is important to provide as many variables (predictor variables/ explanatory variables/ features) as possible that have an impact on the target variable to potentially enable the machine learning algorithm to reproduce the result of the underlying  process. For surface and near-surface processes, this criterion may be more or less satisfiable through the availability of remote sensing data, whereas for modelling subsurface processes such as in hydrogeology, this poses a serious challenge. \cite{desimone_machine-learning_2020, belitz_multiorder_2019}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{asd }\OtherTok{\textless{}{-}} \StringTok{"sdf"}
+\end{Highlighting}
+\end{Shaded}
 
-\section*{Methods}
+\hypertarget{methods}{%
+\section*{Methods}\label{methods}}
+\addcontentsline{toc}{section}{Methods}
+
+Text.
+\ref{fig:flowchart}
+
+\hypertarget{data-records}{%
+\section*{Data Records}\label{data-records}}
+\addcontentsline{toc}{section}{Data Records}
 
 Text.
 
-\section*{Data Records}
+\hypertarget{technical-validation}{%
+\section*{Technical Validation}\label{technical-validation}}
+\addcontentsline{toc}{section}{Technical Validation}
 
 Text.
 
-\section*{Technical Validation}
+\hypertarget{usage-notes}{%
+\section*{Usage Notes}\label{usage-notes}}
+\addcontentsline{toc}{section}{Usage Notes}
 
 Text.
 
-\section*{Usage Notes}
+\hypertarget{code-availability}{%
+\section*{Code availability}\label{code-availability}}
+\addcontentsline{toc}{section}{Code availability}
 
 Text.
 
-\section*{Code availability}
+\hypertarget{acknowledgements}{%
+\section*{Acknowledgements}\label{acknowledgements}}
+\addcontentsline{toc}{section}{Acknowledgements}
 
 Text.
 
-\hypertarget{references}{%
-\section*{References}\label{references}}
-\addcontentsline{toc}{section}{References}
-
-\hypertarget{refs}{}
-\begin{CSLReferences}{1}{0}
-\leavevmode\hypertarget{ref-belitz_multiorder_2019}{}%
-Belitz, Kenneth, Richard B. Moore, Terri L. Arnold, Jennifer B. Sharpe, and J. J. Starn. 2019. {``Multiorder {Hydrologic} {Position} in the {Conterminous} {United} {States}: {A} {Set} of {Metrics} in {Support} of {Groundwater} {Mapping} at {Regional} and {National} {Scales}.''} \emph{Water Resources Research} 55 (12): 11188--207. \url{https://doi.org/10.1029/2019WR025908}.
-
-\end{CSLReferences}
-
-
-% \bibliography{eumohp.bib}
-
-
-\section*{Acknowledgements} (not compulsory)
+\hypertarget{author-contributions-statement}{%
+\section*{Author contributions statement}\label{author-contributions-statement}}
+\addcontentsline{toc}{section}{Author contributions statement}
 
 Text.
 
-\section*{Author contributions statement}
+\hypertarget{competing-interests}{%
+\section*{Competing interests}\label{competing-interests}}
+\addcontentsline{toc}{section}{Competing interests}
 
 Text.
 
-\section*{Competing interests} (mandatory statement)
+\hypertarget{figures-tables}{%
+\section*{Figures \& Tables}\label{figures-tables}}
+\addcontentsline{toc}{section}{Figures \& Tables}
 
-Text.
+\begin{figure}
 
-\section*{Figures \& Tables}
+{\centering \includegraphics[width=0.7\linewidth]{diagramms/flowchart} 
 
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.7\linewidth]{"diagramms/flowchart.pdf"}
-\caption{Abstracted workflow}
-\label{fig:abstracted_workflow}
+}
+
+\caption{sdf}\label{fig:flowchart}
 \end{figure}
+
+\bibliography{eumohp.bib}
 
 \end{document}
