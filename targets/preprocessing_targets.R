@@ -14,8 +14,7 @@ preprocessing_targets <- c(
     river_networks_clip,
     clip_river_networks(
       river_networks,
-      selected_studyarea,
-      river_basin_names
+      selected_studyarea
     )
   ),
 

@@ -20,6 +20,6 @@ import_targets <-
     tar_target(
       river_networks,
       river_networks_files %>% 
-        future_map_dfr(read_river_networks)
+        read_river_networks_parallel()
     )
   )

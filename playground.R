@@ -10,6 +10,7 @@ library(assertr)
 library(tarchetypes)
 library(mapview)
 library(tidyverse)
+library(rgeos)
 library(here)
 
 

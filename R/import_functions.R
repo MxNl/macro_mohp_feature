@@ -23,6 +23,17 @@ list_river_basin_files <-
       fs::path(directory, .)
   }
 
+read_river_networks_parallel <- 
+  function(file) {
+    plan(multisession)
+    
+    data <- file %>% 
+      future_map_dfr(read_river_networks)
+    
+    plan(sequential)
+    data
+  }
+
 read_river_networks <- 
   function(file) {
     river_basin_name <-
@@ -57,27 +68,6 @@ transform_crs_if_required <-
     
   }
 
-read_river_basins <-
-  function(file) {
-    river_basin_name <-
-      file %>% 
-      str_replace(".*(?=GPKG/euhydro_)", "") %>% 
-      str_replace("(?=_v0).*", "") %>% 
-      str_replace("GPKG/euhydro_", "")
-    
-    file %>% 
-      read_sf("RiverBasins") %>%
-      st_zm() %>%
-      rename(geometry = Shape) %>% 
-      select(geometry) %>%
-      # st_make_valid() %>% 
-      # as_Spatial() %>% 
-      # gUnaryUnion() %>%
-      # st_as_sf() %>% 
-      mutate(river_basin_name = river_basin_name) %>%
-      transform_crs_if_required()
-  }
-
 parallel_read_river_basins_land <- 
   function(filepaths) {
     
@@ -92,33 +82,38 @@ parallel_read_river_basins_land <-
     return(river_basins)
   }
 
-read_river_basins_land <-
-  function(file) {
-    river_basin_name <-
-      file %>% 
-      str_replace(".*(?=GPKG/drainage_network_)", "") %>% 
-      str_replace("(?=_public).*", "") %>% 
-      str_replace("GPKG/drainage_network_", "")
-    
+test <- 
+  function(river_basin_name) {
+    river_basin_name %>% 
+      str_c("asda")
+  }
+
+read_river_basins <-
+  function(river_basins_files, river_basin_name) {
+
     if(river_basin_name == "fr_islands") {
       gpkg_layer <- glue::glue("{river_basin_name}_eudem2_basins")
     } else {
       gpkg_layer <- glue::glue("{river_basin_name}_eudem2_basins_h1")
     }
     
-    file %>% 
+    basin <- 
+      river_basins_files %>% 
+      magrittr::extract(str_detect(., river_basin_name)) %>% 
       read_sf(gpkg_layer) %>%
       st_zm() %>%
-      rename(geometry = Shape) %>% 
-      filter(across(any_of("H1_ID"), ~.x != "EU4H100296")) %>% 
+      rename(geometry = Shape)
+    
+    if(river_basin_name == "danube") {
+      basin <- 
+        basin %>% 
+        filter(H1_ID != "EU4H100296")
+    }
+    
+    basin %>% 
       select(geometry) %>%
-      st_make_valid() %>%
-      as_Spatial() %>%
-      gUnaryUnion() %>%
-      st_as_sf() %>%
-      st_cast("POLYGON") %>% 
-      mutate(river_basin_name = river_basin_name) %>%
-      transform_crs_if_required()
+      transform_crs_if_required() %>% 
+      mutate(river_basin_name = river_basin_name)
   }
 
 read_coastline <-
@@ -126,11 +121,12 @@ read_coastline <-
     filepath %>%
       read_sf() %>%
       st_zm() %>% 
-      select(geometry) %>% 
-      # st_make_valid() %>% 
-      # as_Spatial() %>% 
+      clean_names() %>% 
+      # select(geometry) %>% 
+      # st_make_valid() %>%
+      # as_Spatial() %>%
       # gUnaryUnion() %>%
-      # st_as_sf() %>% 
+      # st_as_sf() %>%
       transform_crs_if_required()
   }
 
