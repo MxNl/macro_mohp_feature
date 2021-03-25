@@ -19,7 +19,7 @@ initiate_grass_db <-
   }
 
 write_objects_to_grassdb <- 
-  function(table_name, reference_raster, studyarea, streamorder, depends_on = NULL) {
+  function(table_name, reference_raster, studyarea, streamorder, coastline, depends_on = NULL) {
     
     length(depends_on)
     
@@ -36,6 +36,10 @@ write_objects_to_grassdb <-
     # }
     
     initiate_grass_db(reference_raster, studyarea)
+    
+    coastline <- 
+      coastline %>% 
+      st_cast("LINESTRING")
     
     use_sf()
     table_name %>% 
