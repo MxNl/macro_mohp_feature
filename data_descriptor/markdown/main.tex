@@ -74,6 +74,11 @@ This dataset (EU-MOHP v013.0.1) provides information on the multiorder hydrologi
 
 \thispagestyle{empty}
 
+\begin{verbatim}
+## Writing 5 Bibtex entries ... OK
+## Results written to file 'eumohp.bib'
+\end{verbatim}
+
 \hypertarget{background-summary}{%
 \section{Background \& Summary}\label{background-summary}}
 
@@ -89,7 +94,31 @@ In recent years, data science tools such as machine learning are increasingly ap
 \section*{Methods}\label{methods}}
 \addcontentsline{toc}{section}{Methods}
 
-Text.
+All processing and analysis was conducted with free open source software. All processing steps except for the data download that was done manually are controlled and executed from within a targets pipeline in the programming language R {[}!!source{]}. Targets is an R package that provides a toolkit for reproducible workflows {[}!!source{]}. Spatial vector data such as the !!rivers are processed partly in R and a PostgreSQL database (version 13) with a PostGIS (version 3.1.0) extension for speed and memory reasons. For the same reason, all major raster calculations were conducted in a GRASS GIS database (version 7.8.5-2). The database connections and all calculations in the databases are also controlled by the targets pipeline. For reaching a maximum of reproducibility, a docker container is provided to rerun all calculations with little effort. The R package renv is used for keeping track of the required R package versions and combines well with targets and docker to endure reproducibility.
+
+\hypertarget{detailed-workflow}{%
+\subsection*{Detailed Workflow}\label{detailed-workflow}}
+\addcontentsline{toc}{subsection}{Detailed Workflow}
+
+In the following, the description of the methods is oriented towards the structure of the targets pipeline to easily relate the methods description here to the source code in the repository. All steps required to understand the workflow will be described, for further details we refer to the source code.
+
+\hypertarget{step-1-data-acquisition}{%
+\subsubsection*{Step 1: Data Acquisition}\label{step-1-data-acquisition}}
+\addcontentsline{toc}{subsubsection}{Step 1: Data Acquisition}
+
+The ``EU-Hydro - River Network Database'' was manually downloaded from \url{https://land.copernicus.eu} (for detailed link see references) as version v013. All downloaded and unzipped files have approximately 14 GB. The !!river is the only underlying data for the generation of the EU-MOHP dataset.
+
+\hypertarget{hardware}{%
+\subsection*{Hardware}\label{hardware}}
+\addcontentsline{toc}{subsection}{Hardware}
+
+The pipeline to generate the dataset was executed on a DELL PowerEdge C4140 Server with an Intel Xeon Gold 6240R CPU and 384 GB installed RAM. The installed operation system is Microsoft Windows Server 2019 Standard, version 10.0.17763 Build 17763.
+
+{[}what is different to the Beelitz Paper and why{]}
+NHDPlusV2 data
+No pathleveId column
+Criterion to exclusively use free open source software
+
 \ref{fig:flowchart}
 
 \hypertarget{data-records}{%
@@ -138,7 +167,7 @@ Text.
 \section*{Figures \& Tables}\label{figures-tables}}
 \addcontentsline{toc}{section}{Figures \& Tables}
 
-\begin{figure}
+\begin{figure}[H]
 
 {\centering \includegraphics[width=0.7\linewidth]{diagramms/flowchart} 
 
@@ -147,6 +176,7 @@ Text.
 \caption{sdf}\label{fig:flowchart}
 \end{figure}
 
+\nocite{*}
 \bibliography{eumohp.bib}
 
 \end{document}
