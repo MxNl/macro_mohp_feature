@@ -27,7 +27,7 @@ library(knitr)
 source("../targets/R/visualization_functions.R")
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, include = FALSE}
 options(encoding = "UTF-8")
 RefManageR::ReadZotero("5574385",
                .params = list(collection = "U4DY76U3",
