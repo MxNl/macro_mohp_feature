@@ -332,8 +332,8 @@ FROM unioned_without_strahler l
 
 union_per_basin_merge <- function(table_name, river_basin_names, depends_on = NULL) {
   ########## Test
-  table_name <- LINES_MERGED
-  river_basin_names <- tar_read(river_basin_names)
+  # table_name <- LINES_MERGED
+  # river_basin_names <- tar_read(river_basin_names)
   ####
   
   length(depends_on)

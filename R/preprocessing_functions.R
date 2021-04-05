@@ -13,7 +13,7 @@ clip_river_networks <-
 
       river_networks %>%
         #filter(river_basin_name %in% relevant_river_basins) %>% 
-        filter(as.vector(st_intersects(., studyarea, sparse = FALSE))) %>%
+        filter_intersecting_features(studyarea) %>%
         st_intersection(studyarea) %>%
         st_cast("MULTILINESTRING") %>%
         add_feature_index_column()
@@ -90,7 +90,7 @@ determine_studyarea_outline_level_germany <-
 determine_studyarea_outline_level_europe <-
   function(river_basins) {
     ### Test
-    # river_basins <- tar_read(river_basins)
+    river_basins <- tar_read(river_basins_subset)
     # river_networks <- tar_read(river_networks)
     # river_networks_sub <-
     #   river_networks %>%
@@ -99,6 +99,8 @@ determine_studyarea_outline_level_europe <-
 
     river_basins %>%
       st_make_valid() %>%
+      st_collection_extract("POLYGON") %>% 
+      st_as_sf() %>% 
       as_Spatial() %>%
       gUnaryUnion() %>%
       st_as_sf() %>% 
@@ -180,23 +182,40 @@ get_unique_basin_names <-
 
 union_river_basins <-
   function(river_basins) {
+    
+    if(SIMPLIFY_POLYGONS) {
+      river_basins <- 
+        river_basins %>%
+        rmapshaper::ms_simplify(keep = SIMPLIFY_KEEP_NODES_PERCENTAGE)
+    }
+    
     river_basins %>%
-      rmapshaper::ms_simplify(keep = SIMPLIFY_KEEP_NODES_PERCENTAGE) %>% 
       st_make_valid() %>%
       st_collection_extract("POLYGON") %>% 
       as_Spatial() %>%
       gUnaryUnion() %>%
       st_as_sf() %>%
-      st_cast("POLYGON") %>% 
+      st_cast("POLYGON")
+  }
+
+subset_river_basins <-
+  function(river_basins) {
+    river_basins %>% 
       mutate(area = as.numeric(st_area(geometry))*1E6) %>% 
-      arrange(-area) %>% 
-      slice(1)
+      filter(area >= MIN_AREA_ISLAND) %>% 
+      select(-area)
   }
 
 union_coastline <-
   function(coastline) {
+    
+    if(SIMPLIFY_POLYGONS) {
+      coastline <- 
+        coastline %>%
+        rmapshaper::ms_simplify(keep = SIMPLIFY_KEEP_NODES_PERCENTAGE)
+    }
+    
     coastline %>%
-      rmapshaper::ms_simplify(keep = SIMPLIFY_KEEP_NODES_PERCENTAGE) %>% 
       st_make_valid() %>%
       st_collection_extract("POLYGON") %>% 
       as_Spatial() %>%
@@ -296,6 +315,14 @@ filter_intersecting_features <-
       filter(st_intersects(., y, sparse = FALSE) %>% apply(1, any))
   }
 
+filter_inland_waters <- 
+  function(inland_waters, river_network) {
+    inland_waters %>% 
+      filter(area >= CELLSIZE^2*2) %>% 
+      filter_intersecting_features(river_network) %>% 
+      select(-area)
+  }
+
 impute_streamorder <- 
   function(river_networks) {
     
@@ -304,6 +331,28 @@ impute_streamorder <-
       # verify(filter(dfdd == DFDD_RIVERS & is.na(strahler)) %>% nrow() %>% magrittr::equals(0)) %>% 
       mutate(strahler = replace_na(strahler, 1)) %>% 
       mutate(strahler = if_else(strahler %in% INVALID_STRAHLER_VALUES, 1, strahler))
+  }
+
+join_streamorder_to_inland_waters <- 
+  function(inland_waters, table_name) {
+    
+    river_network <- 
+      LINES_MERGED %>% 
+      get_table_from_postgress() %>% 
+      query_result_as_sf() %>%
+      mutate(feature_id = as.integer(feature_id))
+    
+    inland_waters %>% 
+      select(-inspire_id, -river_basin_name) %>% 
+      add_feature_index_column() %>% 
+      st_join(river_network) %>% 
+      group_by(feature_id.x) %>% 
+      arrange(-strahler) %>% 
+      slice(1) %>% 
+      ungroup() %>% 
+      select(-feature_id.x) %>% 
+      rename(feature_id = feature_id.y) %>% 
+      relocate(feature_id, .before = 1)
   }
 
 get_river_networks_from_db <- 
@@ -324,9 +373,20 @@ make_reference_raster <-
     
     length(depends_on)
     
-    base_raster <- studyarea %>% 
+    studyarea <-
+      studyarea %>%
+      st_buffer(sqrt(2*CELLSIZE)*6)
+
+    base_raster <- 
+      studyarea %>% 
       fasterize::raster(resolution = c(CELLSIZE, CELLSIZE))
-    
-    studyarea %>% 
+
+    # reference_raster <-
+    studyarea %>%
+      # raster::rasterize(base_raster, field = "id", getCover = TRUE)
       fasterize::fasterize(base_raster)
+
+    # reference_raster[reference_raster > 0] <- 1
+    # reference_raster[reference_raster == 0] <- NA
+    # reference_raster
   }

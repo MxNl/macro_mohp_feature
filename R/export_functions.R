@@ -1,3 +1,12 @@
+write_reference_raster <- 
+  function(reference_raster, studyarea, filepath) {
+
+    reference_raster %>% 
+      writeRaster(FILEPATH_REFERENCE_RASTER_OUTPUT,
+                  overwrite=TRUE)
+    Sys.time()
+  }
+
 write_raster_mohp_features <-
   function(feature_name, streamorder) {
 

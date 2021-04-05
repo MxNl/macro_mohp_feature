@@ -98,7 +98,7 @@ generate_discrete_colour_values <-
 
 
 plot_lines_coloured_by_categorical_attribute <-
-  function(x, var) {
+  function(x, var, plot_legend = FALSE) {
     
     plot <-
       x %>%
@@ -107,11 +107,18 @@ plot_lines_coloured_by_categorical_attribute <-
               size = 1
       ) +
       scale_colour_manual(values = generate_discrete_colour_values(x, {{ var }})) +
-      theme_void() +
-      theme(
-        legend.position = "none",
-        legend.direction = "horizontal"
-      )
+      theme_void()
+    
+    if (plot_legend) {
+      plot
+    } else {
+      plot <- 
+        plot +
+        theme(
+          legend.position = "none",
+          legend.direction = "horizontal"
+        )
+    }
     
     return(plot)
   }

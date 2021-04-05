@@ -10,6 +10,14 @@ pipeline_for <- function(area) {
         selected_studyarea,
         read_studyarea(filepath_studyarea_pipelinetest) %>% 
         mutate(id = 1L)
+      ),
+      tar_target(
+        river_basin_names,
+        "rhine"
+      ),
+      tar_target(
+        coastline,
+        selected_studyarea
       )
     ),
     germany = list(
@@ -82,12 +90,18 @@ pipeline_for <- function(area) {
       tar_target(
         river_basins_unioned,
           union_river_basins(river_basins_grouped),
-        pattern = map(river_basins_grouped)
+        pattern = map(river_basins_grouped),
+        iteration = "group"
+      ),
+      tar_target(
+        river_basins_subset,
+        subset_river_basins(river_basins_unioned),
+        pattern = map(river_basins_unioned)
       ),
       tar_target(
         selected_studyarea,
         determine_studyarea_outline_level_europe(
-          river_basins_unioned
+          river_basins_subset
         )
       )
     )

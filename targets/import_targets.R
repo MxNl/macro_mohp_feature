@@ -21,5 +21,13 @@ import_targets <-
       river_networks,
       river_networks_files %>% 
         read_river_networks_parallel()
+    ),
+
+    tar_target(
+      inland_waters,
+      river_networks_files %>% 
+        read_inland_waters(),
+      pattern = map(river_networks_files),
+      iteration = "list"
     )
   )

@@ -12,6 +12,8 @@ library(mapview)
 library(tidyverse)
 library(rgeos)
 library(here)
+library(rgrass7)
+library(whitebox)
 
 
 tar_read(filepath_canals_to_reclassify)
@@ -42,7 +44,9 @@ tar_read(river_networks_clip)
 tar_read(river_networks_imputed_streamorder_canals_as_1)
 
 
-
+tar_read(selected_studyarea) %>% 
+  arrange(desc(area = as.numeric(st_area(geometry))*1E6)) %>% 
+  slice(1)
 
 
 

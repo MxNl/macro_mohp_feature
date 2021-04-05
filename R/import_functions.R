@@ -57,6 +57,24 @@ read_river_networks <-
       transform_crs_if_required()
   }
 
+read_inland_waters <- 
+  function(file) {
+    river_basin_name <-
+      file %>% 
+      str_replace(".*(?=GPKG/euhydro_)", "") %>% 
+      str_replace("(?=_v0).*", "") %>% 
+      str_replace("GPKG/euhydro_", "")
+    
+    file %>% 
+      read_sf(layer = "InlandWater") %>%
+      st_zm() %>%
+      rename(geometry = Shape) %>% 
+      clean_names() %>%
+      select(inspire_id, area) %>% 
+      mutate(river_basin_name = river_basin_name) %>% 
+      transform_crs_if_required()
+  }
+
 transform_crs_if_required <- 
   function(x) {
     if(st_crs(x) != CRS_REFERENCE) {

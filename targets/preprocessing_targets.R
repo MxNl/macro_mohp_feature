@@ -11,6 +11,14 @@ preprocessing_targets <- c(
   # ),
 
   tar_target(
+    inland_waters_studyarea,
+    inland_waters %>% 
+      filter_inland_waters(selected_studyarea),
+    pattern = map(inland_waters),
+    iteration = "vector"
+  ),
+
+  tar_target(
     river_networks_clip,
     clip_river_networks(
       river_networks,
@@ -33,6 +41,12 @@ preprocessing_targets <- c(
     clean_river_networks(river_networks_imputed_streamorder_canals_as_1)
   ),
   
+  tar_target(
+    inland_waters_rivers,
+    inland_waters_studyarea %>% 
+      filter_intersecting_features(river_networks_clean)
+  ),
+
   tar_target(
     db_river_networks_clean,
     write_as_lines_to_db(
@@ -66,6 +80,12 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
+    inland_waters_strahler,
+    inland_waters_rivers %>% 
+      join_streamorder_to_inland_waters(LINES_MERGED)
+  ),
+  
+  tar_target(
     streamorders,
     get_unique_streamorders(
       LINES_MERGED,
@@ -83,33 +103,17 @@ preprocessing_targets <- c(
     ),
     pattern = map(streamorders)
   ),
-  
-  # tar_target(
-  #   river_network_by_streamorder,
-  #   get_river_networks_from_db(
-  #     LINES_BY_STREAMORDER,
-  #     streamorders,
-  #     depends_on = list(db_river_network_by_streamorder)
-  #   ),
-  #   pattern = map(streamorders)
-  # ),
-  
+
   tar_target(
     reference_raster,
     make_reference_raster(
       selected_studyarea,
       depends_on = list(config)
     )
+  ),
+
+  tar_target(
+    reference_raster_disk,
+    write_reference_raster(reference_raster)
   )
-  
-  # tar_target(
-  #   grass_init,
-  #   link2GI::linkGRASS7(reference_raster,
-  #                       default_GRASS7 = c(
-  #                         "C:\\Program Files\\GRASS GIS 7.8",
-  #                         "GRASS GIS 7.8",
-  #                         "NSIS"
-  #                       )
-  #   )
-  # ),
 )
