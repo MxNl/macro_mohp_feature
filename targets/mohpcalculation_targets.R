@@ -4,7 +4,7 @@ mohpcalculation_targets <- list(
     calculate_mohp_metrics_in_grassdb(
       LINES_BY_STREAMORDER,
       inland_waters_strahler,
-      reference_raster,
+      # reference_raster,
       selected_studyarea,
       streamorders,
       coastline,

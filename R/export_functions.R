@@ -1,6 +1,10 @@
 write_reference_raster <- 
   function(reference_raster, studyarea, filepath) {
 
+    if (!fs::dir_exists(DIRECTORY_REFERENCE_RASTER_OUTPUT)) {
+      fs::dir_create(DIRECTORY_REFERENCE_RASTER_OUTPUT) 
+    }
+    
     reference_raster %>% 
       writeRaster(FILEPATH_REFERENCE_RASTER_OUTPUT,
                   overwrite=TRUE)

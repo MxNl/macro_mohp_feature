@@ -14,6 +14,7 @@ FILEPATH_STUDYAREA_PIPELINETEST <- "J:/NUTZER/Noelscher.M/Studierende/Daten/stud
 DIRECTORY_RIVER_NETWORKS <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data"
 FILEPATH_COASTLINE <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
 FILEPATH_REFERENCE_RASTER_OUTPUT <- "output_data/reference_rasters/reference_raster.tif"
+DIRECTORY_REFERENCE_RASTER_OUTPUT <- "output_data/reference_rasters"
 FILEPATH_CONFIG <- "config.yml"
 GRASS_DIRECTORY <- "grassdata"
 GRASS_STREAMORDER_DIRECTORY <- "db_streamorder"

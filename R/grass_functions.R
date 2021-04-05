@@ -21,7 +21,7 @@ initiate_grass_db <-
   }
 
 initiate_grass_db_parallel <- 
-  function(studyarea, streamorder) {
+  function(studyarea, streamorder, crs_reference) {
     
     directory <- glue::glue("{GRASS_DIRECTORY}/{GRASS_STREAMORDER_DIRECTORY}_{streamorder}")
     if(fs::dir_exists(directory)) {
@@ -39,12 +39,12 @@ initiate_grass_db_parallel <-
               override = TRUE)
     
     execGRASS("g.proj", flags = c("c", "quiet"), 
-              proj4 = st_crs(studyarea)$proj4string)
-    # b_box = st_bbox(studyarea) 
-    # execGRASS("g.region", flags = c("quiet"), 
-    #           n = as.character(b_box["ymax"]), s = as.character(b_box["ymin"]), 
-    #           e = as.character(b_box["xmax"]), w = as.character(b_box["xmin"]), 
-    #           res = as.character(CELLSIZE))
+              proj4 = crs_reference)
+    b_box = st_bbox(studyarea)
+    execGRASS("g.region", flags = c("quiet"),
+              n = as.character(b_box["ymax"]), s = as.character(b_box["ymin"]),
+              e = as.character(b_box["xmax"]), w = as.character(b_box["xmin"]),
+              res = as.character(CELLSIZE))
   }
 
 # calculate_hack_streamorder_grassdb <- 
@@ -239,7 +239,7 @@ initiate_grass_db_parallel <-
 calculate_mohp_metrics_in_grassdb <- 
   function(table_name, 
            inland_waters,
-           reference_raster,
+           # reference_raster,
            studyarea, 
            streamorder, 
            coastline, 
@@ -251,17 +251,17 @@ calculate_mohp_metrics_in_grassdb <-
     if (test) {
       table_name <- LINES_BY_STREAMORDER
       inland_waters <- tar_read(inland_waters_strahler)
-      reference_raster <- tar_read(reference_raster)
-      filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
+      # reference_raster <- tar_read(reference_raster)
+      # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
       studyarea <- tar_read(selected_studyarea)
       streamorder <- 1
       coastline <- tar_read(coastline)
     }
 
-    initiate_grass_db_parallel(studyarea, streamorder)
-    # initiate_grass_db(studyarea)
+    crs_reference <- st_crs(studyarea)$proj4string
     
-    crs_reference_raster <- crs(reference_raster)
+    initiate_grass_db_parallel(studyarea, streamorder, crs_reference)
+    # initiate_grass_db(studyarea)
     
     inland_waters <- 
       inland_waters %>% 
@@ -289,7 +289,7 @@ calculate_mohp_metrics_in_grassdb <-
     use_sf()
     lines %>% 
       bind_rows(coastline) %>% 
-      st_transform(crs_reference_raster) %>% 
+      st_transform(crs_reference) %>% 
       writeVECT("river_network", 
                 v.in.ogr_flags = c("overwrite"))
     print("river_network")
@@ -297,7 +297,7 @@ calculate_mohp_metrics_in_grassdb <-
     if(nrow(inland_waters) != 0) {
       use_sf()
       inland_waters %>% 
-        st_transform(crs_reference_raster) %>% 
+        st_transform(crs_reference) %>% 
         writeVECT("inland_waters", 
                   v.in.ogr_flags = c("overwrite"))
       
@@ -314,20 +314,20 @@ calculate_mohp_metrics_in_grassdb <-
     }
     
     
-    use_sp()
-    execGRASS("r.import",
-              input = FILEPATH_REFERENCE_RASTER_OUTPUT,
-              output = "reference_raster")
-
-    print("reference_raster")
-    
-    execGRASS("g.region", flags = c("quiet"),
-              raster = "reference_raster"
-    )
+    # use_sp()
+    # execGRASS("r.import",
+    #           input = FILEPATH_REFERENCE_RASTER_OUTPUT,
+    #           output = "reference_raster")
+    # 
+    # print("reference_raster")
+    # 
+    # execGRASS("g.region", flags = c("quiet"),
+    #           raster = "reference_raster"
+    # )
     
     studyarea <- 
       studyarea %>% 
-      st_transform(crs_reference_raster) %>%
+      st_transform(crs_reference) %>%
       rowwise() %>% 
       group_split()
     
@@ -344,8 +344,14 @@ calculate_mohp_metrics_in_grassdb <-
     feature_layernames %>% 
       map2(studyarea, grass_calculations, lines_to_remove_from_catchments, has_inland_waters)
     
+    use_sf()
+    studyarea %>% 
+      reduce(bind_rows) %>% 
+      writeVECT("mask", 
+                v.in.ogr_flags = c("overwrite"))
+    
     execGRASS("r.mask",
-              raster = "reference_raster",
+              vector = "mask",
               flags = c("overwrite"))
     
     feature_layernames_patch <- 
