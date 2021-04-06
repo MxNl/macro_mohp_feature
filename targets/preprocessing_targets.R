@@ -13,9 +13,10 @@ preprocessing_targets <- c(
   tar_target(
     inland_waters_studyarea,
     inland_waters %>% 
-      filter_inland_waters(selected_studyarea),
-    pattern = map(inland_waters),
-    iteration = "vector"
+      filter_inland_waters(selected_studyarea)
+    # pattern = map(inland_waters),
+    # iteration = "vector",
+    # deployment = "main"
   ),
 
   tar_target(
@@ -102,18 +103,18 @@ preprocessing_targets <- c(
       depends_on = list(db_river_networks_strahler_merge_union)
     ),
     pattern = map(streamorders)
-  ),
-
-  tar_target(
-    reference_raster,
-    make_reference_raster(
-      selected_studyarea,
-      depends_on = list(config)
-    )
-  ),
-
-  tar_target(
-    reference_raster_disk,
-    write_reference_raster(reference_raster)
   )
+
+  # tar_target(
+  #   reference_raster,
+  #   make_reference_raster(
+  #     selected_studyarea,
+  #     depends_on = list(config)
+  #   )
+  # ),
+  # 
+  # tar_target(
+  #   reference_raster_disk,
+  #   write_reference_raster(reference_raster)
+  # )
 )

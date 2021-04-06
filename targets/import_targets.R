@@ -27,7 +27,7 @@ import_targets <-
       inland_waters,
       river_networks_files %>% 
         read_inland_waters(),
-      pattern = map(river_networks_files),
-      iteration = "list"
+      pattern = map(river_networks_files)
+      # iteration = "list"
     )
   )
