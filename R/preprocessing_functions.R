@@ -333,32 +333,6 @@ impute_streamorder <-
       mutate(strahler = if_else(strahler %in% INVALID_STRAHLER_VALUES, 1, strahler))
   }
 
-join_streamorder_to_inland_waters <- 
-  function(inland_waters, table_name, depends_on = NULL) {
-    
-    length(depends_on)
-    
-    
-    
-    river_network <- 
-      LINES_MERGED %>% 
-      get_table_from_postgress() %>% 
-      query_result_as_sf() %>%
-      mutate(feature_id = as.integer(feature_id))
-    
-    inland_waters %>% 
-      select(-inspire_id, -river_basin_name) %>% 
-      add_feature_index_column() %>% 
-      st_join(river_network) %>% 
-      group_by(feature_id.x) %>% 
-      arrange(-strahler) %>% 
-      slice(1) %>% 
-      ungroup() %>% 
-      select(-feature_id.x) %>% 
-      rename(feature_id = feature_id.y) %>% 
-      relocate(feature_id, .before = 1)
-  }
-
 get_river_networks_from_db <- 
   function(table_name, streamorder, depends_on = NULL) {
     

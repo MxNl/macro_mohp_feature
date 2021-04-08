@@ -71,6 +71,7 @@ read_inland_waters <-
       rename(geometry = Shape) %>% 
       clean_names() %>%
       select(inspire_id, area) %>% 
+      filter(area >= CELLSIZE^2*4) %>% 
       mutate(river_basin_name = river_basin_name) %>% 
       transform_crs_if_required()
   }
