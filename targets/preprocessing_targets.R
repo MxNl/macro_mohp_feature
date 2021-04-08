@@ -91,6 +91,8 @@ preprocessing_targets <- c(
   tar_target(
     db_inland_waters_strahler,
       join_streamorder_to_inland_waters(
+        INLAND_WATERS_STRAHLER,
+        INLAND_WATERS,
         LINES_STUDYAREA,
         depends_on = list(
           db_river_networks_strahler_studyarea,
@@ -105,29 +107,5 @@ preprocessing_targets <- c(
       LINES_STUDYAREA,
       depends_on = list(db_river_networks_strahler_studyarea)
       )
-  ),
-  
-  tar_target(
-    db_river_network_by_streamorder,
-    streamorder_filter(
-      LINES_BY_STREAMORDER,
-      LINES_STUDYAREA,
-      streamorders,
-      depends_on = list(db_river_networks_strahler_studyarea)
-    ),
-    pattern = map(streamorders)
   )
-
-  # tar_target(
-  #   reference_raster,
-  #   make_reference_raster(
-  #     selected_studyarea,
-  #     depends_on = list(config)
-  #   )
-  # ),
-  # 
-  # tar_target(
-  #   reference_raster_disk,
-  #   write_reference_raster(reference_raster)
-  # )
 )

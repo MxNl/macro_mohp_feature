@@ -238,8 +238,7 @@ initiate_grass_db_parallel <-
 
 calculate_mohp_metrics_in_grassdb <- 
   function(table_name, 
-           inland_waters,
-           # reference_raster,
+           table_name_inland_waters,
            studyarea, 
            streamorder, 
            coastline, 
@@ -249,12 +248,12 @@ calculate_mohp_metrics_in_grassdb <-
     
     test <- FALSE
     if (test) {
-      table_name <- LINES_BY_STREAMORDER
+      table_name <- LINES_STUDYAREA
       inland_waters <- tar_read(inland_waters_strahler)
       # reference_raster <- tar_read(reference_raster)
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
       studyarea <- tar_read(selected_studyarea)
-      streamorder <- 1
+      streamorder <- 3
       coastline <- tar_read(coastline)
     }
 
@@ -263,15 +262,11 @@ calculate_mohp_metrics_in_grassdb <-
     initiate_grass_db_parallel(studyarea, streamorder, crs_reference)
     # initiate_grass_db(studyarea)
     
-    inland_waters <- 
-      inland_waters %>% 
-      filter(strahler >= streamorder)
-    
     lines <- 
-      table_name %>% 
-      composite_name(streamorder) %>% 
-      get_table_from_postgress() %>% 
-      query_result_as_sf() %>% 
+      st_read(
+        connect_to_database(), 
+        query = str_glue("SELECT * FROM {table_name} WHERE strahler >= {streamorder}")
+      ) %>% 
       mutate(feature_id = as.integer(feature_id))
     
     coastline <- 
@@ -293,6 +288,13 @@ calculate_mohp_metrics_in_grassdb <-
       writeVECT("river_network", 
                 v.in.ogr_flags = c("overwrite"))
     print("river_network")
+    
+    inland_waters <- 
+      st_read(
+      connect_to_database(), 
+      query = str_glue("SELECT * FROM {INLAND_WATERS_STRAHLER} WHERE strahler >= {streamorder}")
+      ) %>% 
+      mutate(feature_id = as.integer(feature_id))
     
     if(nrow(inland_waters) != 0) {
       use_sf()

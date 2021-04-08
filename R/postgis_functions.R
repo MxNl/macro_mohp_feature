@@ -383,6 +383,29 @@ filter_rivers_in_studyarea <- function(table_name,
   Sys.time()
 }
 
+join_streamorder_to_inland_waters <-
+  function(table_name_destination, table_name_inland_waters, table_name_lines, depends_on = NULL) {
+    length(depends_on)
+    
+    query <-
+      str_glue("
+        CREATE TABLE {table_name_destination} AS (
+          SELECT
+  	        DISTINCT ON (inspire_id)
+  	        feature_id,
+  	        strahler,
+  	        l.geometry
+          FROM {table_name_inland_waters} l
+          INNER JOIN {table_name_lines} r
+          ON ST_Intersects(l.geometry, r.geometry)
+          ORDER BY 
+          inspire_id, strahler DESC
+        )")
+    
+    create_table(query, table_name_destination)
+    Sys.time()
+  }
+
 get_unique_streamorders <- 
   function(table_name_source, depends_on = NULL) {
     
