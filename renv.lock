@@ -1259,6 +1259,13 @@
       "Repository": "CRAN",
       "Hash": "ca970b96d894e90397ed20637a0c1bbe"
     },
+    "whitebox": {
+      "Package": "whitebox",
+      "Version": "1.4.0",
+      "Source": "Repository",
+      "Repository": "R-Forge",
+      "Hash": "de8e6945cb7dcd526073369d371c2e4d"
+    },
     "withr": {
       "Package": "withr",
       "Version": "2.4.1",
