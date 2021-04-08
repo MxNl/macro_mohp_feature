@@ -354,6 +354,35 @@ union_per_basin_merge <- function(table_name, river_basin_names, depends_on = NU
   Sys.time()
 }
 
+filter_rivers_in_studyarea <- function(table_name, 
+                                       table_name_source,
+                                       table_name_studyarea, 
+                                       geo_index_column = NULL,
+                                       depends_on = NULL) {
+  ########## Test
+  # table_name <- LINES_STUDYAREA
+  # table_name_source <- LINES_MERGED
+  # table_name_studyarea <- SELECTED_STUDYAREA_TABLE
+  ####
+  
+  length(depends_on)
+  
+  query <- 
+    str_glue("
+    CREATE TABLE {table_name} AS ( 
+      SELECT
+  row_number() OVER (
+            	ORDER BY strahler
+        	) AS feature_id,
+  left_table.strahler,
+   left_table.geometry
+      FROM {table_name_source} AS left_table, {table_name_studyarea} AS right_table
+      WHERE ST_Intersects(left_table.geometry, right_table.geometry))")
+  
+  create_table(query, table_name, geo_index_column = geo_index_column)
+  Sys.time()
+}
+
 get_unique_streamorders <- 
   function(table_name_source, depends_on = NULL) {
     
@@ -418,6 +447,24 @@ write_selected_studyarea <- function(x, table_name_destination, index_column = N
     table_name_destination,
     index_column = index_column
   )
+  Sys.time()
+}
+
+write_inland_waters <- function(x, table_name_destination, index_column = NULL, geo_index_column = NULL) {
+  
+  write_to_table(
+    x,
+    table_name_destination,
+    index_column = index_column
+  )
+  
+  connection <- connect_to_database()
+ 
+  if (!is.null(geo_index_column)) {
+    set_geo_index(table_name_destination, geo_index_column, connection)
+  }
+  DBI::dbDisconnect(connection)
+  
   Sys.time()
 }
 

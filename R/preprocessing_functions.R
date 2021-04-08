@@ -20,10 +20,10 @@ clip_river_networks <-
     } else if (AREA == "europe") {
       
       river_networks %>%
-        filter_intersecting_features(studyarea) %>% 
-        st_as_sf() %>% 
+        # filter_intersecting_features(studyarea) %>% 
+        st_as_sf()
         # filter(river_basin_name %in% river_basin_names) %>% 
-        add_feature_index_column()
+        # add_feature_index_column()
     } else {
       stop("Please provide a valid character string for the AREA/area parameter in config.yml")
     }
@@ -334,7 +334,11 @@ impute_streamorder <-
   }
 
 join_streamorder_to_inland_waters <- 
-  function(inland_waters, table_name) {
+  function(inland_waters, table_name, depends_on = NULL) {
+    
+    length(depends_on)
+    
+    
     
     river_network <- 
       LINES_MERGED %>% 

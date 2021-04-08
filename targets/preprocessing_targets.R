@@ -1,22 +1,22 @@
 preprocessing_targets <- c(
   pipeline_for(AREA),
   
-  # tar_target(
-  #   db_selected_studyarea,
-  #   write_selected_studyarea(
-  #     selected_studyarea,
-  #     SELECTED_STUDYAREA_TABLE
-  #   )#,
-  #   # force = !exists_table(SELECTED_STUDYAREA_TABLE)
-  # ),
+  tar_target(
+    db_selected_studyarea,
+    write_selected_studyarea(
+      selected_studyarea,
+      SELECTED_STUDYAREA_TABLE
+    )#,
+    # force = !exists_table(SELECTED_STUDYAREA_TABLE)
+  ),
 
   tar_target(
-    inland_waters_studyarea,
-    inland_waters %>% 
-      filter_inland_waters(selected_studyarea)
-    # pattern = map(inland_waters),
-    # iteration = "vector",
-    # deployment = "main"
+    db_inland_waters,
+    write_inland_waters(
+      inland_waters,
+      INLAND_WATERS,
+      geo_index_column = "geometry"
+    )
   ),
 
   tar_target(
@@ -42,12 +42,6 @@ preprocessing_targets <- c(
     clean_river_networks(river_networks_imputed_streamorder_canals_as_1)
   ),
   
-  tar_target(
-    inland_waters_rivers,
-    inland_waters_studyarea %>% 
-      filter_intersecting_features(river_networks_clean)
-  ),
-
   tar_target(
     db_river_networks_clean,
     write_as_lines_to_db(
@@ -81,16 +75,35 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
-    inland_waters_strahler,
-    inland_waters_rivers %>% 
-      join_streamorder_to_inland_waters(LINES_MERGED)
+    db_river_networks_strahler_studyarea,
+    filter_rivers_in_studyarea(
+      LINES_STUDYAREA,
+      LINES_MERGED,
+      SELECTED_STUDYAREA_TABLE,
+      "geometry",
+      depends_on = list(
+        db_river_networks_strahler_merge_union,
+        db_selected_studyarea
+      )
+    )
+  ),
+  
+  tar_target(
+    db_inland_waters_strahler,
+      join_streamorder_to_inland_waters(
+        LINES_STUDYAREA,
+        depends_on = list(
+          db_river_networks_strahler_studyarea,
+          db_inland_waters
+          )
+        )
   ),
   
   tar_target(
     streamorders,
     get_unique_streamorders(
-      LINES_MERGED,
-      depends_on = list(db_river_networks_strahler_merge_union)
+      LINES_STUDYAREA,
+      depends_on = list(db_river_networks_strahler_studyarea)
       )
   ),
   
@@ -98,9 +111,9 @@ preprocessing_targets <- c(
     db_river_network_by_streamorder,
     streamorder_filter(
       LINES_BY_STREAMORDER,
-      LINES_MERGED,
+      LINES_STUDYAREA,
       streamorders,
-      depends_on = list(db_river_networks_strahler_merge_union)
+      depends_on = list(db_river_networks_strahler_studyarea)
     ),
     pattern = map(streamorders)
   )

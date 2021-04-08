@@ -23,6 +23,8 @@ OUTPUT_DIRECTORY <- "output_data"
 # Database Table Names
 LINES_CLEAN <- "lines_clean"
 LINES_MERGED <- "lines_merged"
+LINES_STUDYAREA <- "lines_studyarea"
+INLAND_WATERS <- "inland_waters"
 LINES_BY_STREAMORDER <- "river_network_by_streamorder"
 SELECTED_STUDYAREA_TABLE <- "selected_studyarea"
 MOHP_FEATURES_TABLE <- "lateral_position_stream_divide_distance"
