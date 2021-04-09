@@ -130,17 +130,35 @@ calculate_mohp_metrics_in_grassdb <-
       has_inland_waters <- FALSE
     }
     
+    execGRASS("v.to.rast", 
+              input = "river_network", 
+              output = "river_network_raster", 
+              use = "attr",
+              attribute_column = "feature_id",
+              flags = c("overwrite"),
+              memory = GRASS_MAX_MEMORY)
+    print("v.to.rast")
     
-    # use_sp()
-    # execGRASS("r.import",
-    #           input = FILEPATH_REFERENCE_RASTER_OUTPUT,
-    #           output = "reference_raster")
-    # 
-    # print("reference_raster")
-    # 
-    # execGRASS("g.region", flags = c("quiet"),
-    #           raster = "reference_raster"
-    # )
+    execGRASS("r.mapcalc",
+              expression = "river_network_raster = round(river_network_raster)",
+              flags = c("overwrite"))
+    
+    execGRASS("r.null",
+              map = "river_network_raster")
+    
+    execGRASS("r.thin",
+              input = "river_network_raster",
+              output = "river_network_value_raster_thin",
+              flags = c("overwrite"))
+    print("r.thin")
+    
+    print(has_inland_waters)
+    if(has_inland_waters) {
+      execGRASS("r.patch",
+                input = c("river_network_value_raster_thin", "inland_waters_raster"),
+                output = "river_network_value_raster_thin",
+                flag = c("overwrite"))
+    }
     
     studyarea <- 
       studyarea %>% 
@@ -233,36 +251,6 @@ grass_calculations <-
               flags = c("overwrite"))
     print("r.mask")
     
-    execGRASS("v.to.rast", 
-              input = "river_network", 
-              output = "river_network_raster", 
-              use = "attr",
-              attribute_column = "feature_id",
-              flags = c("overwrite"),
-              memory = GRASS_MAX_MEMORY)
-    print("v.to.rast")
-    
-    execGRASS("r.mapcalc",
-              expression = "river_network_raster = round(river_network_raster)",
-              flags = c("overwrite"))
-    
-    execGRASS("r.null",
-              map = "river_network_raster")
-    
-    execGRASS("r.thin",
-              input = "river_network_raster",
-              output = "river_network_value_raster_thin",
-              flags = c("overwrite"))
-    print("r.thin")
-
-    print(has_inland_waters)
-    if(has_inland_waters) {
-      execGRASS("r.patch",
-                input = c("river_network_value_raster_thin", "inland_waters_raster"),
-                output = "river_network_value_raster_thin",
-                flag = c("overwrite"))
-    }
-
     execGRASS("r.grow.distance",
               input = "river_network_value_raster_thin",
               distance = "river_network_distance_raster", 

@@ -16,8 +16,10 @@ pipeline_for <- function(area) {
         "rhine"
       ),
       tar_target(
-        coastline,
-        selected_studyarea
+        coastline_unioned_all,
+        selected_studyarea %>% 
+          st_union() %>% 
+          st_as_sf()
       )
     ),
     germany = list(
