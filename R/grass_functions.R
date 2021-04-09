@@ -47,195 +47,6 @@ initiate_grass_db_parallel <-
               res = as.character(CELLSIZE))
   }
 
-# calculate_hack_streamorder_grassdb <- 
-#   function(table_name, 
-#            reference_raster,
-#            studyarea,
-#            depends_on = NULL) {
-#     
-#     length(depends_on)
-#     
-#     test <- FALSE
-#     if (test) {
-#       table_name <- LINES_BY_STREAMORDER
-#       reference_raster <- tar_read(reference_raster)
-#       filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
-#       studyarea <- tar_read(selected_studyarea)
-#     }
-#     
-#     streamorder <- 1
-#     initiate_grass_db(studyarea)
-#     
-#     crs_reference_raster <- crs(reference_raster)
-#     
-#     lines <- 
-#       table_name %>% 
-#       composite_name(streamorder) %>% 
-#       get_table_from_postgress() %>% 
-#       query_result_as_sf() %>% 
-#       add_feature_index_column() %>% 
-#       mutate(feature_id = as.integer(feature_id))
-#     
-#     use_sf()
-#     lines %>%
-#       st_transform(crs_reference_raster) %>% 
-#       writeVECT("river_network", 
-#                 v.in.ogr_flags = c("overwrite"))
-#     print("river_network")
-#     
-#     use_sp()
-#     execGRASS("r.import",
-#               input = FILEPATH_REFERENCE_RASTER_OUTPUT,
-#               output = "reference_raster")
-# 
-#     print("reference_raster")
-#     
-#     execGRASS("g.region", flags = c("quiet"),
-#               raster = "reference_raster"
-#     )
-#     
-#     use_sf()
-#     studyarea %>% 
-#       st_transform(crs_reference_raster) %>% 
-#       writeVECT("mask", 
-#                 v.in.ogr_flags = c("overwrite"))
-#     
-#     execGRASS("r.mask",
-#               vector = "mask",
-#               flags = c("overwrite"))
-#     print("r.mask")
-#     
-#     execGRASS("v.to.rast", 
-#               input = "river_network", 
-#               output = "river_network_raster", 
-#               use = "attr",
-#               attribute_column = "feature_id",
-#               flags = c("overwrite"))
-#     print("v.to.rast")
-#     
-#     execGRASS("r.mapcalc",
-#               expression = "river_network_raster = round(river_network_raster)",
-#               flags = c("overwrite"))
-#     
-#     execGRASS("r.null",
-#               map = "river_network_raster")
-#     
-#     execGRASS("r.thin",
-#               input = "river_network_raster",
-#               output = "river_network_value_raster_thin",
-#               flags = c("overwrite"))
-#     print("r.thin")
-#     
-#     execGRASS("r.mapcalc",
-#               expression = "value_removed = if(!isnull(river_network_value_raster_thin), 1)",
-#               flags = c("overwrite"))
-#     
-#     execGRASS("r.grow.distance",
-#               input = "river_network_value_raster_thin",
-#               distance = "river_network_distance_raster", 
-#               value = "river_network_value_raster", 
-#               flags = c("overwrite"))
-#     
-#     
-#     
-#     execGRASS("v.to.rast", 
-#               input = "river_network", 
-#               output = "river_network_raster_strahler", 
-#               use = "attr",
-#               attribute_column = "strahler",
-#               flags = c("overwrite"))
-#     
-#     execGRASS("r.mapcalc",
-#               expression = "river_network_raster_strahler = round(river_network_raster_strahler)",
-#               flags = c("overwrite"))
-#     
-#     execGRASS("r.null",
-#               map = "river_network_raster_strahler")
-#     
-#     execGRASS("r.thin",
-#               input = "river_network_raster_strahler",
-#               output = "river_network_raster_strahler_thin",
-#               flags = c("overwrite"))
-#     print("r.thin")
-#     execGRASS("r.grow.distance",
-#               input = "river_network_raster_strahler_thin",
-#               value = "river_network_value_raster_strahler", 
-#               flags = c("overwrite"))
-#     
-#     # execGRASS("r.mapcalc",
-#     #           expression = "test = river_network_distance_raster - river_network_value_raster_strahler + 10",
-#     #           flags = c("overwrite"))
-#     
-#     execGRASS("r.fill.dir",
-#               input = "river_network_distance_raster",
-#               output = "river_network_distance_raster_filled",
-#               direction = "river_network_distance_raster_direction",
-#               flags = c("overwrite"))
-#     
-#     execGRASS("r.watershed",
-#               elevation = "river_network_distance_raster_filled",
-#               drainage = "drainage",
-#               stream = "stream",
-#               threshold = 10,
-#               flags = c("overwrite"))
-#     
-#     # execGRASS("r.stream.order",
-#     #           stream_rast = "river_network_value_raster_thin",
-#     #           hack = "river_network_distance_raster_hack",
-#     #           direction = "river_network_distance_raster_direction",
-#     #           flags = c("overwrite"))
-#     
-#     use_sp()
-#     readRAST("river_network_distance_raster") %>% 
-#       raster() %>% 
-#       writeRaster("output_data/synt_elevation.tif", overwrite = TRUE)
-#     
-#     raster("output_data/synt_elevation.tif") %>%   
-#       plot()
-#     
-#     use_sp()
-#     readRAST("river_network_distance_raster_direction") %>% 
-#       raster() %>% 
-#       writeRaster("output_data/river_network_distance_raster_direction.tif", overwrite = TRUE)
-#     
-#     raster("output_data/river_network_distance_raster_direction.tif") %>%   
-#       plot()
-#     
-#     readRAST("stream") %>% 
-#       raster() %>% 
-#       writeRaster("output_data/river_network_value_raster_thin.tif", overwrite = TRUE)
-#     
-#     raster("output_data/river_network_value_raster_thin.tif") %>%   
-#       plot()
-#     
-#     wbt_d8_pointer("output_data/synt_elevation.tif", output = "output_data/test_pointer.tif")
-#     
-#     raster("output_data/test_pointer.tif") %>%   
-#       plot()
-#     
-#     wbt_d8_flow_accumulation("output_data/synt_elevation.tif",
-#                              output = "output_data/flow_accum.tif")
-#     
-#     raster("output_data/flow_accum.tif") %>%   
-#       plot()
-#     
-#     wbt_extract_nodes("output_data/flow_accum.tif",
-#                       output = "output_data/streams.tif")
-#     
-#     wbt_find_main_stem("output_data/river_network_distance_raster_direction.tif", 
-#                        "output_data/river_network_value_raster_thin.tif", 
-#                        output = "output_data/mainstems.tif")
-#     
-#     # raster("output_data/mainstems.tif") %>% 
-#     #   as("SpatialGridDataFrame") %>%
-#     #   writeRAST("river_network_raster", 
-#     #             flags = c("overwrite"))
-#     
-#     raster("output_data/mainstems.tif") %>%   
-#       plot()
-#     
-#   }
-
 calculate_mohp_metrics_in_grassdb <- 
   function(table_name, 
            table_name_inland_waters,
@@ -249,12 +60,12 @@ calculate_mohp_metrics_in_grassdb <-
     test <- FALSE
     if (test) {
       table_name <- LINES_STUDYAREA
-      inland_waters <- tar_read(inland_waters_strahler)
+      table_name_inland_waters <- INLAND_WATERS_STRAHLER
       # reference_raster <- tar_read(reference_raster)
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
       studyarea <- tar_read(selected_studyarea)
-      streamorder <- 3
-      coastline <- tar_read(coastline)
+      streamorder <- 1
+      coastline <- tar_read(coastline_unioned_all)
     }
 
     crs_reference <- st_crs(studyarea)$proj4string
@@ -273,6 +84,9 @@ calculate_mohp_metrics_in_grassdb <-
       coastline %>% 
       st_as_sf() %>% 
       st_cast("MULTILINESTRING") %>% 
+      st_cast("LINESTRING") %>% 
+      st_cast("MULTILINESTRING") %>% 
+      rename(geometry = x) %>% 
       select(geometry) %>% 
       mutate(feature_id = row_number() + max(lines$feature_id), strahler = 0L)
     
@@ -308,7 +122,8 @@ calculate_mohp_metrics_in_grassdb <-
                 output = "inland_waters_raster", 
                 use = "attr",
                 attribute_column = "feature_id",
-                flags = c("overwrite"))
+                flags = c("overwrite"),
+                memory = GRASS_MAX_MEMORY)
       
       has_inland_waters <- TRUE
     } else {
@@ -329,6 +144,7 @@ calculate_mohp_metrics_in_grassdb <-
     
     studyarea <- 
       studyarea %>% 
+      st_cast("POLYGON") %>% 
       st_transform(crs_reference) %>%
       rowwise() %>% 
       group_split()
@@ -422,7 +238,8 @@ grass_calculations <-
               output = "river_network_raster", 
               use = "attr",
               attribute_column = "feature_id",
-              flags = c("overwrite"))
+              flags = c("overwrite"),
+              memory = GRASS_MAX_MEMORY)
     print("v.to.rast")
     
     execGRASS("r.mapcalc",

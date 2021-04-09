@@ -26,8 +26,7 @@ import_targets <-
     tar_target(
       inland_waters,
       river_networks_files %>% 
-        magrittr::extract(str_detect(., "rhine")) %>% 
-        read_inland_waters()#,
-      # pattern = map(river_networks_files)
+        read_inland_waters(),
+      pattern = map(river_networks_files)
     )
   )
