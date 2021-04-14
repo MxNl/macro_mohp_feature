@@ -43,12 +43,31 @@ tar_read(grid_lateral_position)
 tar_read(river_networks_clip)
 tar_read(river_networks_imputed_streamorder_canals_as_1)
 
+tar_read(river_basin_names)
+tar_read(river_basins_unioned) %>% 
+  chuck(2)
 
-tar_read(selected_studyarea) %>% 
-  arrange(desc(area = as.numeric(st_area(geometry))*1E6)) %>% 
-  slice(1)
+selected_studyarea <- 
+  tar_read(selected_studyarea) %>% 
+  st_cast("POLYGON") %>% 
+  mutate(area = st_area(geometry))
+  
+selected_studyarea %>% 
+  as_tibble() %>% 
+  select(area) %>% 
+  mutate(area = as.numeric(area),
+         area_cat = if_else(area >= MIN_AREA_ISLAND, TRUE, FALSE)) %>% 
+  filter(area*1E6 >= MIN_AREA_ISLAND)
+  ggplot(aes(area, fill = area_cat)) +
+  geom_histogram() +
+  scale_y_log10() +
+  scale_x_log10()
 
-
+selected_studyarea %>% 
+  arrange(-area) %>% 
+  slice(1:10) %>% 
+  ggplot(aes(area)) +
+  geom_sf()
 
 
 

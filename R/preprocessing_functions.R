@@ -201,7 +201,7 @@ union_river_basins <-
 subset_river_basins <-
   function(river_basins) {
     river_basins %>% 
-      mutate(area = as.numeric(st_area(geometry))*1E6) %>% 
+      mutate(area = as.numeric(st_area(geometry))) %>% 
       filter(area >= MIN_AREA_ISLAND) %>% 
       select(-area)
   }
