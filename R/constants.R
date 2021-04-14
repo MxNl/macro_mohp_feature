@@ -50,3 +50,46 @@ STREAM_TYPES_TO_USE <- c(DFDD_RIVERS)
 GRASS_MAX_MEMORY <- 5E4
 SIMPLIFY_KEEP_NODES_PERCENTAGE <- 0.05
 MIN_AREA_ISLAND <- 3.6E9
+
+EEA39COUNTRIES <- 
+  c(
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Cyprus",
+    "Czech Rep.",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Iceland",
+    "Ireland",
+    "Italy",
+    "Latvia",
+    "Liechtenstein",
+    "Lithuania",
+    "Luxembourg",
+    "Malta",
+    "Netherlands",
+    "Norway",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden",
+    "Switzerland",
+    "Turkey",
+    "Albania",
+    "Bosnia and Herz.",
+    "Kosovo",
+    "Montenegro",
+    "Macedonia",
+    "Serbia",
+    "United Kingdom"
+  )

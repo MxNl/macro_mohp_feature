@@ -47,6 +47,51 @@ tar_read(river_basin_names)
 tar_read(river_basins_unioned) %>% 
   chuck(2)
 
+
+river_basins <- tar_read(river_basins)
+
+eea_countries <- 
+  rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") %>% 
+  filter(name %in% EEA39COUNTRIES) %>% 
+  transform_crs_if_required()
+
+buffer <- 
+  eea_countries %>% 
+  filter(name == "Germany") %>% 
+  st_geometry() %>% 
+  st_centroid() %>% 
+  st_buffer(dist = 2.3E6)
+
+eea_countries %>% 
+  ggplot() +
+  geom_sf(fill = "darkgreen",
+          colour = NA) +
+  geom_sf(data = buffer,
+          fill = NA,
+          colour = "black")
+
+eea_countries %>% 
+  st_cast("POLYGON") %>% 
+  filter_intersecting_features(buffer) %>% 
+  sfheaders::sf_remove_holes() %>% 
+  mutate(area = as.numeric(st_area(geometry))) %>% 
+  # group_by(name) %>% 
+  # slice_max(area, n = 1) %>% 
+  filter(area >= MIN_AREA_ISLAND) %>% 
+  st_union() %>% 
+  sfheaders::sf_remove_holes() %>% 
+  mapview::mapview()
+
+
+rnaturalearth::ne_countries(scale = "medium", continent = "europe", returnclass = "sf") %>% 
+  mapview::mapview()
+
+
+
+world %>% 
+  pull(name) %>% 
+  unique()
+
 selected_studyarea <- 
   tar_read(selected_studyarea) %>% 
   st_cast("POLYGON") %>% 
