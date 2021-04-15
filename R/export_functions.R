@@ -12,7 +12,7 @@ write_reference_raster <-
   }
 
 write_raster_mohp_features <-
-  function(feature_name, streamorder) {
+  function(feature_name, region_name, streamorder) {
 
     if (!fs::dir_exists(OUTPUT_DIRECTORY)) {
       fs::dir_create(OUTPUT_DIRECTORY) 
@@ -41,6 +41,8 @@ write_raster_mohp_features <-
     filepath <-
       str_c(
         FILEPATH_PREFIX_SPATIAL_COVERAGE,
+        "_",
+        region_name,
         "_",
         filepath_prefix_feature_name,
         "_",

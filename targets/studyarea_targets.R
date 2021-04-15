@@ -8,8 +8,7 @@ pipeline_for <- function(area) {
       ),
       tar_target(
         selected_studyarea,
-        read_studyarea(filepath_studyarea_pipelinetest) %>% 
-        mutate(id = 1L)
+        read_studyarea(filepath_studyarea_pipelinetest)
       ),
       tar_target(
         river_basin_names,
@@ -17,9 +16,7 @@ pipeline_for <- function(area) {
       ),
       tar_target(
         coastline_unioned_all,
-        selected_studyarea %>% 
-          st_union() %>% 
-          st_as_sf()
+          make_test_coastline(selected_studyarea)
       )
     ),
     germany = list(
