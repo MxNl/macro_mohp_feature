@@ -111,7 +111,7 @@ calculate_mohp_metrics_in_grassdb <-
     grass_rasterize_and_clean_rivers()
     
     has_inland_waters <- 
-      add_inland_waters_to_rivers_raster()
+      add_inland_waters_to_rivers_raster(streamorder, crs_reference)
     
     studyarea <- 
       studyarea %>% 
@@ -128,6 +128,7 @@ calculate_mohp_metrics_in_grassdb <-
         lines_to_remove_from_catchments, 
         lines_to_remove_from_rivers, 
         has_inland_waters,
+        streamorder,
         n_studyareas
         )
   }
@@ -138,6 +139,7 @@ calculate_mohp_per_polygon <-
            lines_to_remove_from_catchments, 
            lines_to_remove_from_rivers, 
            has_inland_waters,
+           streamorder,
            n_studyareas) {
     
     b_box = st_bbox(studyarea)
@@ -152,14 +154,6 @@ calculate_mohp_per_polygon <-
         lines_to_remove_from_rivers,
         has_inland_waters)
 
-    use_sf()
-    studyarea %>%
-      writeVECT("mask",
-                v.in.ogr_flags = c("overwrite"))
-    execGRASS("r.mask",
-              vector = "mask",
-              flags = c("overwrite"))
-
     region_name <- studyarea %>% pull(region_name)
     
     FEATURE_NAMES %>%
@@ -168,33 +162,33 @@ calculate_mohp_per_polygon <-
     print(str_glue("{region_name} ({current_studyarea} of {n_studyareas})"))
   }
 
-generate_feature_referenceareas_table <- 
-  function(studyarea) {
-    feature_rasters <- 
-      FEATURE_NAMES %>% 
-      tibble(feature = .)
-    
-    reference_areas_table <- 
-      studyarea %>% 
-      map(generate_extent_suffix) %>% 
-      tibble(reference_areas = .)
-    
-    crossing(feature_rasters, reference_areas_table) %>% 
-      mutate(layer_name = str_c(feature, reference_areas, sep = "_")) %>% 
-      mutate(reference_areas = factor(reference_areas, 
-                                      levels = pull(reference_areas_table, reference_areas)),
-             feature = factor(feature, levels = FEATURE_NAMES))
-  }
-
-generate_extent_suffix <- 
-  function(studyarea) {
-    studyarea %>% 
-      extent() %>% 
-      as.vector() %>% 
-      as.integer() %>% 
-      as.character() %>% 
-      str_c(collapse = "")
-  }
+# generate_feature_referenceareas_table <- 
+#   function(studyarea) {
+#     feature_rasters <- 
+#       FEATURE_NAMES %>% 
+#       tibble(feature = .)
+#     
+#     reference_areas_table <- 
+#       studyarea %>% 
+#       map(generate_extent_suffix) %>% 
+#       tibble(reference_areas = .)
+#     
+#     crossing(feature_rasters, reference_areas_table) %>% 
+#       mutate(layer_name = str_c(feature, reference_areas, sep = "_")) %>% 
+#       mutate(reference_areas = factor(reference_areas, 
+#                                       levels = pull(reference_areas_table, reference_areas)),
+#              feature = factor(feature, levels = FEATURE_NAMES))
+#   }
+# 
+# generate_extent_suffix <- 
+#   function(studyarea) {
+#     studyarea %>% 
+#       extent() %>% 
+#       as.vector() %>% 
+#       as.integer() %>% 
+#       as.character() %>% 
+#       str_c(collapse = "")
+#   }
 
 grass_calculations <- 
   function(studyarea, 
@@ -206,10 +200,9 @@ grass_calculations <-
     # studyarea <- studyarea %>% chuck(1)
     
     use_sf()
-    studyarea %>% 
-      writeVECT("mask", 
+    studyarea %>%
+      writeVECT("mask",
                 v.in.ogr_flags = c("overwrite"))
-    
     execGRASS("r.mask",
               vector = "mask",
               flags = c("overwrite"))
@@ -294,9 +287,6 @@ grass_calculations <-
     execGRASS("r.mapcalc",
               expression = glue::glue("{FEATURE_NAMES[3]} = round(river_network_distance_raster)"),
               flags = c("overwrite"))
-    
-    execGRASS("r.mask",
-              flags = c("r"))
   }
 
 
@@ -326,7 +316,7 @@ grass_rasterize_and_clean_rivers <-
   }
 
 add_inland_waters_to_rivers_raster <- 
-  function() {
+  function(streamorder, crs_reference) {
     inland_waters <- 
       st_read(
         connect_to_database(), 

@@ -1,27 +1,35 @@
 make_test_coastline <- 
   function(studyarea) {
-    coastline <- 
+    studyarea <- 
       studyarea %>% 
-      st_union() %>% 
+      st_union()
+    
+    buffer <- 
+      studyarea %>% 
       st_centroid() %>% 
       magrittr::subtract(c(10000, -10000)) %>% 
       st_set_crs(st_crs(studyarea)) %>% 
-      st_buffer(dist = 30000) %>% 
+      st_buffer(dist = 30000)
+    
+    coastline <- 
+      buffer %>% 
       st_intersection(st_cast(studyarea, "MULTILINESTRING"), .) %>% 
       st_union() %>%
       st_as_sf() %>% 
       rename(geometry = x) %>% 
       st_cast("MULTILINESTRING") %>% 
       mutate(type = "coastline", .before = geometry)
-    
+
     studyarea %>% 
-      select(-region_name, -id) %>% 
-      st_cast("MULTILINESTRING") %>% 
-      st_difference(coastline) %>% 
+      st_difference(buffer) %>% 
+      st_buffer(dist = 1) %>% 
+      # select(-region_name, -id) %>% 
+      st_intersection(st_cast(studyarea, "MULTILINESTRING"), .) %>% 
+      st_as_sf() %>% 
+      rename(geometry = x) %>% 
       mutate(type = "watershed", .before = geometry) %>% 
       st_cast("MULTILINESTRING") %>% 
       bind_rows(coastline)
-    
   }
 
 clip_river_networks <-
