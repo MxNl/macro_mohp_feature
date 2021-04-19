@@ -61,8 +61,28 @@ pipeline_for <- function(area) {
         pattern = map(coastline_grouped)
       ),
       tar_target(
-        coastline_unioned_all,
+        coastline_regrouped,
         coastline_unioned %>% 
+          st_cast("LINESTRING") %>% 
+          mutate(grouping = rep(1:30, length.out = n())) %>% 
+          group_by(grouping) %>% 
+          tar_group(),
+        iteration = "group"
+      ),
+      tar_target(
+        coastline_filtered,
+        coastline_regrouped %>% 
+          filter_coastline_studyarea(selected_studyarea),
+        pattern = map(coastline_regrouped)
+      ),
+      tar_target(
+        coastline_intersection,
+        coastline_filtered %>% 
+          intersect_coastline_with_studyarea(selected_studyarea)
+      ),
+      tar_target(
+        coastline_unioned_all,
+        coastline_intersection %>% 
           st_union()
       ),
       tar_target(
@@ -72,7 +92,6 @@ pipeline_for <- function(area) {
       tar_target(
         river_basin_names,
         get_unique_basin_names(river_basins_files)
-          # magrittr::extract(str_detect(., "garonne|loire")),
       ),
       tar_target(
         river_basins,
@@ -94,13 +113,26 @@ pipeline_for <- function(area) {
       ),
       tar_target(
         river_basins_subset,
-        subset_river_basins(river_basins_unioned),
-        pattern = map(river_basins_unioned)
+        subset_river_basins(river_basins_unioned)
+      ),
+      tar_target(
+        river_basins_subset_union_in_db,
+        union_studyarea_in_db(
+          river_basins_subset,
+          RIVER_BASINS_SUBSET
+        )#,
+        # force = !exists_table(SELECTED_STUDYAREA_TABLE)
+      ),
+      tar_target(
+        river_basins_region_name,
+        determine_studyarea_outline_level_europe(
+          river_basins_subset_union_in_db
+        )
       ),
       tar_target(
         selected_studyarea,
-        determine_studyarea_outline_level_europe(
-          river_basins_subset
+        add_region_name(
+          river_basins_region_name
         )
       )
     )

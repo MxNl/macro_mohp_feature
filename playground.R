@@ -43,7 +43,15 @@ tar_read(grid_lateral_position)
 tar_read(river_networks_clip)
 tar_read(river_networks_imputed_streamorder_canals_as_1)
 
-tar_read(river_basin_names)
+tar_read(river_basin_names) %>% 
+
+
+
+tar_read(river_basins_subset) %>% 
+  ggplot() +
+  geom_sf()
+
+
 tar_read(river_basins_unioned) %>% 
   chuck(2)
 
@@ -82,6 +90,19 @@ eea_countries %>%
   sfheaders::sf_remove_holes() %>% 
   mapview::mapview()
 
+
+test_line <- 
+  river_basins_europe %>% 
+  slice(1) %>% 
+  st_cast("MULTILINESTRING")
+
+test_line %>% 
+  st_centroid() %>% 
+  st_buffer(dist = 300000) %>% 
+  # st_difference(test_line, .) %>% 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = test_line)
 
 rnaturalearth::ne_countries(scale = "medium", continent = "europe", returnclass = "sf") %>% 
   mapview::mapview()

@@ -32,6 +32,48 @@ make_test_coastline <-
       bind_rows(coastline)
   }
 
+filter_coastline_studyarea <-
+  function(coastline, studyarea) {
+    
+    coastline %>% 
+      transform_crs_if_required() %>% 
+      filter_intersecting_features(studyarea) %>% 
+      st_union()
+  }
+
+intersect_coastline_with_studyarea <-
+  function(coastline, studyarea) {
+    
+    coastline <- 
+      coastline %>% 
+      st_union() %>% 
+      st_cast("LINESTRING") %>% 
+      st_buffer(dist = 1)
+    
+    studyarea <- 
+      studyarea %>% 
+      st_cast("LINESTRING")
+    
+    coastline <- 
+      coastline %>% 
+      st_intersection(studyarea) %>% 
+      st_as_sf() %>% 
+      rename(geometry = x) %>% 
+      st_cast("MULTILINESTRING") %>% 
+      select(geometry) %>% 
+      mutate(type = "coastline", .before = geometry)
+    
+    studyarea %>% 
+      st_buffer(dist = 1) %>% 
+      st_difference(coastline) %>% 
+      st_intersection(studyarea) %>% 
+      st_as_sf() %>% 
+      select(geometry) %>% 
+      mutate(type = "watershed", .before = geometry) %>% 
+      st_cast("MULTILINESTRING") %>% 
+      bind_rows(coastline)
+  }
+
 clip_river_networks <-
   function(
     river_networks,
@@ -124,7 +166,7 @@ determine_studyarea_outline_level_germany <-
 determine_studyarea_outline_level_europe <-
   function(river_basins) {
     ### Test
-    river_basins <- tar_read(river_basins_subset)
+    # river_basins <- tar_read(river_basins_subset)
     # river_networks <- tar_read(river_networks)
     # river_networks_sub <-
     #   river_networks %>%
@@ -132,16 +174,65 @@ determine_studyarea_outline_level_europe <-
     ###
 
     river_basins %>%
-      st_make_valid() %>%
-      st_collection_extract("POLYGON") %>% 
-      st_as_sf() %>% 
-      as_Spatial() %>%
-      gUnaryUnion() %>%
-      st_as_sf() %>% 
-      sfheaders::sf_remove_holes() %>%
       st_as_sf() %>%
       mutate(id = 1L, .before = 1) %>% 
+      st_cast("POLYGON") %>% 
+      mutate(area = as.numeric(st_area(geometry))) %>% 
+      arrange(-area) %>% 
+      slice(1:10) %>% 
       transform_crs_if_required()
+  }
+
+add_region_name <- 
+  function(river_basins) {
+    eea_countries <- 
+      rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") %>% 
+      filter(name %in% EEA39COUNTRIES) %>% 
+      transform_crs_if_required()
+    
+    river_basins <- 
+      river_basins %>% 
+      add_feature_index_column()
+    
+    river_basins %>% 
+      st_join(eea_countries) %>% 
+      select(feature_id, name_long) %>% 
+      st_drop_geometry() %>% 
+      as_tibble() %>% 
+      group_by(feature_id) %>% 
+      summarise(region_name = str_c(name_long, collapse = "-")) %>% 
+      mutate(
+        region_name = str_replace_all(region_name, " ", ""),
+        region_name = str_to_lower(region_name),
+        n_char = str_length(region_name),
+        region_name = if_else(n_char == max(n_char), "europemainland", region_name)
+        ) %>% 
+      group_by(region_name) %>% 
+      mutate(n = n(),
+            region_name = if_else(n > 1, str_c(region_name, row_number()), region_name)) %>% 
+      ungroup() %>% 
+      select(-n_char) %>% 
+      left_join(river_basins, ., by = "feature_id") %>% 
+      select(-feature_id)
+  }
+
+spatial_filter_europe <- 
+  function(river_basins) {
+    eea_countries <- 
+      rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") %>% 
+      filter(name %in% EEA39COUNTRIES) %>% 
+      transform_crs_if_required()
+    
+    buffer <- 
+      eea_countries %>% 
+      filter(name == "Germany") %>% 
+      st_geometry() %>% 
+      st_centroid() %>% 
+      st_buffer(dist = 2.3E6)
+    
+    river_basins %>% 
+      st_cast("POLYGON") %>% 
+      filter_intersecting_features(st_transform(buffer, st_crs(river_basins)))
   }
 
 basinwise_union <-
@@ -237,7 +328,12 @@ subset_river_basins <-
     river_basins %>% 
       mutate(area = as.numeric(st_area(geometry))) %>% 
       filter(area >= MIN_AREA_ISLAND) %>% 
-      select(-area)
+      select(-area) %>% 
+      st_as_sf() %>% 
+      sfheaders::sf_remove_holes() %>% 
+      st_as_sf() %>% 
+      transform_crs_if_required() %>% 
+      spatial_filter_europe()
   }
 
 union_coastline <-

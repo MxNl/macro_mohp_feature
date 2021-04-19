@@ -27,6 +27,7 @@ LINES_STUDYAREA <- "lines_studyarea"
 INLAND_WATERS <- "inland_waters"
 INLAND_WATERS_STRAHLER <- "inland_waters_strahler"
 LINES_BY_STREAMORDER <- "river_network_by_streamorder"
+RIVER_BASINS_SUBSET <- "river_basins_subset"
 SELECTED_STUDYAREA_TABLE <- "selected_studyarea"
 MOHP_FEATURES_TABLE <- "lateral_position_stream_divide_distance"
 

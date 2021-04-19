@@ -93,6 +93,58 @@ write_connected_river_networks <- function(table_name_read,
   Sys.time()
 }
 
+union_studyarea_in_db <- function(river_basins, table_name_destination) {
+  
+  river_basins %>%
+    st_make_valid() %>%
+    write_to_table(table_name_destination)
+
+  table_name_destination_union <- str_c(table_name_destination, "_union")
+
+  connection <- connect_to_database()
+  
+  query <-
+    glue::glue(
+      "-- Change the storage type
+      ALTER TABLE {table_name_destination}
+      ALTER COLUMN geometry
+      SET STORAGE EXTERNAL;"
+    )
+  
+  DBI::dbExecute(connection, query)
+
+    query <-
+    glue::glue(
+      "-- Force the column to rewrite
+      UPDATE {table_name_destination}
+      SET geometry = ST_SetSRID(geometry, {CRS_REFERENCE});"
+    )
+  
+  DBI::dbExecute(connection, query)
+  
+  query <-
+    glue::glue(
+      "CREATE TABLE {table_name_destination_union} AS (
+        WITH studyarea_unioned AS (
+	        SELECT
+		  ST_MakePolygon(ST_ExteriorRing((ST_Dump(ST_Union(geometry))).geom)) AS geometry
+	      FROM {table_name_destination}
+	    ) 
+	    SELECT 
+		    *
+	    FROM studyarea_unioned
+      )"
+    )
+  
+  create_table(query, table_name_destination_union)
+  
+  river_basins <- read_sf(connection, table_name_destination_union)
+  
+  DBI::dbDisconnect(connection)
+  
+  river_basins
+}
+
 merge_same_strahler_segments <- function(table_name_destination, table_source, river_basin_name, depends_on = NULL) {
 
   length(depends_on)
