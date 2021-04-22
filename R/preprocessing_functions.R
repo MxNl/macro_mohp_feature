@@ -41,36 +41,38 @@ filter_coastline_studyarea <-
       st_union()
   }
 
-intersect_coastline_with_studyarea <-
-  function(coastline, studyarea) {
-    
-    coastline <- 
-      coastline %>% 
-      st_union() %>% 
-      st_cast("LINESTRING") %>% 
-      st_buffer(dist = 1)
-    
+add_buffer <-
+  function(coastline) {
+    coastline %>% 
+      st_as_sf() %>% 
+      st_buffer(dist = 3000)
+  }
+
+studyarea_to_coastline <-
+  function(studyarea, coastline_buffer) {
     studyarea <- 
       studyarea %>% 
       st_cast("LINESTRING")
     
-    coastline <- 
-      coastline %>% 
-      st_intersection(studyarea) %>% 
-      st_as_sf() %>% 
-      rename(geometry = x) %>% 
-      st_cast("MULTILINESTRING") %>% 
+    coastline_buffer %>% 
+      st_intersection(studyarea, .) %>% 
       select(geometry) %>% 
       mutate(type = "coastline", .before = geometry)
+  }
+
+studyarea_to_watershed <-
+  function(studyarea, coastline_buffer, coastline) {
+    studyarea <- 
+      studyarea %>% 
+      st_cast("LINESTRING")
     
     studyarea %>% 
-      st_buffer(dist = 1) %>% 
-      st_difference(coastline) %>% 
-      st_intersection(studyarea) %>% 
+      st_difference(coastline_buffer) %>% 
       st_as_sf() %>% 
       select(geometry) %>% 
       mutate(type = "watershed", .before = geometry) %>% 
       st_cast("MULTILINESTRING") %>% 
+      st_as_sf() %>% 
       bind_rows(coastline)
   }
 
@@ -326,9 +328,9 @@ union_river_basins <-
 subset_river_basins <-
   function(river_basins) {
     river_basins %>% 
-      mutate(area = as.numeric(st_area(geometry))) %>% 
-      filter(area >= MIN_AREA_ISLAND) %>% 
-      select(-area) %>% 
+      # mutate(area = as.numeric(st_area(geometry))) %>% 
+      # filter(area >= MIN_AREA_ISLAND) %>% 
+      # select(-area) %>% 
       st_as_sf() %>% 
       sfheaders::sf_remove_holes() %>% 
       st_as_sf() %>% 

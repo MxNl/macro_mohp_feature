@@ -6,7 +6,7 @@ mohpcalculation_targets <- list(
       INLAND_WATERS_STRAHLER,
       selected_studyarea,
       streamorders,
-      coastline_unioned_all,
+      coastline_watershed,
       depends_on = list(
         db_river_networks_strahler_studyarea,
         db_inland_waters_strahler)

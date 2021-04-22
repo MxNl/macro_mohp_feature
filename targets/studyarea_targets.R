@@ -63,7 +63,6 @@ pipeline_for <- function(area) {
       tar_target(
         coastline_regrouped,
         coastline_unioned %>% 
-          st_cast("LINESTRING") %>% 
           mutate(grouping = rep(1:30, length.out = n())) %>% 
           group_by(grouping) %>% 
           tar_group(),
@@ -76,14 +75,26 @@ pipeline_for <- function(area) {
         pattern = map(coastline_regrouped)
       ),
       tar_target(
-        coastline_intersection,
-        coastline_filtered %>% 
-          intersect_coastline_with_studyarea(selected_studyarea)
+        coastline_buffer,
+          add_buffer(coastline_filtered),
+        pattern = map(coastline_filtered)
       ),
       tar_target(
-        coastline_unioned_all,
-        coastline_intersection %>% 
-          st_union()
+        coastline_buffer_unioned,
+        union_coastline_in_db(
+          coastline_buffer,
+          COASTLINE_BUFFER
+        )
+      ),
+      tar_target(
+        studyarea_as_coastline,
+        selected_studyarea %>% 
+          studyarea_to_coastline(coastline_buffer_unioned)
+      ),
+      tar_target(
+        coastline_watershed,
+        selected_studyarea %>% 
+          studyarea_to_watershed(coastline_buffer_unioned, studyarea_as_coastline)
       ),
       tar_target(
         river_basins_files,

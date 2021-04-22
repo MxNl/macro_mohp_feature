@@ -211,7 +211,7 @@ grass_calculations <-
     execGRASS("r.null",
               map = "river_network_value_raster_thin",
               setnull = as.character(lines_to_remove_from_rivers))
-    
+    print("r.null")
     execGRASS("r.grow.distance",
               input = "river_network_value_raster_thin",
               distance = "river_network_distance_raster", 
@@ -267,7 +267,7 @@ grass_calculations <-
               input = "thiessen_catchments_lines_raster_thin",
               distance = "thiessen_catchments_distance_raster",
               flags = c("overwrite", "m"))
-    
+    print("r.grow.distance")
     execGRASS("r.mapcalc",
               expression = glue::glue("{FEATURE_NAMES[1]} = (river_network_distance_raster + thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))

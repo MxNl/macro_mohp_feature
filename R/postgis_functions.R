@@ -93,6 +93,56 @@ write_connected_river_networks <- function(table_name_read,
   Sys.time()
 }
 
+union_coastline_in_db <- function(coastline, table_name_destination) {
+  
+  coastline %>%
+    st_cast("MULTIPOLYGON") %>%
+    st_as_sf() %>% 
+    rename(geometry = x) %>% 
+    st_make_valid() %>%
+    write_to_table(table_name_destination)
+
+  table_name_destination_union <- str_c(table_name_destination, "_union")
+
+  connection <- connect_to_database()
+  
+  query <-
+    glue::glue(
+      "-- Change the storage type
+      ALTER TABLE {table_name_destination}
+      ALTER COLUMN geometry
+      SET STORAGE EXTERNAL;"
+    )
+  
+  DBI::dbExecute(connection, query)
+
+    query <-
+    glue::glue(
+      "-- Force the column to rewrite
+      UPDATE {table_name_destination}
+      SET geometry = ST_SetSRID(geometry, {CRS_REFERENCE});"
+    )
+  
+  DBI::dbExecute(connection, query)
+  
+  query <-
+    glue::glue(
+      "CREATE TABLE {table_name_destination_union} AS (
+          SELECT
+		        ST_Union(geometry) AS geometry
+	        FROM {table_name_destination}
+      )"
+    )
+  
+  create_table(query, table_name_destination_union)
+  
+  coastline <- read_sf(connection, table_name_destination_union)
+  
+  DBI::dbDisconnect(connection)
+  
+  coastline
+}
+
 union_studyarea_in_db <- function(river_basins, table_name_destination) {
   
   river_basins %>%
