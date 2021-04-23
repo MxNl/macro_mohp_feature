@@ -90,7 +90,6 @@ calculate_mohp_metrics_in_grassdb <-
     
     lines_to_remove_from_catchments <-
       coastline %>%
-      filter(type == "coastline") %>% 
       pull(feature_id) %>%
       unique()
 
