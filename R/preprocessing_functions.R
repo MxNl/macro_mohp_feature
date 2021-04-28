@@ -109,6 +109,10 @@ clip_river_networks <-
 
 update_strahler_hypexclusion <-
   function(river_network) {
+    river_network <- 
+      river_network %>% 
+      mutate(feature_id = row_number())
+    
     river_network %>% 
       filter(!(hyp %in% HYP_CLASSES_TO_INCLUDE)) %>% 
       select(hyp, feature_id) %>% 
@@ -123,7 +127,7 @@ update_strahler_hypexclusion <-
       rename(feature_id = feature_id.y) %>% 
       left_join(river_network, ., by = "feature_id") %>% 
       mutate(strahler = if_else(!is.na(new_strahler), new_strahler, strahler)) %>% 
-      select(-new_strahler)
+      select(-new_strahler, -feature_id)
   }
 
 filter_rivers <-
