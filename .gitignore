@@ -14,7 +14,7 @@ qgis
 logs
 *.yml
 junk
-grass
+grassdata
 .pdf
 *.log
 *.pdf
