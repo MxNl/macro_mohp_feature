@@ -15,7 +15,7 @@ pipeline_for <- function(area) {
         "rhine"
       ),
       tar_target(
-        coastline_unioned_all,
+        coastline_watershed,
           make_test_coastline(selected_studyarea)
       )
     ),

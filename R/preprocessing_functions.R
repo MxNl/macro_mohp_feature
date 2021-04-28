@@ -107,6 +107,25 @@ clip_river_networks <-
     }
   }
 
+update_strahler_hypexclusion <-
+  function(river_network) {
+    river_network %>% 
+      filter(!(hyp %in% HYP_CLASSES_TO_INCLUDE)) %>% 
+      select(hyp, feature_id) %>% 
+      st_join(river_network) %>% 
+      as_tibble() %>% 
+      filter(feature_id.x != feature_id.y) %>% 
+      group_by(feature_id.x) %>% 
+      mutate(new_strahler = min(strahler)) %>% 
+      filter(strahler != new_strahler) %>% 
+      ungroup() %>% 
+      select(feature_id.y, new_strahler) %>% 
+      rename(feature_id = feature_id.y) %>% 
+      left_join(river_network, ., by = "feature_id") %>% 
+      mutate(strahler = if_else(!is.na(new_strahler), new_strahler, strahler)) %>% 
+      select(-new_strahler)
+  }
+
 filter_rivers <-
   function(river_network) {
     ##### Test
