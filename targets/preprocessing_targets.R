@@ -28,8 +28,22 @@ preprocessing_targets <- c(
   ),
 
   tar_target(
+    river_networks_grouped,
+    river_networks_clip %>% 
+      group_by(river_basin_name) %>% 
+      tar_group(),
+    iteration = "group"
+  ),
+
+  tar_target(
+    river_networks_strahler_update,
+      update_strahler_hypexclusion(river_networks_grouped),
+    pattern = map(river_networks_grouped)
+  ),
+
+  tar_target(
     river_networks_non_dry_selected_streamtypes,
-    filter_rivers(river_networks_clip)
+    filter_rivers(river_networks_strahler_update)
   ),
   
   tar_target(
