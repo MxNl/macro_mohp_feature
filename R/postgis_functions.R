@@ -261,7 +261,7 @@ split_points_single AS (
 split_points AS (
     SELECT
         cluster_id,
-        ST_CollectionHomogenize(ST_Collect(geometry)) AS geometry
+        (ST_Dump(ST_CollectionHomogenize(ST_Collect(geometry)))).geom AS geometry
     FROM split_points_single
     GROUP BY cluster_id
 ),
