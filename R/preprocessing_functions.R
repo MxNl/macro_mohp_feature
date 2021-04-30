@@ -107,6 +107,45 @@ clip_river_networks <-
     }
   }
 
+update_strahler_hypexclusion <-
+  function(river_network) {
+    river_network <- 
+      river_network %>% 
+      mutate(feature_id = row_number())
+    
+    update_table <- 
+      river_network %>% 
+      filter(!(hyp %in% HYP_CLASSES_TO_INCLUDE)) %>% 
+      select(hyp, feature_id) %>% 
+      st_join(select(river_network, hyp, feature_id, strahler)) %>% 
+      as_tibble() %>% 
+      filter(feature_id.x != feature_id.y) %>% 
+      filter(hyp.y %in% HYP_CLASSES_TO_INCLUDE) %>% 
+      group_by(feature_id.x) %>% 
+      filter(n() <= 2) %>% 
+      ungroup()
+    
+    for (i in 1:5) {
+      update_table <- 
+        update_table %>% 
+        group_by(feature_id.x) %>% 
+        mutate(new_strahler = if_else(n() > 1, min(strahler), 1)) %>% 
+        filter(strahler != new_strahler) %>% 
+        ungroup() %>% 
+        select(feature_id.y, new_strahler) %>% 
+        rename(feature_id = feature_id.y) %>% 
+        left_join(update_table, ., by = c("feature_id.y" = "feature_id")) %>% 
+        mutate(strahler = if_else(!is.na(new_strahler), new_strahler, strahler)) %>% 
+        select(-new_strahler)
+    }
+    
+    update_table %>% 
+      select(feature_id.y, strahler) %>% 
+      left_join(river_network, ., by = c("feature_id" = "feature_id.y")) %>% 
+      mutate(strahler = if_else(!is.na(strahler.y), strahler.y, strahler.x)) %>% 
+      select(-strahler.y, -strahler.x, -feature_id)
+  }
+
 filter_rivers <-
   function(river_network) {
     ##### Test
