@@ -57,6 +57,10 @@ grassgis_steps <-
 make_workflow_diagram <-
   function(path) {
 
+    path %>% 
+      dirname() %>% 
+      fs::dir_create()
+    
     diagramm <- DiagrammeR::grViz("
     digraph {
   graph [compound = true, nodesep = .5, ranksep = .25,

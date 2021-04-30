@@ -50,6 +50,7 @@ RefManageR::ReadZotero("5574385",
 
 ```{r, echo=FALSE}
 make_workflow_diagram("diagramms/flowchart.pdf")
+here::here()
 ```
 
 
