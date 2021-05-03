@@ -54,7 +54,7 @@ read_river_networks <-
       st_zm() %>%
       rename(geometry = Shape) %>% 
       clean_names() %>%
-      select(dfdd, inspire_id, strahler, hyp) %>% 
+      select(dfdd, inspire_id, strahler, hyp, longpath, nextdownid, object_id) %>% 
       mutate(river_basin_name = river_basin_name) %>% 
       transform_crs_if_required()
   }

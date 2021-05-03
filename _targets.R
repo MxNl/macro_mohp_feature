@@ -9,6 +9,7 @@ options(
 
 tar_option_set(
   packages = c(
+    "igraph",
     "here",
     "DBI",
     "glue",
