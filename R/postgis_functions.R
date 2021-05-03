@@ -473,10 +473,11 @@ filter_rivers_in_studyarea <- function(table_name,
     str_glue("
     CREATE TABLE {table_name} AS ( 
       SELECT
-  row_number() OVER (
-            	ORDER BY strahler
-        	) AS feature_id,
-  left_table.strahler,
+   left_table.strahler,
+   left_table.longpath,
+   left_table.nextdownid,
+   left_table.object_id,
+   left_table.river_basin_name,
    left_table.geometry
       FROM {table_name_source} AS left_table, {table_name_studyarea} AS right_table
       WHERE ST_Intersects(left_table.geometry, right_table.geometry))")
@@ -486,22 +487,27 @@ filter_rivers_in_studyarea <- function(table_name,
 }
 
 join_streamorder_to_inland_waters <-
-  function(table_name_destination, table_name_inland_waters, table_name_lines, depends_on = NULL) {
+  function(table_name_destination, table_name_inland_waters, table_name_lines, streamorder, depends_on = NULL) {
     length(depends_on)
+    
+    table_name_destination <- 
+      table_name_destination %>% 
+      composite_name(streamorder)
+    
+    table_name_lines <- 
+      table_name_lines %>% 
+      composite_name(streamorder)
     
     query <-
       str_glue("
         CREATE TABLE {table_name_destination} AS (
           SELECT
-  	        DISTINCT ON (inspire_id)
   	        feature_id,
-  	        strahler,
+  	        streamorder,
   	        l.geometry
           FROM {table_name_inland_waters} l
           INNER JOIN {table_name_lines} r
           ON ST_Intersects(l.geometry, r.geometry)
-          ORDER BY 
-          inspire_id, strahler DESC
         )")
     
     create_table(query, table_name_destination)

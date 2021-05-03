@@ -29,7 +29,7 @@ set_index <- function(table, column, connection) {
   db_execute(glue::glue("CREATE INDEX {table}_{column}_idx ON {table} ({column});"), connection = connection)
 }
 
-write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
+write_to_table <- function(data, table, append = FALSE, index_column = NULL, geo_index_column = NULL) {
   connection <- connect_to_database()
   db_execute("CREATE EXTENSION IF NOT EXISTS postgis;", connection = connection)
   db_execute(glue::glue("DROP TABLE IF EXISTS {table};"), connection = connection)
@@ -37,6 +37,9 @@ write_to_table <- function(data, table, append = FALSE, index_column = NULL) {
 
   if (!is.null(index_column)) {
     set_index(table, index_column, connection)
+  }
+  if (!is.null(geo_index_column)) {
+    set_geo_index(table, geo_index_column, connection)
   }
   DBI::dbDisconnect(connection)
 }
@@ -90,6 +93,26 @@ write_as_lines_to_db <- function(sf_lines, table_name_destination) {
   sf_lines %>%
     st_cast("LINESTRING") %>%
     write_to_table(table_name_destination)
+  Sys.time()
+}
+
+write_as_is_to_db <- function(sf_lines, table_name, geo_index_column = NULL) {
+  
+  # sf_lines <- tar_read(river_networks_grouped)
+  # river_basin_name <- tar_read(river_basin_names) %>% chuck(2)
+  # table_name <- LINES_MERGED
+  
+  streamorder <- 
+    sf_lines %>% 
+    slice(1) %>% 
+    pull(streamorder)
+  
+  table_name <- 
+    table_name %>% 
+    composite_name(streamorder)
+  
+  sf_lines %>%
+    write_to_table(table_name, geo_index_column = geo_index_column)
   Sys.time()
 }
 

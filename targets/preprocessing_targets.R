@@ -6,8 +6,7 @@ preprocessing_targets <- c(
     write_selected_studyarea(
       selected_studyarea,
       SELECTED_STUDYAREA_TABLE
-    )#,
-    # force = !exists_table(SELECTED_STUDYAREA_TABLE)
+    )
   ),
 
   tar_target(
@@ -28,22 +27,8 @@ preprocessing_targets <- c(
   ),
 
   tar_target(
-    river_networks_grouped,
-    river_networks_clip %>% 
-      group_by(river_basin_name) %>% 
-      tar_group(),
-    iteration = "group"
-  ),
-
-  tar_target(
-    river_networks_strahler_update,
-      update_strahler_hypexclusion(river_networks_grouped),
-    pattern = map(river_networks_grouped)
-  ),
-
-  tar_target(
     river_networks_non_dry_selected_streamtypes,
-    filter_rivers(river_networks_strahler_update)
+    filter_rivers(river_networks_clip)
   ),
   
   tar_target(
@@ -65,54 +50,17 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
-    db_river_networks_strahler_merge,
-    merge_same_strahler_segments(
-      LINES_MERGED,
-      LINES_CLEAN,
-      river_basin_names,
-      depends_on = list(
-        db_river_networks_clean
-      )
-    ),
-    pattern = map(river_basin_names)
-  ),
-  
-  tar_target(
-    db_river_networks_strahler_merge_union,
-    union_per_basin_merge(
-      LINES_MERGED,
-      river_basin_names,
-      depends_on = list(
-        db_river_networks_strahler_merge
-      )
-    )
-  ),
-  
-  tar_target(
     db_river_networks_strahler_studyarea,
     filter_rivers_in_studyarea(
       LINES_STUDYAREA,
-      LINES_MERGED,
+      LINES_CLEAN,
       SELECTED_STUDYAREA_TABLE,
       "geometry",
       depends_on = list(
-        db_river_networks_strahler_merge_union,
+        db_river_networks_clean,
         db_selected_studyarea
       )
     )
-  ),
-  
-  tar_target(
-    db_inland_waters_strahler,
-      join_streamorder_to_inland_waters(
-        INLAND_WATERS_STRAHLER,
-        INLAND_WATERS,
-        LINES_STUDYAREA,
-        depends_on = list(
-          db_river_networks_strahler_studyarea,
-          db_inland_waters
-          )
-        )
   ),
   
   tar_target(
@@ -121,5 +69,53 @@ preprocessing_targets <- c(
       LINES_STUDYAREA,
       depends_on = list(db_river_networks_strahler_studyarea)
       )
+  ),
+  
+  tar_target(
+    rivernetworks_merged_per_streamorder,
+    merge_rivernetworks_per_streamorder(
+      LINES_STUDYAREA,
+      streamorders,
+      river_basin_names,
+      depends_on = list(
+        db_river_networks_strahler_studyarea
+      )
+    ),
+    pattern = cross(streamorders, river_basin_names),
+    priority = 1
+  ),
+  
+  tar_target(
+    river_networks_grouped,
+    rivernetworks_merged_per_streamorder %>%
+      group_by(streamorder) %>%
+      tar_group(),
+    iteration = "group"
+  ),
+  
+  tar_target(
+    db_river_networks_merged_per_streamorder,
+    write_as_is_to_db(
+      river_networks_grouped,
+      LINES_MERGED,
+      "geometry"
+    ),
+    pattern = map(river_networks_grouped)
+  ),
+  
+  tar_target(
+    db_inland_waters_strahler,
+      join_streamorder_to_inland_waters(
+        INLAND_WATERS_STRAHLER,
+        INLAND_WATERS,
+        LINES_MERGED,
+        streamorders,
+        depends_on = list(
+          db_river_networks_merged_per_streamorder,
+          db_inland_waters
+          )
+        ),
+    pattern = map(streamorders)
   )
+  
 )

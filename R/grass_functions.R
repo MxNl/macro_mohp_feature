@@ -62,7 +62,7 @@ calculate_mohp_metrics_in_grassdb <-
     
     test <- FALSE
     if (test) {
-      table_name <- LINES_STUDYAREA
+      table_name <- LINES_MERGED
       table_name_inland_waters <- INLAND_WATERS_STRAHLER
       # reference_raster <- tar_read(reference_raster)
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
@@ -76,10 +76,14 @@ calculate_mohp_metrics_in_grassdb <-
     initiate_grass_db_parallel(studyarea, streamorder, crs_reference)
     
     # Get river network from PostGIS databse
+    table_name <- 
+      table_name %>% 
+      composite_name(streamorder)
+    
     lines <- 
       st_read(
         connect_to_database(), 
-        query = str_glue("SELECT * FROM {table_name} WHERE strahler >= {streamorder}")
+        query = str_glue("SELECT feature_id, geometry FROM {table_name}")
       ) %>% 
       mutate(feature_id = as.integer(feature_id))
     
@@ -101,8 +105,10 @@ calculate_mohp_metrics_in_grassdb <-
     
     use_sf()
     lines %>% 
-      bind_rows(coastline) %>% 
+      arrange(-st_length(geometry)) %>% 
+      bind_rows(select(coastline, -type)) %>% 
       st_transform(crs_reference) %>% 
+      # mutate(feature_id = as.character(feature_id)) %>%
       writeVECT("river_network", 
                 v.in.ogr_flags = c("overwrite"))
     print("river_network")
@@ -110,7 +116,7 @@ calculate_mohp_metrics_in_grassdb <-
     grass_rasterize_and_clean_rivers()
     
     has_inland_waters <- 
-      add_inland_waters_to_rivers_raster(streamorder, crs_reference)
+      add_inland_waters_to_rivers_raster(table_name_inland_waters, streamorder, crs_reference)
     
     studyarea <- 
       studyarea %>% 
@@ -274,11 +280,7 @@ grass_calculations <-
     
     # Calculate distance from watershed/catchment boundary
     use_sp()
-    max_distance <- 
-      readRAST("river_network_distance_raster") %>%
-      raster() %>% 
-      raster::maxValue()
-    
+    max_distance <- 1E9 %>% format(scientific = FALSE)
     execGRASS("r.mapcalc",
               expression = str_glue("friction = if(!isnull(river_network_raster), {max_distance}, 0)"),
               flags = c("overwrite"))
@@ -290,14 +292,28 @@ grass_calculations <-
               start_raster = "thiessen_catchments_lines_raster_thin",
               walk_coeff = "1,0,0,0",
               lambda = 1000,
+              memory = GRASS_MAX_MEMORY,
               flags = c("overwrite"))
     execGRASS("r.mapcalc",
-              expression = "thiessen_catchments_distance_raster = if(!isnull(river_network_raster), 0, thiessen_catchments_distance_raster)",
+              expression = str_glue("thiessen_catchments_distance_raster = thiessen_catchments_distance_raster >= {max_distance}, NULL, thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
-    #TODO Remove after bracket splits are implemented
-    execGRASS("r.mapcalc",
-              expression = str_glue("thiessen_catchments_distance_raster = if(thiessen_catchments_distance_raster > {max_distance}*1.3, {max_distance}, thiessen_catchments_distance_raster)"),
+
+    execGRASS("r.neighbors",
+              input = "thiessen_catchments_distance_raster",
+              selection = "river_network_raster",
+              output = "thiessen_catchments_distance_raster",
+              method = "minimum",
               flags = c("overwrite"))
+    
+    execGRASS("r.null",
+              map = "thiessen_catchments_distance_raster",
+              null = 0)
+    
+    # execGRASS("r.fill.gaps",
+    #           input = "thiessen_catchments_distance_raster",
+    #           output = "thiessen_catchments_distance_raster",
+    #           flags = c("overwrite"))
+    
     print("thiessen_catchments_distance_raster")
     
     # Final MOHP calculation
@@ -327,9 +343,11 @@ grass_rasterize_and_clean_rivers <-
   function() {
     execGRASS("v.to.rast", 
               input = "river_network", 
-              output = "river_network_raster", 
+              output = "river_network_raster",
+              type = "line",
               use = "attr",
               attribute_column = "feature_id",
+              # label_column = "feature_id",
               flags = c("overwrite", "d"),
               memory = GRASS_MAX_MEMORY)
     print("v.to.rast")
@@ -340,6 +358,13 @@ grass_rasterize_and_clean_rivers <-
     
     execGRASS("r.null",
               map = "river_network_raster")
+
+    execGRASS("r.neighbors",
+              input = "river_network_raster",
+              selection = "river_network_raster",
+              output = "river_network_raster",
+              method = "minimum",
+              flags = c("overwrite", "c"))
     
     # execGRASS("r.thin",
     #           input = "river_network_raster",
@@ -349,13 +374,18 @@ grass_rasterize_and_clean_rivers <-
   }
 
 add_inland_waters_to_rivers_raster <- 
-  function(streamorder, crs_reference) {
+  function(table_name_inland_waters, streamorder, crs_reference) {
+    table_name_inland_waters <- 
+      table_name_inland_waters %>% 
+      composite_name(streamorder)
+    
     inland_waters <- 
       st_read(
         connect_to_database(), 
-        query = str_glue("SELECT * FROM {INLAND_WATERS_STRAHLER} WHERE strahler >= {streamorder}")
+        query = str_glue("SELECT * FROM {table_name_inland_waters}")
       ) %>% 
-      mutate(feature_id = as.integer(feature_id))
+      # mutate(feature_id = as.character(feature_id)) %>% 
+      select(-streamorder)
     
     if(nrow(inland_waters) != 0) {
       use_sf()
@@ -367,8 +397,10 @@ add_inland_waters_to_rivers_raster <-
       execGRASS("v.to.rast", 
                 input = "inland_waters", 
                 output = "inland_waters_raster", 
+                type = "area",
                 use = "attr",
                 attribute_column = "feature_id",
+                # label_column = "feature_id",
                 flags = c("overwrite"),
                 memory = GRASS_MAX_MEMORY)
       

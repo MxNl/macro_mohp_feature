@@ -304,7 +304,7 @@ add_feature_index_column <-
 
 keep_relevant_columns <-
   function(river_network,
-           relevant_columns = c("strahler", "river_basin_name")) {
+           relevant_columns = c("strahler", "river_basin_name", "longpath", "nextdownid", "object_id")) {
 
     river_network %>%
       select(all_of(relevant_columns))
@@ -393,6 +393,69 @@ union_coastline <-
       gUnaryUnion() %>%
       st_as_sf() %>%
       st_cast("POLYGON")
+  }
+
+add_levelpathid <- 
+  function(river_network) {
+    
+    river_network_path <- 
+      river_network %>% 
+      as_tibble() %>% 
+      arrange(-longpath) %>% 
+      select(object_id, nextdownid)
+    
+    longestpaths_list <- list()
+    i <- 1
+    while(nrow(river_network_path) > 0) {
+      
+      longestpaths_list[[i]] <- 
+        river_network_path %>% 
+        graph.data.frame(directed = TRUE) %>% 
+        subcomponent(1, mode = "out") %>% 
+        as.vector() %>% 
+        slice(river_network_path, .)
+      
+      river_network_path <- 
+        river_network_path %>% 
+        filter(!(object_id %in% longestpaths_list[[i]]$object_id))
+      
+      i <- i + 1
+    }
+    
+    longestpaths_list %>% 
+      imap(~mutate(.x, levelpath_id = .y)) %>% 
+      reduce(bind_rows) %>% 
+      select(-nextdownid) %>% 
+      left_join(river_network, ., by = "object_id") %>% 
+      select(-longpath, -nextdownid, -object_id)
+  }
+
+merge_rivernetworks_per_streamorder <- 
+  function(table_name, streamorder, river_basin_name, depends_on = NULL) {
+    
+    length(depends_on)
+    
+    river_network <- 
+      st_read(
+        connect_to_database(), 
+        query = str_glue("SELECT 
+                            * 
+                          FROM {table_name} 
+                            WHERE 
+                              strahler >= {streamorder}
+                            AND
+                              river_basin_name = '{river_basin_name}'")
+      )
+    
+    river_network %>% 
+      add_levelpathid() %>% 
+      group_by(levelpath_id) %>% 
+      summarise() %>% 
+      select(-levelpath_id) %>% 
+      st_cast("MULTILINESTRING") %>% 
+      arrange(-st_length(geometry)) %>% 
+      add_feature_index_column() %>% 
+      mutate(streamorder = as.integer(streamorder))
   }
 
 calculate_lateral_position_grid <- function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name, directory) {
@@ -497,9 +560,7 @@ filter_inland_waters <-
 impute_streamorder <- 
   function(river_networks) {
     
-    # tar_read(river_networks_clip) %>% 
     river_networks %>%
-      # verify(filter(dfdd == DFDD_RIVERS & is.na(strahler)) %>% nrow() %>% magrittr::equals(0)) %>% 
       mutate(strahler = replace_na(strahler, 1)) %>% 
       mutate(strahler = if_else(strahler %in% INVALID_STRAHLER_VALUES, 1, strahler))
   }
@@ -548,5 +609,5 @@ add_id_column_and_sync_with_rivers <-
       st_cast("LINESTRING") %>% 
       st_cast("MULTILINESTRING") %>% 
       select(type, geometry) %>% 
-      mutate(feature_id = row_number() + max(river_network$feature_id), strahler = 0L)
+      mutate(feature_id = row_number() + max(river_network$feature_id))
   }
