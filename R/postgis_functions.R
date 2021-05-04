@@ -572,11 +572,22 @@ convert_geometry <-
       mutate(across(where(is_pq_geometry), from_wkb))
   }
 
-write_selected_studyarea <- function(x, table_name_destination, index_column = NULL) {
+get_distinct_streamorders_in_riverbasins <- 
+  function(table) {
+    DBI::dbGetQuery(connect_to_database(),
+                    str_glue("SELECT 
+                                DISTINCT river_basin_name, strahler 
+                              FROM {table} 
+                              GROUP BY river_basin_name, strahler")) %>% 
+      as_tibble()
+  }
+
+write_selected_studyarea <- function(x, table_name_destination, index_column = NULL, geo_index_column = NULL) {
   write_to_table(
     x,
     table_name_destination,
-    index_column = index_column
+    index_column = index_column,
+    geo_index_column = geo_index_column
   )
   Sys.time()
 }

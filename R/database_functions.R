@@ -84,7 +84,7 @@ get_table_from_postgress <- function(table_name_read) {
   query_result
 }
 
-write_as_lines_to_db <- function(sf_lines, table_name_destination) {
+write_as_lines_to_db <- function(sf_lines, table_name_destination, geo_index_column = NULL) {
   
   # sf_lines <- tar_read(river_networks_clean)
   # river_basin_name <- tar_read(river_basin_names) %>% chuck(2)
@@ -92,7 +92,7 @@ write_as_lines_to_db <- function(sf_lines, table_name_destination) {
   
   sf_lines %>%
     st_cast("LINESTRING") %>%
-    write_to_table(table_name_destination)
+    write_to_table(table_name_destination, geo_index_column = geo_index_column)
   Sys.time()
 }
 

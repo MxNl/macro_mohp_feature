@@ -431,9 +431,17 @@ add_levelpathid <-
   }
 
 merge_rivernetworks_per_streamorder <- 
-  function(table_name, streamorder, river_basin_name, depends_on = NULL) {
+  function(table_name, distinct_streamorders_in_riverbasins, depends_on = NULL) {
     
     length(depends_on)
+    
+    streamorder <- 
+      distinct_streamorders_in_riverbasins %>% 
+      pull(strahler)
+
+    river_basin_name <- 
+      distinct_streamorders_in_riverbasins %>% 
+      pull(river_basin_name)
     
     river_network <- 
       st_read(

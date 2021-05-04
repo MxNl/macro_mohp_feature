@@ -5,7 +5,8 @@ preprocessing_targets <- c(
     db_selected_studyarea,
     write_selected_studyarea(
       selected_studyarea,
-      SELECTED_STUDYAREA_TABLE
+      SELECTED_STUDYAREA_TABLE,
+      geo_index_column = "geometry"
     )
   ),
 
@@ -45,7 +46,8 @@ preprocessing_targets <- c(
     db_river_networks_clean,
     write_as_lines_to_db(
       river_networks_clean,
-      LINES_CLEAN
+      LINES_CLEAN,
+      geo_index_column = "geometry"
     )
   ),
   
@@ -72,17 +74,23 @@ preprocessing_targets <- c(
   ),
   
   tar_target(
+    distinct_streamorders_in_riverbasins,
+    get_distinct_streamorders_in_riverbasins(LINES_STUDYAREA) %>% 
+      rowwise() %>% 
+      tar_group(),
+    iteration = "group"
+  ),
+  
+  tar_target(
     rivernetworks_merged_per_streamorder,
     merge_rivernetworks_per_streamorder(
       LINES_STUDYAREA,
-      streamorders,
-      river_basin_names,
+      distinct_streamorders_in_riverbasins,
       depends_on = list(
         db_river_networks_strahler_studyarea
       )
     ),
-    pattern = cross(streamorders, river_basin_names),
-    priority = 1
+    pattern = map(distinct_streamorders_in_riverbasins),
   ),
   
   tar_target(
