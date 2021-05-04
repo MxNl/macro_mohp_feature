@@ -461,9 +461,14 @@ merge_rivernetworks_per_streamorder <-
       summarise() %>% 
       select(-levelpath_id) %>% 
       st_cast("MULTILINESTRING") %>% 
-      arrange(-st_length(geometry)) %>% 
-      add_feature_index_column() %>% 
       mutate(streamorder = as.integer(streamorder))
+  }
+
+order_by_length_and_add_feature_id <- 
+  function(river_network) {
+    river_network %>% 
+      arrange(-st_length(geometry)) %>% 
+      add_feature_index_column()
   }
 
 calculate_lateral_position_grid <- function(stream_distance_centroids, divide_distance_centroids, stream_order, grid, field_name, directory) {

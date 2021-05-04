@@ -92,10 +92,15 @@ preprocessing_targets <- c(
     ),
     pattern = map(distinct_streamorders_in_riverbasins),
   ),
+
+  tar_target(
+    rivernetworks_feature_id,
+    order_by_length_and_add_feature_id(rivernetworks_merged_per_streamorder)
+  ),
   
   tar_target(
     river_networks_grouped,
-    rivernetworks_merged_per_streamorder %>%
+    rivernetworks_feature_id %>%
       group_by(streamorder) %>%
       tar_group(),
     iteration = "group"
