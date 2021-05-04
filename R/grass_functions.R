@@ -167,34 +167,6 @@ calculate_mohp_per_polygon <-
     print(str_glue("{region_name} ({current_studyarea} of {n_studyareas})"))
   }
 
-# generate_feature_referenceareas_table <- 
-#   function(studyarea) {
-#     feature_rasters <- 
-#       FEATURE_NAMES %>% 
-#       tibble(feature = .)
-#     
-#     reference_areas_table <- 
-#       studyarea %>% 
-#       map(generate_extent_suffix) %>% 
-#       tibble(reference_areas = .)
-#     
-#     crossing(feature_rasters, reference_areas_table) %>% 
-#       mutate(layer_name = str_c(feature, reference_areas, sep = "_")) %>% 
-#       mutate(reference_areas = factor(reference_areas, 
-#                                       levels = pull(reference_areas_table, reference_areas)),
-#              feature = factor(feature, levels = FEATURE_NAMES))
-#   }
-# 
-# generate_extent_suffix <- 
-#   function(studyarea) {
-#     studyarea %>% 
-#       extent() %>% 
-#       as.vector() %>% 
-#       as.integer() %>% 
-#       as.character() %>% 
-#       str_c(collapse = "")
-#   }
-
 grass_calculations <- 
   function(studyarea, 
            lines_to_remove_from_catchments, 
@@ -279,7 +251,6 @@ grass_calculations <-
     
     
     # Calculate distance from watershed/catchment boundary
-    use_sp()
     max_distance <- 1E9 %>% format(scientific = FALSE)
     execGRASS("r.mapcalc",
               expression = str_glue("friction = if(!isnull(river_network_raster), {max_distance}, 0)"),
@@ -291,11 +262,12 @@ grass_calculations <-
               output = "thiessen_catchments_distance_raster",
               start_raster = "thiessen_catchments_lines_raster_thin",
               walk_coeff = "1,0,0,0",
-              lambda = 1000,
+              lambda = 1,
               memory = GRASS_MAX_MEMORY,
               flags = c("overwrite"))
+    
     execGRASS("r.mapcalc",
-              expression = str_glue("thiessen_catchments_distance_raster = thiessen_catchments_distance_raster >= {max_distance}, NULL, thiessen_catchments_distance_raster)"),
+              expression = str_glue("thiessen_catchments_distance_raster = if(thiessen_catchments_distance_raster >= {max_distance}, null(), round(thiessen_catchments_distance_raster))"),
               flags = c("overwrite"))
 
     execGRASS("r.neighbors",
@@ -305,14 +277,10 @@ grass_calculations <-
               method = "minimum",
               flags = c("overwrite"))
     
-    execGRASS("r.null",
-              map = "thiessen_catchments_distance_raster",
-              null = 0)
-    
-    # execGRASS("r.fill.gaps",
-    #           input = "thiessen_catchments_distance_raster",
-    #           output = "thiessen_catchments_distance_raster",
-    #           flags = c("overwrite"))
+    execGRASS("r.surf.idw",
+              input = "thiessen_catchments_distance_raster",
+              output = "thiessen_catchments_distance_raster",
+              flags = c("overwrite"))
     
     print("thiessen_catchments_distance_raster")
     
