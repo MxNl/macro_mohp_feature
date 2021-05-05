@@ -94,26 +94,28 @@ preprocessing_targets <- c(
   ),
 
   tar_target(
-    rivernetworks_feature_id,
-    order_by_length_and_add_feature_id(rivernetworks_merged_per_streamorder)
-  ),
-  
-  tar_target(
     river_networks_grouped,
-    rivernetworks_feature_id %>%
+    rivernetworks_merged_per_streamorder %>%
       group_by(streamorder) %>%
       tar_group(),
     iteration = "group"
   ),
   
   tar_target(
+    rivernetworks_feature_id,
+    order_by_length_and_add_feature_id(river_networks_grouped),
+    pattern = map(river_networks_grouped),
+    iteration = "group"
+  ),
+    
+  tar_target(
     db_river_networks_merged_per_streamorder,
     write_as_is_to_db(
-      river_networks_grouped,
+      rivernetworks_feature_id,
       LINES_MERGED,
       "geometry"
     ),
-    pattern = map(river_networks_grouped)
+    pattern = map(rivernetworks_feature_id)
   ),
   
   tar_target(
