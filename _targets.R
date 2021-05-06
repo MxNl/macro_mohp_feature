@@ -10,6 +10,9 @@ options(
 
 tar_option_set(
   packages = c(
+    "DiagrammeR", 
+    "DiagrammeRsvg", 
+    "rsvg",
     "igraph",
     "here",
     "fs",
@@ -61,7 +64,7 @@ source("R/export_functions.R")
 # source("data_descriptor/targets/R/bibliography_functions.R")
 source("data_descriptor/targets/R/visualization_functions.R")
 
-# plan(multisession)
+plan(multisession)
 
 # Define targets
 c(

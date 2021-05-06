@@ -1,5 +1,5 @@
 source("_targets.R")
-# tar_renv(extras = c("styler", "DiagrammeR", "DiagrammeRsvg", "rsvg"))
+# tar_renv(extras = c("styler"))
 # tar_watch()
 
 # targets::tar_make_future(workers = future::availableCores() - 1)
