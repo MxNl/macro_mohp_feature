@@ -116,11 +116,6 @@ write_as_is_to_db <- function(sf_lines, table_name, geo_index_column = NULL) {
   Sys.time()
 }
 
-hash_of_db <- function(table_name) {
-  get_table_from_postgress(table_name) %>%
-    fastdigest::fastdigest()
-}
-
 exists_table <- function(table_name_source) {
   !DBI::dbExistsTable(connect_to_database(), table_name_source)
 }

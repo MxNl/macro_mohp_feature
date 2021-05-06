@@ -1,8 +1,3 @@
-library(sf)
-library(stars)
-library(raster)
-library(rgrass7)
-library(tidyverse)
 
 raster <- tar_read(reference_raster)
 studyarea <- tar_read(selected_studyarea)
@@ -165,9 +160,9 @@ thiessen_catchments %>%
     plot_lines_coloured_by_categorical_attribute(feature_id) +
     # geom_sf(data = test_size, fill = NA, colour = "green") +
     geom_sf(data = thiessen_catchments, aes(fill = value), alpha = .3)
-} %>% plotly::ggplotly()
+} %>% ggplotly()
 
-{thiessen_catchments %>% ggplot() + geom_sf() +geom_sf(data = lines, colour = "blue")} %>% plotly::ggplotly()
+{thiessen_catchments %>% ggplot() + geom_sf() +geom_sf(data = lines, colour = "blue")} %>% ggplotly()
 thiessen_catchments %>% 
   st_intersection(st_transform(studyarea, crs=st_crs(thiessen_catchments))) %>%
   st_cast("MULTILINESTRING") %>% 
@@ -205,8 +200,8 @@ execGRASS("r.mapcalc",
           expression = "lateral_position = round((river_network_distance_raster/divide_stream_distance)*10000)",
           flags = c("overwrite"))
 
-rgrass7::use_sp()
-rgrass7::readRAST("lateral_position") %>% 
+use_sp()
+readRAST("lateral_position") %>% 
   # raster() %>% 
   # raster::mask(raster) %>% 
   plot()
@@ -228,7 +223,7 @@ readVECT("thiessen_catchments") %>%
   # filter(feature_id == 55) %>% 
   ggplot() +
   geom_sf(aes(colour = feature_id == 55)) +
-  geom_sf_label(aes(label = feature_id))} %>% plotly::ggplotly()
+  geom_sf_label(aes(label = feature_id))} %>% ggplotly()
 
 use_sf()
 catchments <- readVECT("thiessen_catchments")
@@ -244,15 +239,15 @@ test_size <-
   plot_lines_coloured_by_categorical_attribute(feature_id) +
   geom_sf(data = test_size, fill = NA, colour = "green") +
   geom_sf(data = catchments, fill = NA)
-  } %>% plotly::ggplotly()
+  } %>% ggplotly()
 
 use_sp()
 readRAST("river_network_value_raster") %>% plot()
 
 raster_spat <- rast(raster)
 lines_spat <- vect(as_Spatial(lines))
-distance_raster <- terra::distance(raster_spat, lines_spat) %>% 
-  raster::raster()
+distance_raster <- distance(raster_spat, lines_spat) %>% 
+  raster()
 
 crs(distance_raster)
 
@@ -262,7 +257,7 @@ use_sf()
 {lines %>% 
   mutate(feature_id = as.character(feature_id)) %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id) +
-  geom_sf(data = outlet_points)} %>% plotly::ggplotly()
+  geom_sf(data = outlet_points)} %>% ggplotly()
 
 outlet_points_coords <- 
   outlet_points %>%
@@ -272,7 +267,7 @@ outlet_points_coords <-
 
 distance_raster %>% plot()
 
-rgrass7::writeRAST(as(distance_raster, "SpatialGridDataFrame"), "distance_raster")
+writeRAST(as(distance_raster, "SpatialGridDataFrame"), "distance_raster")
 execGRASS("r.watershed", 
           elevation="distance_raster", 
           basin="thiessen_catchments", 
@@ -321,7 +316,7 @@ execGRASS("v.overlay",
 thiessen_catchments <- readVECT("watersheds_union")
 thiessen_catchments <- readVECT("watersheds_polygon")
 thiessen_catchments <- readRAST("thiessen_catchments")
-flowdir <- readRAST("flowdir") %>% raster::raster()
+flowdir <- readRAST("flowdir") %>% raster()
 
 flowdir %>% plot()
 thiessen_catchments %>% 

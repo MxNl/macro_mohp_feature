@@ -552,7 +552,7 @@ calculate_stream_divide_distance_grid <-
 
 sfpolygon_to_raster <- function(sf_polygon, field_name) {
   sf_polygon %>%
-    fasterize::fasterize(raster = raster::raster(., res = CELLSIZE),
+    fasterize(raster = raster::raster(., res = CELLSIZE),
                          field = field_name)
 }
 
@@ -607,7 +607,7 @@ make_reference_raster <-
     # reference_raster <-
     studyarea %>%
       # raster::rasterize(base_raster, field = "id", getCover = TRUE)
-      fasterize::fasterize(base_raster)
+      fasterize(base_raster)
 
     # reference_raster[reference_raster > 0] <- 1
     # reference_raster[reference_raster == 0] <- NA

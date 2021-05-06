@@ -16,7 +16,7 @@ bibliography:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.pos = "H")
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.pos = "H", message = FALSE, warning = FALSE)
 options(tinytex.verbose = TRUE)
 
 library(DiagrammeR)
@@ -24,7 +24,7 @@ library(DiagrammeRsvg)
 library(rsvg)
 library(knitr)
 
-source("../targets/R/visualization_functions.R")
+# source("../targets/R/visualization_functions.R")
 ```
 
 ```{r, echo=FALSE, include = FALSE}
@@ -46,11 +46,6 @@ RefManageR::ReadZotero("5574385",
  
 ```
 -->
-
-
-```{r, echo=FALSE}
-make_workflow_diagram("diagramms/flowchart.pdf")
-```
 
 
 # Background & Summary
@@ -117,5 +112,5 @@ Text.
 # Figures \& Tables {-}
 
 ```{r flowchart, echo=FALSE, out.width = "70%", fig.cap= "sdf"}
-include_graphics("diagramms/flowchart.pdf") 
+include_graphics(tar_read(workflow_figure))
 ```

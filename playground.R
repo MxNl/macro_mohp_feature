@@ -1,19 +1,4 @@
-library(targets)
-library(raster)
-library(sf)
-library(lwgeom)
-library(stars)
-library(furrr)
-library(janitor)
-library(patchwork)
-library(assertr)
-library(tarchetypes)
-library(mapview)
-library(tidyverse)
-library(rgeos)
-library(here)
-library(rgrass7)
-library(whitebox)
+
 
 
 tar_read(filepath_canals_to_reclassify)
@@ -88,7 +73,7 @@ eea_countries %>%
   filter(area >= MIN_AREA_ISLAND) %>% 
   st_union() %>% 
   sfheaders::sf_remove_holes() %>% 
-  mapview::mapview()
+  mapview()
 
 
 test_line <- 
@@ -105,7 +90,7 @@ test_line %>%
   geom_sf(data = test_line)
 
 rnaturalearth::ne_countries(scale = "medium", continent = "europe", returnclass = "sf") %>% 
-  mapview::mapview()
+  mapview()
 
 
 
@@ -136,9 +121,6 @@ selected_studyarea %>%
   geom_sf()
 
 
-
-library(leaflet)
-library(leafgl)
 
 test_lines <- 
   LINES_MERGED %>% 
@@ -183,7 +165,7 @@ asstars <-
   st_as_stars()
 connection
 
-tictoc::tic()
+tic()
 grid_test <- 
   rasterized %>% 
   st_as_stars() %>% 
@@ -193,7 +175,7 @@ grid_test <-
   # st_transform(CRS_REFERENCE) 
   # filter_intersecting_features(selected_studyarea)
   # write_to_table("testtest")
-tictoc::toc()
+toc()
 
 grid_test %>% 
   mapview()
@@ -203,10 +185,10 @@ selected_studyarea %>% st_crs()
 
 "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
 
-tictoc::tic()
+tic()
 assf <- asstars %>% 
   st_as_sf(as_points = FALSE)
-tictoc::toc()
+toc()
 
 assf
 
@@ -337,7 +319,7 @@ rivers_plot <-
   st_cast("MULTIPOINT") %>% 
   ggplot(aes(colour = feature_id)) +
   geom_sf() +
-  facet_wrap(~feature_id, ncol = 1)} %>% plotly::ggplotly()
+  facet_wrap(~feature_id, ncol = 1)} %>% ggplotly()
 
 
 segment_six <- 
@@ -361,7 +343,7 @@ st_difference(unioned, st_intersection(segment_six, segment_seven)) %>%
 tar_read(river_networks_clean) %>% 
   mutate(feature_id = as.character(feature_id)) %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
-  plotly::ggplotly()
+  ggplotly()
   
 st_overlaps(segment_seven, segment_six, sparse = FALSE)
 st_overlaps(segment_six, segment_seven, sparse = FALSE)
@@ -395,7 +377,7 @@ plotlist[[i]] <-
   theme(legend.position = "none")
 }
 
-plotlist[[3]] %>% plotly::ggplotly()
+plotlist[[3]] %>% ggplotly()
 
 sequential_nearest_neighbours_with_maxdist <- 
   function(
@@ -437,13 +419,12 @@ sequential_nearest_neighbours_with_maxdist <-
     
   }
 
-library(leaflet)
-library(leafgl)
+
 studyarea_test <- tar_read(selected_studyarea)
 
 raster_test <- 
   studyarea_test %>% 
-  raster::raster(crs = 3035, resolution = 100)
+  raster(crs = 3035, resolution = 100)
 
 points <- 
   raster_test %>% 
@@ -504,11 +485,7 @@ SELECT lo_unlink(loid)
 
 
 
-library(tidyverse)
-library(sf)
-library(mapview)
-
-convert_geometry <- function(x) as_tibble(x) %>% dplyr::mutate(dplyr::across(where(is_pq_geometry), from_wkb))
+convert_geometry <- function(x) as_tibble(x) %>% mutate(dplyr::across(where(is_pq_geometry), from_wkb))
 
 connection <- connect_to_database()
 
@@ -1076,7 +1053,7 @@ test <-
     #               alpha =.6) +
     geom_sf(data = studyarea, fill = NA) +
     theme(legend.position = "none")} %>% 
-  plotly::ggplotly()
+  ggplotly()
 
 
 {test %>% 
@@ -1089,7 +1066,7 @@ test <-
     #               label.size = 0,
     #               alpha =.6) +
     geom_sf(data = studyarea, fill = NA)} %>% 
-  plotly::ggplotly()
+  ggplotly()
 
 
 test %>% 
@@ -1129,7 +1106,7 @@ get_table_from_postgress("merge_test") %>%
   add_feature_index_column() %>% 
   mutate(feature_id = as.character(feature_id)) %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
-  plotly::ggplotly()
+  ggplotly()
 
 
 test <- 
@@ -1178,7 +1155,7 @@ test %>%
   select(grid_geometry, distance_meters) %>% 
   rename(geometry = grid_geometry) %>% 
   query_result_as_sf() %>% 
-  mapview::mapview(alpha = 0, zcol = "distance_meters")
+  mapview(alpha = 0, zcol = "distance_meters")
 
 
 # thiessen catchments
@@ -1191,7 +1168,7 @@ test <-
 test %>% 
   pluck(6) %>%
   query_result_as_sf() %>%
-  mapview::mapview(alpha = 1)
+  mapview(alpha = 1)
 
 # nearest neighbours to divide
 test <- 
@@ -1204,7 +1181,7 @@ test %>%
   pluck(2) %>%
   rename(geometry = grid_geometry) %>% 
   query_result_as_sf() %>%
-  mapview::mapview(alpha = 0, zcol = "distance_meters")
+  mapview(alpha = 0, zcol = "distance_meters")
 
 
 
@@ -1219,7 +1196,7 @@ test %>%
   pluck(1) %>% 
   select(geometry, divide_stream_distance) %>%
   query_result_as_sf() %>% 
-  mapview::mapview(alpha = 0, zcol = "divide_stream_distance")
+  mapview(alpha = 0, zcol = "divide_stream_distance")
 
 
 tar_read(lateral_position_stream_divide_distance)
@@ -1279,7 +1256,7 @@ test_rivers <-
 test_rivers %>% 
   st_intersects(tar_read(studyarea_subset_plots), sparse = FALSE) %>% 
   as.vector() %>% 
-  magrittr::extract(. == FALSE)
+  extract(. == FALSE)
 
 
 
@@ -1311,7 +1288,7 @@ thiessen_catchments %>%
 test %>% 
   select(distance_meters) %>% 
   st_intersection(st_buffer(sample_n(., 1), dist = 1E4)) %>% 
-  mapview::mapview(zcol = "distance_meters", alpha = 0)
+  mapview(zcol = "distance_meters", alpha = 0)
 
 
 area_test <- 
@@ -1332,7 +1309,7 @@ tar_read(river_networks_clean)
 tar_read(river_networks_only_connected) %>% 
   mutate(strahler = as.character(strahler)) %>% 
   plot_lines_coloured_by_categorical_attribute(strahler) %>% 
-  plotly::ggplotly()
+  ggplotly()
 
 list(
   tar_read("river_networks_clip"),
@@ -1347,7 +1324,7 @@ list(
   map(plot_lines_coloured_by_categorical_attribute, feature_id) %>% 
   pluck(1) %>% 
   list() %>% 
-  cowplot::plot_grid(plotlist = .)
+  plot_grid(plotlist = .)
 
 
 test <- 
@@ -1374,11 +1351,11 @@ tar_read(river_networks_dissolved_brackets) %>%
   add_feature_index_column() %>% 
   # dissolve_line_features_between_junctions() %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id) %>%
-  plotly::ggplotly()
+  ggplotly()
 
 tar_read(river_networks_dissolved_brackets) %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id) %>%
-  plotly::ggplotly()
+  ggplotly()
 
 
 strahler_error <- 
@@ -1448,11 +1425,11 @@ st_read("J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time
 
 values <-
   tibble(
-    output_function = rlang::syms("calculate_lateral_position_grid"),
+    output_function = syms("calculate_lateral_position_grid"),
     streamorders = 1:6,
     # centroids_stream_distance = rlang::syms("centroids_stream_distance"),
     # centroids_divide_distance = rlang::syms("centroids_divide_distance"),
-    grid =  rlang::syms("base_grid"),
+    grid =  syms("base_grid"),
     field_name = "lateral_position",
     data_source = str_c(field_name, "_", streamorders)
   )
@@ -1494,7 +1471,7 @@ tar_pattern(
   x = 5,
   y = 1
 )
-targets::tar_make_future(workers = future::availableCores())
+tar_make_future(workers = future::availableCores())
 tar_read(unique_feature_ids)
 
 
@@ -1545,7 +1522,7 @@ testplot <-
   )
 
 testplot %>% 
-  plotly::ggplotly()
+  ggplotly()
 
 river_network_by_streamorder[[1]] <- 
   river_network_by_streamorder[[1]] %>% 
@@ -1555,7 +1532,7 @@ segment_colours <-
   river_network_by_streamorder[[1]] %>%
   # distinct(nearest_feature) %>% 
   nrow() %>% 
-  hues::iwanthue(lmin = 40,
+  iwanthue(lmin = 40,
                  cmax = 70)
 
 testplot1 <- 
@@ -1951,7 +1928,7 @@ tar_read(river_networks_clean) %>%
 
 tar_read(river_networks_dissolved) %>% 
   plot_lines_coloured_by_categorical_attribute(feature_id) %>% 
-  plotly::ggplotly()
+  ggplotly()
 
 tar_read(river_networks_dissolved) %>% 
   filter(feature_id %in% c(80, 12, 83, 81)) %>% 
@@ -1961,4 +1938,4 @@ tar_read(river_networks_dissolved) %>%
 {tar_read(river_networks_dissolved) %>% 
     ggplot() +
     geom_sf() +
-    geom_sf(data = split_points, size = 3)} %>% plotly::ggplotly()
+    geom_sf(data = split_points, size = 3)} %>% ggplotly()

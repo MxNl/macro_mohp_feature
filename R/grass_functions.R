@@ -265,9 +265,9 @@ grass_calculations <-
               lambda = 1,
               memory = GRASS_MAX_MEMORY,
               flags = c("overwrite"))
-    
+    print("walk")
     execGRASS("r.mapcalc",
-              expression = str_glue("thiessen_catchments_distance_raster = if(thiessen_catchments_distance_raster >= {max_distance}, null(), round(thiessen_catchments_distance_raster))"),
+              expression = str_glue("thiessen_catchments_distance_raster = if(thiessen_catchments_distance_raster >= {max_distance}, null(), thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
 
     execGRASS("r.neighbors",
@@ -276,11 +276,11 @@ grass_calculations <-
               output = "thiessen_catchments_distance_raster",
               method = "minimum",
               flags = c("overwrite"))
-    
-    execGRASS("r.surf.idw",
-              input = "thiessen_catchments_distance_raster",
-              output = "thiessen_catchments_distance_raster",
-              flags = c("overwrite"))
+    print("neighbors")
+    # execGRASS("r.surf.idw",
+    #           input = "thiessen_catchments_distance_raster",
+    #           output = "thiessen_catchments_distance_raster",
+    #           flags = c("overwrite"))
     
     print("thiessen_catchments_distance_raster")
     

@@ -1,7 +1,3 @@
-library(DiagrammeR)
-library(DiagrammeRsvg)
-library(rsvg)
-
 
 pre_r_steps <-
   function() {
@@ -119,6 +115,7 @@ make_workflow_diagram <-
     )
 
     tmp <- capture.output(rsvg_pdf(charToRaw(export_svg(diagramm)), path))
+    return(path)
     # cat("![Standards QA flowchart](stnds.qa.png){#fig:stnds.qa.flow}\n\n")
   }
 
