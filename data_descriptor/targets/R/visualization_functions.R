@@ -62,7 +62,7 @@ make_workflow_diagram <-
   graph [compound = true, nodesep = .5, ranksep = .25,
          color = crimson, outputorder=edgesfirst]
 
-  node [shape = box, style = 'filled', fillcolor = white, fontname = Bahnschrift, 
+  node [shape = box, style = 'filled', fillcolor = white, fontname = Corbel, 
         fontsize = 10, fontcolor = darkgray,
         shape = rectangle,
         color = darkslategray, fixedwidth = true, width = 2]
@@ -120,3 +120,128 @@ make_workflow_diagram <-
   }
 
 # make_workflow_diagram("data_descriptor/test.pdf")
+
+make_studyarea_figure <- 
+  function(studyarea) {
+
+    eea_countries <- 
+      rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") %>% 
+      filter(name %in% EEA39COUNTRIES) %>% 
+      transform_crs_if_required()
+    
+    distinct_colours <- 
+      studyarea %>%
+      nrow() %>% 
+      hues::iwanthue(lmin = 80,
+                     cmin = 60,
+                     cmax = 80)
+    
+    eea_countries %>% 
+      spatial_filter_europe() %>% 
+      st_union() %>% 
+      tm_shape() +
+      tm_polygons(border.col = NULL) +
+      tm_layout(frame = FALSE, fontfamily = "Corbel") +
+      tm_shape(studyarea) +
+      tm_polygons(col = "region_name",
+                  title = "Spatial coverage\n(names as used\nin file names)",
+                  palette = distinct_colours,
+                  border.col = NULL) +
+      tm_shape(eea_countries) +
+      tm_borders(col = "white")
+      # tm_text("name", remove.overlap = TRUE)
+    
+    # studyarea %>% 
+    #   ggplot() +
+    #   geom_sf(aes(fill = region_name),
+    #           colour = NA) +
+    #   scale_fill_manual(values = distinct_colours) +
+    #   theme_void() +
+    #   theme(text = element_text(family="Bahnschrift")) +
+    #   labs(fill = "Region as\nin file names")
+  }
+
+aoi_from_coordinates <- 
+  function(x, y, dist) {
+    tibble(x = x,
+           y = y) %>% 
+      st_as_sf(coords = c("x", "y")) %>% 
+      st_sf(crs = 25832) %>% 
+      transform_crs_if_required() %>% 
+      st_buffer(dist = dist, endCapStyle = "SQUARE")
+  }
+
+make_river_canal_confusion_example_plot <- 
+  function(x, y, dist, layer_to_clip) {
+    
+    clip_polygon <- aoi_from_coordinates(x, y, dist)
+    
+    clipped_geometries <- 
+      layer_to_clip %>% 
+      filter_intersecting_features(clip_polygon) %>% 
+      st_intersection(clip_polygon)
+    
+    colours <- 
+      clipped_geometries %>% 
+      generate_discrete_colour_values(dfdd)
+    
+    clipped_geometries %>% 
+      mutate(dfdd = if_else(dfdd == "BH140", 
+                            str_glue("{dfdd} (river)"), 
+                            if_else(dfdd == "BH20", 
+                                    str_glue("{dfdd} (ditch)"), 
+                                    str_glue("{dfdd} (canal)")
+                            ))) %>% 
+      ggplot() +
+      geom_sf(aes(colour = dfdd), size = 1) +
+      scale_colour_manual(values = colours) +
+      geom_curve(data = data.frame(x = 4628921.04384992, y = 3250201.40311892, xend = 4628817.60981672, yend = 3246581.09972031),
+                 colour = "grey",
+                 mapping = aes(x = x, y = y, xend = xend, yend = yend),
+                 curvature = -0.34, arrow = arrow(30L, unit(0.1, "inches"),
+                                                  "last", "closed"),
+                 inherit.aes = FALSE) + 
+      geom_curve(data = data.frame(x = 4622715.00185787, y = 3249011.87485938, xend = 4623852.77622308, yend = 3248236.09555967),
+                 colour = "grey", mapping = aes(x = x, y = y, xend = xend, yend = yend),
+                 arrow = arrow(30L, unit(0.1, "inches"),
+                               "last", "closed"),
+                 inherit.aes = FALSE) + 
+      geom_text(data = data.frame(x = 4622207.80957843, y = 3249825.99554802, label = "canal-like shape"),
+                colour = "grey", mapping = aes(x = x, y = y, label = label),
+                family = "Corbel", inherit.aes = FALSE) + 
+      geom_text(data = data.frame(x = 4629024.47788312, y = 3251184.05689855, label = "river-like shape"),
+                colour = "grey", mapping = aes(x = x, y = y, label = label),
+                inherit.aes = FALSE) +
+      geom_curve(data = data.frame(x = 4619762.48546094, y = 3249529.06105918, xend = 4619090.16424514, yend = 3246736.25558025),
+                 colour = "grey", mapping = aes(x = x, y = y, xend = xend, yend = yend),
+                 arrow = arrow(30L, unit(0.1, "inches"),
+                               "last", "closed"),
+                 inherit.aes = FALSE) +
+      theme_minimal() +
+      theme(legend.position = "top",
+            text = element_text(family = "Corbel"), 
+            axis.title.x = element_blank(),
+            axis.title.y = element_blank()
+      ) +
+      labs(colour = "DFDD")
+  }
+
+make_dfdd_stats_bar_plot <- 
+  function(river_network) {
+    
+    colours <- iwanthue(1)
+    
+    river_network %>% 
+      group_by(dfdd) %>% 
+      count() %>% 
+      ggplot(aes(n, reorder(dfdd, n))) +
+      geom_col(fill = colours,
+               alpha = .7) +
+      theme_minimal() +
+      theme(text = element_text(family = "Corbel")) +
+      labs(x = "Number of geometries",
+           y = "DFDD")
+  }
+
+
+

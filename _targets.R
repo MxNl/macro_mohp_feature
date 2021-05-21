@@ -10,9 +10,8 @@ options(
 
 tar_option_set(
   packages = c(
-    "DiagrammeR", 
-    "DiagrammeRsvg", 
-    "rsvg",
+    "extrafont",
+    "tmap",
     "igraph",
     "here",
     "fs",
@@ -42,6 +41,8 @@ tar_option_set(
   garbage_collection = TRUE
 )
 
+extrafont::loadfonts(device = "win", quiet = TRUE)
+
 source("R/constants.R")
 
 source("targets/studyarea_targets.R")
@@ -64,7 +65,7 @@ source("R/export_functions.R")
 # source("data_descriptor/targets/R/bibliography_functions.R")
 source("data_descriptor/targets/R/visualization_functions.R")
 
-plan(multisession)
+# plan(multisession)
 
 # Define targets
 c(

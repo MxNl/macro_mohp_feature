@@ -3,5 +3,17 @@ visualizations_data_descriptor_targets <-
     tar_target(
       workflow_figure,
       make_workflow_diagram("diagramms/flowchart.pdf")
+    ),
+    tar_target(
+      studyarea_figure,
+      make_studyarea_figure(selected_studyarea)
+    ),
+    tar_target(
+      river_canal_confusion_plot,
+      make_river_canal_confusion_example_plot(871980.836, 5802002.409, 7E3, river_networks)
+    ),
+    tar_target(
+      dfdd_stats_bar_plot,
+      make_dfdd_stats_bar_plot(river_networks_clip)
     )
   )

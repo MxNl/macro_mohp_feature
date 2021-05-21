@@ -19,30 +19,8 @@ pipeline_for <- function(area) {
           make_test_coastline(selected_studyarea)
       )
     ),
-    germany = list(
-      tar_target(
-        filepath_coastline,
-        FILEPATH_COASTLINE
-      ),
-      tar_target(
-        coastline,
-        read_coastline(filepath_coastline)
-      ),
-      tar_target(
-        filepath_studyarea_germany,
-        FILEPATH_STUDYAREA_GERMANY,
-        format = "file"
-      ),
-      tar_target(
-        studyarea_germany,
-        read_studyarea(filepath_studyarea_germany)
-      ),
-      tar_target(
-        selected_studyarea,
-        determine_studyarea_outline_level_germany(studyarea_germany, coastline)
-      )
-    ),
     europe = list(
+      # helper target -----------------------------------------------------------
       tar_target(
         filepath_coastline,
         FILEPATH_COASTLINE
@@ -60,6 +38,7 @@ pipeline_for <- function(area) {
           union_coastline(),
         pattern = map(coastline_grouped)
       ),
+      # helper target -----------------------------------------------------------
       tar_target(
         coastline_regrouped,
         coastline_unioned %>% 
@@ -96,19 +75,23 @@ pipeline_for <- function(area) {
         selected_studyarea %>% 
           studyarea_to_watershed(coastline_buffer_unioned, studyarea_as_coastline)
       ),
+      # helper target -----------------------------------------------------------
       tar_target(
         river_basins_files,
         list_river_basin_files(directory_river_networks)
       ),
+      # helper target -----------------------------------------------------------
       tar_target(
         river_basin_names,
         get_unique_basin_names(river_basins_files)
       ),
+      # river_basins ------------------------------------------------------------
       tar_target(
         river_basins,
         read_river_basins(river_basins_files, river_basin_names),
         pattern = map(river_basin_names)
       ),
+      # helper target -----------------------------------------------------------
       tar_target(
         river_basins_grouped,
         river_basins %>% 
@@ -116,30 +99,34 @@ pipeline_for <- function(area) {
           tar_group(),
         iteration = "group"
       ),
+      # river_basins_unioned ----------------------------------------------------
       tar_target(
         river_basins_unioned,
           union_river_basins(river_basins_grouped),
         pattern = map(river_basins_grouped),
         iteration = "group"
       ),
+      # river_basins_subset -----------------------------------------------------
       tar_target(
         river_basins_subset,
         subset_river_basins(river_basins_unioned)
       ),
+      # river_basins_subset_union_in_db -----------------------------------------
       tar_target(
         river_basins_subset_union_in_db,
         union_studyarea_in_db(
           river_basins_subset,
           RIVER_BASINS_SUBSET
-        )#,
-        # force = !exists_table(SELECTED_STUDYAREA_TABLE)
+        )
       ),
+      # river_basins_region_name ------------------------------------------------
       tar_target(
         river_basins_region_name,
         determine_studyarea_outline_level_europe(
           river_basins_subset_union_in_db
         )
       ),
+      # selected_studyarea ------------------------------------------------------
       tar_target(
         selected_studyarea,
         add_region_name(
