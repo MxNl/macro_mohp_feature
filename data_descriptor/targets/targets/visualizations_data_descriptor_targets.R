@@ -1,8 +1,8 @@
 visualizations_data_descriptor_targets <- 
   list(
     tar_target(
-      workflow_figure,
-      make_workflow_diagram("diagramms/flowchart.pdf")
+      input_data_table,
+      make_input_data_table()
     ),
     tar_target(
       studyarea_figure,

@@ -1,5 +1,5 @@
 source("_targets.R")
-# targets::tar_renv(extras = c("styler", "citr", "RefManageR", "bibtex", "showtext", "renv"))
+# targets::tar_renv(extras = c("styler", "citr", "RefManageR", "bibtex", "showtext", "renv", "rnaturalearthdata"))
 # tar_watch()
 
 # targets::tar_make_future(workers = future::availableCores() - 1)

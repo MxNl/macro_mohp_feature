@@ -2,6 +2,7 @@ library(targets)
 library(tarchetypes)
 library(future)
 library(renv)
+library(extrafont)
 
 options(
   tidyverse.quiet = TRUE,
@@ -10,7 +11,6 @@ options(
 
 tar_option_set(
   packages = c(
-    "extrafont",
     "tmap",
     "igraph",
     "here",
@@ -41,7 +41,6 @@ tar_option_set(
   garbage_collection = TRUE
 )
 
-extrafont::loadfonts(device = "win", quiet = TRUE)
 
 source("R/constants.R")
 

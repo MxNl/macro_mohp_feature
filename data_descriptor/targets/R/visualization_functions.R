@@ -121,6 +121,19 @@ make_workflow_diagram <-
 
 # make_workflow_diagram("data_descriptor/test.pdf")
 
+make_input_data_table <- 
+  function() {
+    tribble(
+      ~'Layer name', ~'Data source', ~'GeoPackage Layers', ~'Data type', ~'Geometry type', ~Description,
+      "river network",   "EU-Hydro -- River Network Database", "Canals_l, Ditches_l, River_Net_l", "vector", "linestring", "representing stream lines of rivers",
+      "surface water bodies",   "EU-Hydro -- River Network Database", "InlandWater", "vector", "polygon", "representing lakes, ponds and wide rivers",
+      "river basins or study area",   "EU-Hydro -- River Network Database", "_eudem2_basins_h1", "vector", "linestring", "required to set the area for which the EU-MOHP measures are calculated for",
+      "coastline",   "EU-Hydro -- Coastline", "-", "vector", "linestring", "representing the coastline"
+    ) %>% 
+      mutate('Layer number' = row_number(), .before = 1)
+  }
+
+
 make_studyarea_figure <- 
   function(studyarea) {
 
@@ -129,26 +142,48 @@ make_studyarea_figure <-
       filter(name %in% EEA39COUNTRIES) %>% 
       transform_crs_if_required()
     
-    distinct_colours <- 
+    distinct_colours <-
       studyarea %>%
-      nrow() %>% 
-      hues::iwanthue(lmin = 80,
-                     cmin = 60,
-                     cmax = 80)
+      nrow() %>%
+      hues::iwanthue(
+        # lmin = 34,
+        # lmax = 90,
+        # cmin = 0,
+        # cmax = 72
+      )
     
-    eea_countries %>% 
-      spatial_filter_europe() %>% 
-      st_union() %>% 
-      tm_shape() +
-      tm_polygons(border.col = NULL) +
-      tm_layout(frame = FALSE, fontfamily = "Corbel") +
-      tm_shape(studyarea) +
-      tm_polygons(col = "region_name",
+    administrative_borders <-
+      eea_countries %>%
+      spatial_filter_europe()
+
+    coloured_areas <- 
+      eea_countries %>% 
+      st_cast("POLYGON") %>% 
+      filter_intersecting_features(studyarea) %>% 
+      summarise() %>% 
+      st_cast("POLYGON") %>% 
+      st_join(studyarea)
+    
+    not_covered_areas <-
+      administrative_borders %>%
+      filter(!st_intersects(., coloured_areas, sparse = FALSE) %>% apply(1, any)) %>% 
+      mutate(same_colour = "not covered")
+    
+    administrative_borders <-
+      administrative_borders %>% 
+      filter(!st_intersects(., not_covered_areas, sparse = FALSE) %>% apply(1, any))
+    
+    tm_shape(coloured_areas) +
+      tm_fill(col = "region_name",
                   title = "Spatial coverage\n(names as used\nin file names)",
-                  palette = distinct_colours,
-                  border.col = NULL) +
-      tm_shape(eea_countries) +
-      tm_borders(col = "white")
+                  palette = distinct_colours) +
+      tm_shape(not_covered_areas) +
+      tm_fill(col = "same_colour",
+              palette = "grey",
+              title = "") +
+      tm_shape(administrative_borders) +
+      tm_borders(col = "white") +
+      tm_layout(frame = FALSE, fontfamily = "Corbel")
       # tm_text("name", remove.overlap = TRUE)
     
     # studyarea %>% 
@@ -208,10 +243,10 @@ make_river_canal_confusion_example_plot <-
                  inherit.aes = FALSE) + 
       geom_text(data = data.frame(x = 4622207.80957843, y = 3249825.99554802, label = "canal-like shape"),
                 colour = "grey", mapping = aes(x = x, y = y, label = label),
-                family = "Corbel", inherit.aes = FALSE) + 
+                family = "Corbel", fontface = 2, inherit.aes = FALSE) + 
       geom_text(data = data.frame(x = 4629024.47788312, y = 3251184.05689855, label = "river-like shape"),
                 colour = "grey", mapping = aes(x = x, y = y, label = label),
-                inherit.aes = FALSE) +
+                family = "Corbel", fontface = 2, vinherit.aes = FALSE) +
       geom_curve(data = data.frame(x = 4619762.48546094, y = 3249529.06105918, xend = 4619090.16424514, yend = 3246736.25558025),
                  colour = "grey", mapping = aes(x = x, y = y, xend = xend, yend = yend),
                  arrow = arrow(30L, unit(0.1, "inches"),
@@ -229,18 +264,27 @@ make_river_canal_confusion_example_plot <-
 make_dfdd_stats_bar_plot <- 
   function(river_network) {
     
-    colours <- iwanthue(1)
+    # colours <- iwanthue(1)
     
     river_network %>% 
+      drop_na(dfdd) %>% 
       group_by(dfdd) %>% 
       count() %>% 
+      mutate(
+        dfdd = if_else(dfdd == "BH140", str_glue("{dfdd} (=river)"), dfdd),
+        dfdd = if_else(dfdd == "BH020", str_glue("{dfdd} (=canal)"), dfdd),
+        dfdd = if_else(dfdd == "BH030", str_glue("{dfdd} (=ditch)"), dfdd)
+        ) %>% 
+      mutate(n = n/1000) %>% 
       ggplot(aes(n, reorder(dfdd, n))) +
-      geom_col(fill = colours,
+      geom_col(fill = "#ffcf46",
                alpha = .7) +
       theme_minimal() +
-      theme(text = element_text(family = "Corbel")) +
-      labs(x = "Number of geometries",
-           y = "DFDD")
+      theme(text = element_text(family = "Corbel"),
+            axis.title.y = element_blank(),
+            plot.title = element_text(hjust = 0.5)) +
+      labs(x = "Number of geometries [x1000]",
+           title = "Histogram of the column DFDD")
   }
 
 
