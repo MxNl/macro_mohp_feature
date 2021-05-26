@@ -95,9 +95,32 @@ preprocessing_targets <- c(
   ),
   # helper target -----------------------------------------------------------
   tar_target(
-    river_networks_grouped,
+    river_networks_streamorderone,
     rivernetworks_merged_per_streamorder %>%
+      filter(streamorder == 1)
+  ),
+  # helper target -----------------------------------------------------------
+  tar_target(
+    river_networks_greater_one_grouped,
+    rivernetworks_merged_per_streamorder %>%
+      filter(streamorder != 1) %>% 
       group_by(streamorder) %>%
+      tar_group(),
+    iteration = "group"
+  ),
+  # river_networks_treated_brackets -----------------------------------------
+  tar_target(
+    river_networks_treated_brackets,
+    river_networks_greater_one_grouped %>%
+      remove_simple_brackets(),
+    pattern = map(river_networks_greater_one_grouped)
+  ),
+  # helper target -----------------------------------------------------------
+  tar_target(
+    river_networks_grouped,
+    river_networks_streamorderone %>%
+      bind_rows(river_networks_treated_brackets) %>% 
+      group_by(streamorder) %>% 
       tar_group(),
     iteration = "group"
   ),
