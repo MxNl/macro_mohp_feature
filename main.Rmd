@@ -19,13 +19,21 @@ linkcolor: black
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.pos = "H", message = FALSE, warning = FALSE, fig.showtext = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.pos = "H", message = FALSE, warning = FALSE, fig.showtext = TRUE, size = "footnotesize", attr.output = ".numberLines")
 options(tinytex.verbose = TRUE)
 knitr::knit_hooks$set(crop = knitr::hook_pdfcrop)
+
+# knitr hook for code chunk font size
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
 
 library(knitr)
 library(showtext)
 
+# Add font for ggplots
 font_add("Corbel", regular = "C:\\Windows\\Fonts\\corbel.ttf")
 
 # source("../../R/constants.R")
@@ -143,9 +151,9 @@ Firstly, the preprocessing steps related to the river basins are described becau
 
 ## Preprocessing -- River Network {-}
 
-After the data import, the next step is the filtering of linestring geometries from the river network based on attribute columns `DFDD` and `HYP` (target: river_networks_non_dry_selected_streamtypes in "preprocessing_targets.R" file). `DFDD` classifies the geometries into BH140 (river), BH020 (canal) and BH030 (ditch). Canals and ditches were removed from the river network by only keeping the geometries with the value "BH140" for several reasons. Many of the canal and ditch geometries have missing stream order values, which is required for the following processing steps. Another reason is the assumption that canals might be hydraulically disconnected to the natural hydrologic system through walls with low permeability. Lastly, the overall importance of canals and ditches is low when comparing the number of geometries to rivers as shown in fig. \@ref(fig:dfddstatsbarplot). !!The section [Technical Validation] provides a discussion on this issue. `HYP` classifies the geometries into the following degrees of hydrologic persistence: 1 (Perennial), 2 (Intermittent), 3 (Ephemeral) and 4 (Dry). Geometries with the value 4 (Dry) were removed. Then, missing and invalid stream order values are imputed the with the value 1 to include them in the first hydrologic order (target: river_networks_imputed_streamorder_canals_as_1). The river network geometries were clipped to the study area by only keeping geometries that intersect with the study area (target: db_river_networks_strahler_studyarea). 
+After the data import, the next step is the filtering of linestring geometries from the river network based on attribute columns `DFDD` and `HYP` (target: river_networks_non_dry_selected_streamtypes in "preprocessing_targets.R" file; see fig. \@ref(fig:projectdirtree), line 30). `DFDD` classifies the geometries into BH140 (river), BH020 (canal) and BH030 (ditch). Canals and ditches were removed from the river network by only keeping the geometries with the value "BH140" for several reasons. Many of the canal and ditch geometries have missing stream order values, which is required for the following processing steps. Another reason is the assumption that canals might be hydraulically disconnected to the natural hydrologic system through walls with low permeability. Lastly, the overall importance of canals and ditches is low when comparing the number of geometries to rivers as shown in fig. \@ref(fig:dfddstatsbarplot). !!The section [Technical Validation] provides a discussion on this issue. `HYP` classifies the geometries into the following degrees of hydrologic persistence: 1 (Perennial), 2 (Intermittent), 3 (Ephemeral) and 4 (Dry). Geometries with the value 4 (Dry) were removed. Then, missing and invalid stream order values are imputed the with the value 1 to include them in the first hydrologic order (target: river_networks_imputed_streamorder_canals_as_1). The river network geometries were clipped to the study area by only keeping geometries that intersect with the study area (target: db_river_networks_strahler_studyarea). 
 
-The next processing step implements a method to obtain linestring geometries that reflect the mainstems of the rivers and its tributaries (target: rivernetworks_merged_per_streamorder; see fig. \@ref(fig:mainstemscheme)). This is achieved by merging the geometries by a column containing an unique id for each mainstem. The mainstem is defined here as the longest path from the head water to the most distant river mouth. As the underlying river network data has no column providing this information, it is necessary to first generate this id column by which we will conduct the merging of the lines (!!source:: Belitz used the already existing column `LevelPathI` from their underlying river network data set). For doing so, it is now required to first derive a river network for each hydrologic order separately. This is achieved by keeping only geometries with a stream order equal or greater than the specific hydrologic order as described in [Background & Summary]. The river networks of each individual hydrologic order was then sorted by column `LONGPATH` in descending order.
+The next processing step implements a method to obtain linestring geometries that represent the mainstems of the rivers and its tributaries (target: rivernetworks_merged_per_streamorder). This is achieved by merging the geometries by a column containing an unique id for each mainstem. The mainstem is defined here as the longest path from the head water to the most distant river mouth (see geometries with the same `Levelpath ID` in fig. \@ref(fig:mainstemscheme)B). As the underlying river network data has no column providing this information, it is necessary to first generate this id column by which we will conduct the merging of the lines (!!source:: Belitz used the already existing column `LevelPathI` from their underlying river network data set). For doing so, it is now required to first derive a river network for each hydrologic order separately. This is achieved by keeping only geometries with a stream order equal or greater than the specific hydrologic order as described in [Background & Summary]. The river networks of each individual hydrologic order was then sorted by column `LONGPATH` in descending order.
 
 ```{r, eval=FALSE}
 river_network_path <- 
@@ -177,9 +185,21 @@ while(nrow(river_network_path) > 0) {
 }
 ```
 
-Subsequently, a column `levelpath_id` was added as a unique ID for all geometries beloning to the same mainstem. The geometries of the respective river network was then merged by using this column. This results in a river network for each hydrologic order separately with a reduced number of geometries as multiple geometries are now summarised into mainstems.
+Subsequently, a column `levelpath_id` was added as a unique ID for all geometries belonging to the same mainstem. The geometries of the respective river network was then merged based on this column (see difference in linestring geometries between fig. \@ref(fig:mainstemscheme)B and C). This results in a river network for each hydrologic order separately with a reduced number of geometries as multiple geometries are now summarised into mainstems.
 
-continue here...
+Then, the river networks were sorted by the length of the geometries and provided with an unique ID for each geometry in the column `feature_id` (target: rivernetworks_feature_id; see `Feature ID` in fig. \@ref(fig:mainstemscheme)C).
+
+
+
+
+## Preprocessing -- Surface Water Bodies {-}
+
+Besides the import, there is only one other step in the targets pipeline that preprocesses the surface water bodies (target: db_inland_waters_strahler in "preprocessing_targets.R" file; see fig. \@ref(fig:projectdirtree), line 30). A filter was applied to only keep those geometries of surface water bodies that intersect with the river network of a specific hydrologic order. To assign a stream order to the surface water bodies, the stream order of the intersecting river network geometries was used.
+
+
+## Preprocessing -- Coastline {-}
+
+
 
 
 # Hardware {-}
@@ -259,7 +279,7 @@ tar_read(river_canal_confusion_plot)
 tar_read(dfdd_stats_bar_plot)
 ```
 
-```{r mainstemscheme, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= 'Schematic river network before (A) and after (B) merging linestring geometries.'}
+```{r mainstemscheme, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= 'Schematic representation of the river network and its linestring geometries after import (A), after the identification of mainstems including the column `Levelpath ID` (B) and after merging the linestring geometries by this column and adding a `Feature ID` column (C)'}
 include_graphics("diagramms/mainstem_scheme.pdf")
 ```
 
