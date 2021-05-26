@@ -614,6 +614,50 @@ make_reference_raster <-
     # reference_raster
   }
 
+remove_simple_brackets <-
+  function(river_network) {
+    river_network <-
+      river_network %>% 
+      add_feature_index_column()
+    
+    start_end_points <-
+      river_network %>%
+      st_line_merge() %>%
+      rowwise() %>%
+      group_map(get_start_and_endpoints) %>%
+      reduce(bind_rows)
+    
+    minor_paths_to_remove <-
+      start_end_points %>%
+      st_join(river_network) %>%
+      filter(feature_id.x != feature_id.y) %>%
+      group_by(feature_id.x, feature_id.y) %>%
+      filter(n() > 1) %>%
+      pull(feature_id.x) %>%
+      unique()
+    
+    river_network %>%
+      filter(!feature_id %in% minor_paths_to_remove)
+  }
+
+get_start_and_endpoints <-
+  function(lines, ...) {
+    endpoints_one_side <-
+      lines %>%
+      st_endpoint() %>%
+      st_as_sf()
+    
+    endpoints_other_side <-
+      lines %>%
+      st_startpoint() %>%
+      st_as_sf()
+    
+    endpoints <-
+      endpoints_one_side %>%
+      bind_rows(endpoints_other_side) %>%
+      mutate(feature_id = lines %>% pull(feature_id))
+  }
+
 add_id_column_and_sync_with_rivers <- 
   function (coastline, river_network) {
     coastline %>% 
