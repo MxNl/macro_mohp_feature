@@ -117,7 +117,7 @@ where $i$ is the hydrologic order, $DS$ is the horizontal distance to the neares
 
 # Methods {-}
 
-Most processing and calculation steps were done in the R programming language [see fig. \@ref(fig:workflowfigure)C`;`{=latex} @r_core_team_r_2020]. Due to the memory size of this data set as well as for the sake of computational speed, a PostgreSQL database with PostGIS extension was used for some processing steps of vector data and a GRASS GIS database was used for all final calculations of the MOHP metrics (see fig. \@ref(fig:workflowfigure)D and E). For reproducability and programming reasons, all processing steps including the databases were tracked and executed through a data processing pipeline using the targets package in R [see fig. \@ref(fig:workflowfigure)`;`{=latex} @landau_targets_2021]. More details can be found in the following sections or in the code itself (see section [Code availability]). This processing or targets pipeline can be seen as programming script that tracks each step and skips processing steps that are still up-to-date when re-running the script.
+Most processing and calculation steps were done in the R programming language [see fig. \@ref(fig:workflowfigure)C`;`{=latex} @r_core_team_r_2020]. Due to the memory size of this data set as well as for the sake of computational speed, a PostgreSQL database with PostGIS extension was used for some processing steps of vector data and a GRASS GIS database was used for all final calculations of the MOHP metrics (see fig. \@ref(fig:workflowfigure)D and E). For reproducibility and programming reasons, all processing steps including the databases were tracked and executed through a data processing pipeline using the targets package in R [see fig. \@ref(fig:workflowfigure)`;`{=latex} @landau_targets_2021]. More details can be found in the following sections or in the code itself (see section [Code availability]). This processing or targets pipeline can be seen as programming script that tracks each step and skips processing steps that are still up-to-date when re-running the script.
 
 The resulting EU-MOHP metrics (see fig. \@ref(fig:workflowfigure)G) are written to the sub-directories `r FEATURE_NAMES %>% str_c("'", ., "'") %>% str_c(collapse = ", ")` of `output_data` as gridded maps in the GeoTiff (.tif) file format. The data descriptor is stored in `output_data` in the LaTeX (.tex) file format.
 
@@ -164,7 +164,7 @@ river_network_path <-
   select(object_id, nextdownid)
 ```
 
-`LONGPATH` indicates the length of the path from the start node of a geometry to the end node of the most downstream geometry of the river network. Starting with the topmost geometry, all downstream geometries that constitute the longest path to the river mouth are identified by making use of the columns `OBJECT_ID` and `NEXTDOWNID` and the R package `igraph`. This is the start of a loop over the sorted geometries. The column `OBJECT_ID` provides an unique ID for every linestring geometry and `NEXTDOWNID` indicates the `OBJECT_ID` of the next downstream geometry. Based on this information the function `subcomponent` of the `igraph` package identifies the `OBJECT_ID`s of all geometries that belong the the longest path. These identified geometries were then removed from the river network for the next iteration of the loop. The subsequent iteration identifies all geometries downstream of the current topmost geometry of the remaining river network. This is repeated until the river network doesn't contain any geometries. 
+`LONGPATH` indicates the length of the path from the start node of a geometry to the end node of the most downstream geometry of the river network. Starting with the topmost geometry, all downstream geometries that constitute the longest path to the river mouth are identified by making use of the columns `OBJECT_ID` and `NEXTDOWNID` and the R package `igraph`. This is the start of a loop over the sorted geometries. The column `OBJECT_ID` provides an unique ID for every linestring geometry and `NEXTDOWNID` indicates the `OBJECT_ID` of the next downstream geometry. Based on this information the function `subcomponent` of the `igraph` package identifies the `OBJECT_ID`s of all geometries that belong the the longest path. These identified geometries were then removed from the river network for the next iteration of the loop. The subsequent iteration identifies all geometries downstream of the current topmost geometry of the remaining river network. This is repeated until the river network has no geometries left.
 
 ```{r, eval=FALSE}
 longestpaths_list <- list()
@@ -225,7 +225,7 @@ Text.
 
 Text.
 
-For transfering the methods to another custom region, equivalent input data to tab. \@ref(tab:inputdata) is required. 
+For transferring the methods to another custom region, equivalent input data to tab. \@ref(tab:inputdata) is required.
 
 # Code availability {-}
 
