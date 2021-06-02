@@ -16,3 +16,6 @@ logs
 junk
 grassdata
 main_files
+~$*
+output_data/data_descriptor_files
+diagramms/directory_tree.pdf

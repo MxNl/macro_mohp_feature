@@ -61,10 +61,10 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/grass_functions.R")
 source("R/export_functions.R")
-# source("data_descriptor/targets/R/bibliography_functions.R")
+
 source("data_descriptor/targets/R/visualization_functions.R")
 
-plan(multisession)
+# plan(multisession)
 
 # Define targets
 c(
@@ -73,7 +73,5 @@ c(
   mohpcalculation_targets,
   data_descriptor_targets,
   visualizations_data_descriptor_targets
-  # export_targets # ,
-  #TODO visualization_targets include again
 )
   

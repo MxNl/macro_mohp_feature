@@ -25,6 +25,7 @@ pipeline_for <- function(area) {
         filepath_coastline,
         FILEPATH_COASTLINE
       ),
+      # coastline_grouped -------------------------------------------------------
       tar_target(
         coastline_grouped,
         read_coastline(filepath_coastline) %>% 
@@ -32,6 +33,7 @@ pipeline_for <- function(area) {
           tar_group(),
         iteration = "group"
       ),
+      # coastline_unioned -------------------------------------------------------
       tar_target(
         coastline_unioned,
         coastline_grouped %>% 
@@ -47,17 +49,20 @@ pipeline_for <- function(area) {
           tar_group(),
         iteration = "group"
       ),
+      # coastline_filtered ------------------------------------------------------
       tar_target(
         coastline_filtered,
         coastline_regrouped %>% 
           filter_coastline_studyarea(selected_studyarea),
         pattern = map(coastline_regrouped)
       ),
+      # coastline_buffer --------------------------------------------------------
       tar_target(
         coastline_buffer,
           add_buffer(coastline_filtered),
         pattern = map(coastline_filtered)
       ),
+      # coastline_buffer --------------------------------------------------------
       tar_target(
         coastline_buffer_unioned,
         union_coastline_in_db(
@@ -65,11 +70,13 @@ pipeline_for <- function(area) {
           COASTLINE_BUFFER
         )
       ),
+      # studyarea_as_coastline --------------------------------------------------------
       tar_target(
         studyarea_as_coastline,
         selected_studyarea %>% 
           studyarea_to_coastline(coastline_buffer_unioned)
       ),
+      # coastline_watershed --------------------------------------------------------
       tar_target(
         coastline_watershed,
         selected_studyarea %>% 

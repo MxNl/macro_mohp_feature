@@ -2,7 +2,7 @@ read_studyarea <-
   function(filepath) {
     filepath %>%
       st_read() %>%
-      mutate(region_name = str_c("testarea_", row_number()), .before = geometry) %>% 
+      mutate(region_name = str_c("testarea", row_number()), .before = geometry) %>% 
       transform_crs_if_required() %>% 
       mutate(id = 1L)
   }

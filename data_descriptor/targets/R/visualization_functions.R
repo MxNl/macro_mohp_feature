@@ -121,16 +121,198 @@ make_workflow_diagram <-
 
 # make_workflow_diagram("data_descriptor/test.pdf")
 
+
+make_dataset_map_overview_plot <-
+  function(selected_hydrologic_orders = c(2, 5)) {
+    
+    get_mop_files <-
+      function(streamorder, directory) {
+        list.files(directory) %>%
+          tibble(files = .) %>%
+          filter(word(files, 2, sep = "_") == AREA) %>%
+          filter(word(files, 6, sep = "_") == str_glue("{CELLSIZE}m.tif")) %>%
+          filter(word(files, 5, sep = "_") %in% str_glue("streamorder{streamorder}"))
+      }
+    
+    make_output_data_map_plot <-
+      function(feature_name, streamorder, legend_title = "", tag_title, guide_range_source = selected_hydrologic_orders) {
+        if (feature_name == FEATURE_NAMES[2]) {
+          filepath_prefix_feature_name <- "lp"
+          directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+        } else if (feature_name == FEATURE_NAMES[1]) {
+          filepath_prefix_feature_name <- "dsd"
+          directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+        } else if (feature_name == FEATURE_NAMES[3]) {
+          filepath_prefix_feature_name <- "sd"
+          directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+        } else {
+          stop("Provide valid value for the argument feature_name")
+        }
+        
+        files <-
+          streamorder %>%
+          get_mop_files(directory)
+        
+        guide_range <-
+          guide_range_source %>%
+          get_mop_files(directory) %>%
+          pull(files) %>%
+          str_c(directory, .) %>%
+          map(read_stars) %>%
+          map(~ map(.x, range, na.rm = TRUE)) %>%
+          unlist() %>%
+          range(finite = TRUE)
+        
+        raster_stars <-
+          str_glue("{directory}{files$files}") %>%
+          map(read_stars)
+        
+        raster_stars_mosaic <-
+          st_mosaic(raster_stars[[1]])
+        
+        for (i in 2:length(raster_stars)) {
+          raster_stars_mosaic <-
+            st_mosaic(raster_stars_mosaic, raster_stars[[i]])
+        }
+        
+        final_plot <- 
+          ggplot() +
+          geom_stars(data = raster_stars_mosaic, downsample = 3) +
+          coord_equal() +
+          theme_void() +
+          labs(
+            fill = legend_title,
+            tag = tag_title
+          ) +
+          theme(
+            legend.position = "top",
+            text = element_text(family = "Corbel", size = 8)
+            # legend.key.width = unit(dev.size()[1] / 30, "inches")
+          ) +
+          guides(
+            fill = guide_colourbar(title.position = "top", title.hjust = 0.5, barheight = 0.5),
+            size = guide_legend(title.position = "top", title.hjust = 0.5)
+          )
+        
+        if (feature_name == FEATURE_NAMES[2]) {
+          final_plot +
+            scale_fill_viridis_c(limits = guide_range, na.value = NA, 
+                                 labels = scales::label_number(scale = 1e-2, accuracy = 1))
+        } else {
+          final_plot +
+            scale_fill_viridis_c(limits = guide_range, na.value = NA, 
+                                 labels = scales::label_number(scale = 1e-3, accuracy = 1))
+        } 
+      }
+    
+    plot_lp_one <- make_output_data_map_plot(
+      feature_name = FEATURE_NAMES[2],
+      streamorder = selected_hydrologic_orders[1],
+      legend_title = "Lateral position [%]",
+      tag_title = "A",
+      guide_range_source = selected_hydrologic_orders
+    )
+    plot_lp_two <- make_output_data_map_plot(
+      FEATURE_NAMES[2],
+      selected_hydrologic_orders[2],
+      "Lateral position [%]",
+      "D"
+    )
+    
+    plot_lp <-
+      (plot_lp_one / plot_lp_two +
+         plot_layout(guides = "auto") &
+         theme(legend.position = "top")) +
+      plot_layout(guides = "collect")
+    
+    plot_dsd_one <- make_output_data_map_plot(
+      FEATURE_NAMES[1],
+      selected_hydrologic_orders[1],
+      "Divide stream distance [km]",
+      "B"
+    )
+    plot_dsd_two <- make_output_data_map_plot(
+      FEATURE_NAMES[1],
+      selected_hydrologic_orders[2],
+      "Divide stream distance [km]",
+      "E"
+    )
+    
+    plot_dsd <-
+      (plot_dsd_one / plot_dsd_two +
+         plot_layout(guides = "auto") &
+         theme(legend.position = "top")) +
+      plot_layout(guides = "collect")
+    
+    plot_sd_one <- make_output_data_map_plot(
+      FEATURE_NAMES[3],
+      selected_hydrologic_orders[1],
+      "Stream distance [km]",
+      "C"
+    )
+    plot_sd_two <- make_output_data_map_plot(
+      FEATURE_NAMES[3],
+      selected_hydrologic_orders[2],
+      "Stream distance [km]",
+      "F"
+    )
+    
+    plot_sd <-
+      (plot_sd_one / plot_sd_two +
+         plot_layout(guides = "auto") &
+         theme(legend.position = "top")) +
+      plot_layout(guides = "collect")
+    
+    (plot_lp | plot_dsd | plot_sd)  + plot_annotation(theme = theme(plot.margin = margin()))
+  }
+
 make_input_data_table <- 
   function() {
     tribble(
-      ~'Layer name', ~'Data source', ~'GeoPackage Layers', ~'Data type', ~'Geometry type', ~Description,
+      ~'Data layer', ~'Data source', ~'Layers in .gpkg files', ~'Data type', ~'Geometry type', ~Description,
       "river network",   "EU-Hydro -- River Network Database", "Canals_l, Ditches_l, River_Net_l", "vector", "linestring", "representing stream lines of rivers",
       "surface water bodies",   "EU-Hydro -- River Network Database", "InlandWater", "vector", "polygon", "representing lakes, ponds and wide rivers",
-      "river basins or study area",   "EU-Hydro -- River Network Database", "_eudem2_basins_h1", "vector", "linestring", "required to set the area for which the EU-MOHP measures are calculated for",
+      "river basins/ study area",   "EU-Hydro -- River Network Database", "_eudem2_basins_h1", "vector", "linestring", "required to set the area for which the EU-MOHP measures are calculated for",
       "coastline",   "EU-Hydro -- Coastline", "-", "vector", "linestring", "representing the coastline"
     ) %>% 
-      mutate('Layer number' = row_number(), .before = 1)
+      mutate('No' = row_number(), .before = 1)
+  }
+
+make_output_data_table <- 
+  function() {
+    expand_grid(
+      '<region name for spatial coverage>' = c("europemainland", "finland-norway-sweden", "turkey", "unitedkingdom", 
+                                        "iceland", "unitedkingdom-ireland", "italy1", "italy2", "france", 
+                                        "greece"),
+      '<abbreviation of the EU-MOHP measure>' = c("lp", "dsd", "sd"),
+      '<hydrologic order>' = str_glue("streamorder{tar_read(streamorders)}"),
+      '<spatial resolution>' = str_glue("{CELLSIZE}m")
+    ) %>% 
+      mutate(across(everything(), as.factor)) %>% 
+      pivot_longer(cols = everything()) %>% 
+      mutate(name = factor(name, levels = c('<region name for spatial coverage>', 
+                                            '<abbreviation of the EU-MOHP measure>', 
+                                            '<hydrologic order>',
+                                            '<spatial resolution>'))) %>% 
+      arrange(across(everything())) %>% 
+      distinct(across(everything())) %>% 
+      left_join(
+        tibble(
+          value = 
+            c("europemainland", "finland-norway-sweden", "turkey", "unitedkingdom", 
+              "iceland", "unitedkingdom-ireland", "italy1", "italy2", "france", "greece",
+              "lp", "dsd", "sd",
+              str_glue("streamorder{tar_read(streamorders)}"),
+              str_glue("{CELLSIZE}m")
+            ),
+          description = c(
+            "Raster data covers the contiguous land area of continental Europe, ...", "...the Scandinavian countries Finland, Norway and Sweden", "...Turkey", "...United Kingdom", "...Iceland", "Ireland and North Ireland", "...Sicily", "...Sardinia", "...Corsica", "...Creta", "Lateral Position", "Divide stream distance", "Stream distance", rep("Hydrologic order", times = length(str_glue("streamorder{tar_read(streamorders)}"))),
+            "Spatial resolution"
+          )
+        )
+      ) %>% 
+      rename('Placeholder in output file name' = name) %>% 
+      set_names(str_to_sentence(names(.)))
   }
 
 
