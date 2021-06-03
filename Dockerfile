@@ -6,7 +6,7 @@ ENV LC_ALL=C.UTF-8 \
     LANG=C.UTF- \
     UBUNTU_CODENAME=focal \
     USER_HOME=/home/$USERNAME \
-    R_VERSION=4.0.5 \
+    R_VERSION=4.1.0 \
     RENV_VERSION=0.13.2 \
     DEBIAN_FRONTEND=noninteractive \
     POSTGRES_VERSION=13 \
@@ -70,10 +70,12 @@ RUN set -xe \
 WORKDIR $USER_HOME
 USER $USER_NAME
 COPY --chown=$USER_NAME renv.lock renv.lock
+
 #R --vanilla --slave -e "renv::activate(); renv::restore()
-RUN R --vanilla -s -e 'renv::activate(); renv::restore(repos="https://packagemanager.rstudio.com/cran/__linux__/focal/latest")'
+RUN R -e 'renv::restore(repos=c(CRAN="https://packagemanager.rstudio.com/cran/__linux__/focal/latest"))'
 
 ENV IS_DOCKER=1
 
-#COPY . .
-#VOLUME /docker-mount
+COPY . .
+
+VOLUME /docker-mount

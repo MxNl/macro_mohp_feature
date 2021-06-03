@@ -4,3 +4,4 @@
 renv/*
 .Rprofile
 docker-mount/*
+input_data/*
