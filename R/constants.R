@@ -1,6 +1,7 @@
 # Program Configuration
-YML_CONFIG <- yaml::read_yaml('config.yml')
+RUNS_IN_DOCKER <- Sys.getenv("IS_DOCKER") != ""
 
+YML_CONFIG <- yaml::read_yaml('config.yml')
 AREA <- purrr::chuck(YML_CONFIG, "area")
 CELLSIZE <- purrr::chuck(YML_CONFIG, "cellsize")
 FILEPATH_PREFIX_SPATIAL_COVERAGE <- paste0("mohp_", AREA)
@@ -9,15 +10,15 @@ EXCLUDE_SCANDINAVIAN_BASINS <- purrr::chuck(YML_CONFIG, "exclude_scandinavian_ba
 SIMPLIFY_POLYGONS <- purrr::chuck(YML_CONFIG, "simplify_polygons")
 
 # Directories
-INPUT_PATH <- if (Sys.getenv("IS_DOCKER") != "") "docker-mount" else "input_data"
-FILEPATH_STUDYAREA_PIPELINETEST <- fs::path(INPUT_PATH, "macro_datapreparation_pipeline_test_studyarea_island.shp")
-DIRECTORY_RIVER_NETWORKS <- fs::path(INPUT_PATH, "data")
-FILEPATH_COASTLINE <- fs::path(INPUT_PATH, "EUHYDRO_Coastline_EEA39_v013.shp")
+INPUT_DIRECTORY <- if (RUNS_IN_DOCKER) "docker-mount" else "input_data"
+FILEPATH_STUDYAREA_PIPELINETEST <- fs::path(INPUT_DIRECTORY, "macro_datapreparation_pipeline_test_studyarea_island.shp")
+DIRECTORY_RIVER_NETWORKS <- fs::path(INPUT_DIRECTORY, "data")
+FILEPATH_COASTLINE <- fs::path(INPUT_DIRECTORY, "EUHYDRO_Coastline_EEA39_v013.shp")
 
 FILEPATH_CONFIG <- "config.yml"
 GRASS_DIRECTORY <- "grassdata"
 GRASS_STREAMORDER_DIRECTORY <- "db_streamorder"
-OUTPUT_DIRECTORY <- "output_data"
+OUTPUT_DIRECTORY <- if (RUNS_IN_DOCKER) "docker-mount/output_data" else "output_data"
 
 # Database Table Names
 LINES_CLEAN <- "lines_clean"

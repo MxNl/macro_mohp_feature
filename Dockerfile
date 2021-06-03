@@ -71,7 +71,7 @@ WORKDIR $USER_HOME
 USER $USER_NAME
 COPY --chown=$USER_NAME renv.lock renv.lock
 #R --vanilla --slave -e "renv::activate(); renv::restore()
-RUN R --vanilla -s -e 'renv::consent(TRUE); renv::restore(repos=c(CRAN="https://packagemanager.rstudio.com/cran/__linux__/focal/latest"))'
+RUN R --vanilla -s -e 'renv::activate(); renv::restore(repos="https://packagemanager.rstudio.com/cran/__linux__/focal/latest")'
 
 ENV IS_DOCKER=1
 
