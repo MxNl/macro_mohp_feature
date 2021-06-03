@@ -1,5 +1,5 @@
 #!/bin/bash -e
 
-sudo -u root /etc/init.d/postgresql start
+#sudo -u root /etc/init.d/postgresql start
 
 Rscript main.R
