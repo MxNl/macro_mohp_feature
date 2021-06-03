@@ -254,18 +254,6 @@
       "Repository": "CRAN",
       "Hash": "f61dbaec772ccd2e17705c1e872e9e7c"
     },
-    "citr": {
-      "Package": "citr",
-      "Version": "0.3.2",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "crsh",
-      "RemoteRepo": "citr",
-      "RemoteRef": "master",
-      "RemoteSha": "0e8243d55676888546a383b98adbfd454603f547",
-      "Hash": "4764fc0da2c45ab682733b70bcf1fb34"
-    },
     "class": {
       "Package": "class",
       "Version": "7.3-19",
