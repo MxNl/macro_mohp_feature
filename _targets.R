@@ -71,7 +71,7 @@ c(
   import_targets,
   preprocessing_targets,
   mohpcalculation_targets,
-  data_descriptor_targets,
-  visualizations_data_descriptor_targets
+  if (RUNS_IN_DOCKER) NULL else data_descriptor_targets,
+  if (RUNS_IN_DOCKER) NULL else visualizations_data_descriptor_targets
 )
   
