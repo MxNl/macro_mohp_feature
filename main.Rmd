@@ -1,11 +1,11 @@
 ---
-title: "Multiorder Hydrologic Position in Europe as a Set of Metrics in Support of Machine Learning Based Groundwater Mapping at Regional and National Scales"
+title: "Multiorder Hydrologic Position in Europe as a Set of Metrics in Support of Machine Learning Based Cross-scale Groundwater Mapping"
 author:
   - name: Maximilian Noelscher
     affiliation:
     - Federal Institute for Geosciences and Natural Resources (BGR), Berlin, Germany
 abstract: |
-  This dataset (EU-MOHP v013.1.0) provides information on the multiorder hydrologic position of a geographic point within its respective river network and catchment as gridded maps. More precisely, it comprises the three measures “lateral position” as a relative measure of the position between the stream and the catchment boundary/ watershed, “divide stream distance” as an absolute distance measure that serves as a proxy for the position within the catchment and “stream distance” as an absolute measure of the distance to the nearest stream. These three measures were calculated for several hydrologic orders to reflect different spatial scales. Its spatial extent covers major parts of physiographical Europe or the European Economic Area (EEA39). Although there might be many potential use cases, this dataset serves predominantly as valuable static geophysical or environmental predictor variable among other input data for mapping or regionalization tasks in the context of hydrogeology and hydrology using machine learning.
+  This dataset (EU-MOHP v013.1.0) provides information on the multiorder hydrologic position (MOHP) of a geographic point within its respective river network and catchment as gridded maps. More precisely, it comprises the three measures “lateral position” as a relative measure of the position between the stream and the catchment boundary/ watershed, “divide stream distance” as an absolute distance measure that serves as a proxy for the position within the catchment and “stream distance” as an absolute measure of the distance to the nearest stream. These three measures were calculated for several hydrologic orders to reflect different spatial scales. Its spatial extent covers major parts of physiographical Europe or the European Economic Area (EEA39). Although there might be many potential use cases, this dataset serves predominantly as valuable static environmental predictor variable for hydrogeological and hydrological mapping or regionalization tasks using machine learning.
 output: 
   bookdown::pdf_document2:
     number_sections: FALSE
@@ -71,16 +71,16 @@ In recent years, data science tools such as machine learning are increasingly ap
 
 <!-- *[Motivation/goals]* -->
 
-The key motivation for this dataset is to provide a set of features that introduce hydrological context to machine learning models regarding the horizontal position of a point within its catchment. Therefore, it serves as a proxy for multiple geophysical characteristics of a hydrologic system. It complements commonly available datasets and tackles the above mentioned challenge.
-This dataset is strongly inspired by Belitz et al. (2019) and adapts their ideas and methods to the “EU-Hydro - River Network Database” but –- in contrast –- using purely free open source software and a strong focus on reproducibility \cite{belitz_multiorder_2019}. Belitz et al. (2019) provide a comprehensive explanation of the motivation as well as a detailed discussion for further reading \cite{belitz_multiorder_2019}.
+The key motivation for this dataset is to provide a set of features that introduce hydrological context to machine learning models regarding the horizontal position of a point within its catchment. Therefore, it serves as a proxy for multiple geophysical characteristics of a hydrologic system. It complements commonly available datasets such as land-use and land-cover, geological or soil maps and tackles the above mentioned challenge.
+This dataset is strongly inspired by Belitz et al. (2019)\cite{belitz_multiorder_2019} and adapts their ideas and methods to the “EU-Hydro - River Network Database” as underlying river network but –- in contrast –- using free open source software and a strong focus on reproducibility. For more detailed background, we refer to Belitz et al. (2019)\cite{belitz_multiorder_2019}.
 
 <!-- *[context of previous work and the literature]* -->
 
-In their study, Belitz et al. (2019) also provide the results from case studies to prove that the multiorder hydrologic position is a valuable feature when mapping diverse geophysical targets using machine learning \cite{belitz_multiorder_2019}. Its benefit to the performance of machine learning models has also been acknowledged by several other studies \cite{degnan_relation_2020, knierim_using_2020, stackelberg_machine_2021}.
+In their study, Belitz et al. (2019)\cite{belitz_multiorder_2019} also provide the results from case studies to prove that the multiorder hydrologic position is a valuable feature when mapping diverse geophysical targets using machine learning. Its benefit to the performance of machine learning models has also been acknowledged by several other studies \cite{degnan_relation_2020, knierim_using_2020, stackelberg_machine_2021}.
 
 <!-- *[potential reuse]* -->
 
-Being a static geophysical catchment attribute, the EU-MOHP dataset can be used as features in any machine learning task in the domain of hydrology and hydrogeology. Because of the calculation based on the different stream orders, this dataset can be applied at multiple spatial scales and depths -- from local via regional to continental scales. Examples of use cases might be the mapping of hydrogeochemical parameters or hydraulic variables like depth to groundwater, the prediction of groundwater levels or catchment classification tasks using unsupervised machine learning methods.
+Being a static geophysical catchment attribute, the EU-MOHP dataset can be used as features in any machine learning task in the domain of hydrology and hydrogeology. Because of the calculation based on the different stream orders, this dataset can be applied at multiple spatial scales -- from local via regional to continental scales. Examples of use cases might be the mapping of hydrogeochemical parameters or hydraulic variables like depth to groundwater, the prediction of groundwater levels or catchment classification tasks using unsupervised machine learning methods.
 
 <!-- *[schematic overview of the study and assay(s) design]* -->
 
@@ -94,7 +94,7 @@ for each of the `r tar_read(streamorders) %>% length()` stream orders which lead
 
 <!-- ## EU-MOHP Concept -->
 
-Conceptually, the three measures LP, DSD and SD of EU-MOHP are based on the idea that the location in hydrologic systems matters. A location can be e.g. close to the confluence of two large rivers or in another extreme close the catchment boundary of headwater streams. The location or hydrologic position refers to the position of a point between a stream and its divide/catchment boundary. Thiessen divides were used as catchment boundaries instead of divides that are generated from digital elevation models. One major advantage is that Thiessen divides can be calculated purely based on the river network itself while avoiding issues such as closed lows in the resulting metrics \cite{belitz_multiorder_2019}. A Thiessen divide is the outline of a Thiessen catchment which is the area that contains all points to which a stream is closer than any other stream \cite{johnston_evaluation_2009}. In other words, a Thiessen divide contains all points with equal distance to the two nearest streams.
+Conceptually, the three measures LP, DSD and SD of EU-MOHP are based on the idea that the location in hydrologic systems matters\cite{belitz_multiorder_2019}. A location can be e.g. close to the confluence of two large rivers or in another extreme close the catchment boundary of headwater streams. The location or hydrologic position refers to the position of a point between a stream and its divide/catchment boundary. Thiessen divides were used as catchment boundaries instead of divides that are generated from digital elevation models. One major advantage is that Thiessen divides can be calculated purely based on the river network itself while avoiding issues such as closed lows in the resulting metrics \cite{belitz_multiorder_2019}. A Thiessen divide is the outline of a Thiessen catchment which is the area that contains all points to which a stream is closer than any other stream \cite{johnston_evaluation_2009}. In other words, a Thiessen divide contains all points with equal distance to the two nearest streams.
 
 The overall concept also includes the spatial scale that the role of different hydrologic processes can depend upon. This issue is addressed by calculating the EU-MOHP measures for different hydrologic orders which are derived from the stream orders of the river network. For a specific hydrologic order $i$, only streams with a stream order $>= i$ were used (e.g. for stream order 2, all streams with stream order 2, 3, 4 and greater, compare Fig. \@ref(fig:schematicmohp)A and B). Here, the stream orders are defined according to \cite{strahler_quantitative_1957} where all streams without tributaries are assigned to the first stream order (headwater streams). The stream order downstream of a confluence increases by 1 if the upstream stream orders are equal. If the stream orders are not equal, it inherits the greater stream order. Therefore, each hydrologic order reflects a different scale.
 
@@ -114,40 +114,38 @@ Based on the river network and the Thiessen divides, the EU-MOHP measures (LP, D
 
 \noindent
 <!-- further up, you use plain variable names, here italic ones. the convention for variable names comprising multiple letter is non-italic letters, also in formulas. -->
-where $i$ is the hydrologic order, $DS$ is the horizontal distance to the nearest stream (Fig. \@ref(fig:schematicmohp)) and $DD$ is the horizontal distance to the nearest divide without crossing a stream (Fig. \@ref(fig:schematicmohp)). This condition arises from the fact that water flows towards the topographically lowest points namely the streams.
+where $i$ is the hydrologic order, DS is the horizontal distance from a point to the nearest stream (Fig. \@ref(fig:schematicmohp)) and DD is the horizontal distance to the nearest Thiessen divide under the condition that the divide is on the same side of the stream or in other words: the line that connects the nearest Thiessen divide and the point must not cross a stream (Fig. \@ref(fig:schematicmohp)). This condition arises from the fact that water flows towards the topographically lowest points namely the streams.
 
 Examples of the generated EU-MOHP v013.1.0 maps are shown in Fig. \@ref(fig:datasetmapoverviewplot) for the two hydrologic orders `r tar_read(selected_hydrologic_orders) %>% str_c(collapse= " and ")`. 
 
 # Methods {-}
 
-Most processing and calculation steps were done in the R programming language (Fig. \@ref(fig:workflowfigure)C) \cite{r_core_team_r_2020}. Due to the memory size of this dataset as well as for the sake of computational speed, a PostgreSQL database with PostGIS extension was used for some processing steps of vector data and a GRASS GIS database was used for all final raster based calculations of the MOHP metrics (Fig. \@ref(fig:workflowfigure)D and E). For reproducibility and programming reasons, all processing steps including the databases were tracked and executed through a data processing pipeline using the targets package in R (Fig. \@ref(fig:workflowfigure)) \cite{landau_targets_2021}. More details can be found in the following sections or in the code itself (see [Code availability]). This processing or targets pipeline can be seen as programming script that tracks each step and skips processing steps that are still up-to-date when re-running the script.
+Most processing and calculation steps were done in the R programming language (Fig. \@ref(fig:workflowfigure)C) \cite{r_core_team_r_2020}. Due to the memory size of this dataset as well as for the sake of computational speed, a PostgreSQL database with PostGIS extension was used for some processing steps of vector data and a GRASS GIS database was used for all final raster based calculations of the EU-MOHP metrics (Fig. \@ref(fig:workflowfigure)D and E). For reproducibility and programming reasons, all processing steps including the databases were tracked and executed through a data processing pipeline using the targets package in R (Fig. \@ref(fig:workflowfigure)) \cite{landau_targets_2021}. More details can be found in the following sections or in the code itself (see [Code availability]). This processing or targets pipeline can be seen as programming script that tracks each step and skips processing steps that are still up-to-date when re-running the script.
 
-To better refer to the code during the description of the methods, each processing step provides the name of its related target in the targets pipeline and the file containing this target. Targets titled as `helper target` in the code are not described here because they are not relevant to the description of the methods and exist only for technical reasons. Column names appear in different notations, but are always clearly assignable. E.g. the column notation `OBJECT_ID` is used in the underlying river network dataset. This notation was changed to `object_id` in the code for consistency and error reduction reasons. Other notations are used for a better readability.
-
-
+To better refer to the code during the description of the methods, each processing step provides the name of its related target in the targets pipeline and the file containing this target. Targets titled as *helper target* in the code are not described here because they are not relevant to the description of the methods and exist only for technical reasons. For consistency, all column names were changed to lowercase, e.g. *OBJECT_ID* to *object_id*. The usage of "processing step" translates to a "target" in the targets pipeline which is also called "processing pipeline".
 
 ## Directory and file structure {-}
 
-The directory and file structure of the project folder containing all code and files to generate this dataset is summarized in Fig. \@ref(fig:projectdirtree) as tree. Files and directories that are not relevant for describing the methods are not shown here. The file `config.yml` (line !!1) contains definitions of variables that are meant to be changed by a user before running the script. The most relevant variable is `cellsize` which sets the raster cell width of the resulting EU-MOHP gridded maps. Another important variable is `area` to switch between a test study area and the complete study area for all EEA39. The test study area reduces the calculation time for pipeline testing purposes. The folder `grassdata` (line !!2) contains the GRASS GIS databases. The file `macro_mohp_feature.Rproj` (line !!3) is the R project file. `output_data` (line !!5) contains sub-directories where the final EU-MOHP gridded maps are written to. `R` (line 9) contains R scripts where custom functions and constants are defined. `renv` (line !!19) and the file `renv.lock` (line !!25) are related to the R package `renv` for improved reproducibility by managing R package dependencies. The R script `run_pipeline.R` contains code to execute the targets pipeline that does all the data processing and calculations. `targets` (line !!27) contains the definition of all targets or processing steps of the pipeline. For overview reasons, it is split thematically across multiple files. `_targets` (line !!35) is used by the targets package internally. The file `_targets.R` (line !!39) sets up the processing pipeline and loads all dependencies.
+The directory and file structure of the project folder containing all code and files to generate this dataset is summarized in Fig. \@ref(fig:projectdirtree) as tree. Files and directories that are not relevant for describing the methods are not shown here. The file *config.yml* (line !!1) contains definitions of variables that are meant to be changed by a user before running the script. The most relevant variable is *cellsize* which sets the raster cell width of the resulting EU-MOHP gridded maps. Another important variable is *area* to switch between a test study area and the complete study area for all EEA39. The test study area reduces the calculation time for pipeline testing purposes. The folder *grassdata* (line !!2) contains the GRASS GIS databases. The file *macro_mohp_feature.Rproj* (line !!3) is the R project file. *output_data* (line !!5) contains sub-directories where the final EU-MOHP gridded maps are written to. *R* (line 9) contains R scripts where custom functions and constants are defined. *renv* (line !!19) and the file *renv.lock* (line !!25) are related to the R package renv that tracks package dependencies and versions. The R script *run_pipeline.R* contains code to execute the targets pipeline that does all the data processing and calculations. *targets* (line !!27) contains the definition of all targets or processing steps of the pipeline. For overview reasons, it is split thematically across multiple files. *_targets* (line !!35) is used by the targets package internally. The file *_targets.R* (line !!39) sets up the targets pipeline and loads all dependencies.
 
-The resulting EU-MOHP metrics (Fig. \@ref(fig:workflowfigure)G) were written to the sub-directories `r FEATURE_NAMES %>% str_c('"', ., '"') %>% str_c(collapse = ", ")` of `output_data` as gridded maps in the GeoTiff (.tif) file format. The data descriptor was written to `output_data` in the LaTeX (.tex) and PDF (.pdf) file format.
+The resulting EU-MOHP metrics (Fig. \@ref(fig:workflowfigure)G) are written to the sub-directories `r FEATURE_NAMES %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{FEATURE_NAMES[length(FEATURE_NAMES)]}*"), sep = " and ")` of *output_data* as gridded maps in the GeoTiff (.tif) file format. The data descriptor was written to *output_data* in the LaTeX (.tex) and PDF (.pdf) file format.
 
 ## Underlying dataset {-}
 
-The generation of this dataset is based on two basic data products which are the [“EU-Hydro -- River Network Database” version v013](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-river-network-database?tab=download) and [“EU-Hydro -- Coastline” version v013](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-coastline?tab=download) with the advantage that the dependencies are low from a data point of view \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021-1}. Therefore, it is possible to transfer the methodology to other regions with only little effort. The Tab. \@ref(tab:inputdata) provides an overview of the input data layers building the basis for generating or reproducing this dataset.
+The generation of this dataset is based on two basic data products, the [“EU-Hydro -- River Network Database” version v013](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-river-network-database?tab=download) and [“EU-Hydro -- Coastline” version v013](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-coastline?tab=download) with the advantage that data dependencies are low \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021-1}. Therefore, it is possible to transfer the methodology to other regions with only little effort. The Tab. \@ref(tab:inputdata) provides an overview of the input data layers necessary for calculating the dataset.
 
-The “EU-Hydro -- River Network Database” as well as the “EU-Hydro -- Coastline” were manually downloaded from the Copernicus - Land Monitoring Service website (Fig. \@ref(fig:workflowfigure)A) in GeoPackage (.gpkg) and in Shapefile (.shp) file format, respectively (Fig. \@ref(fig:workflowfigure)B) \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021}. The river network data is split into 2 .gpkg files for each of `r targets::tar_read(river_networks_files) %>% length()` the major river basins. All unzipped files together have a size of approximately 14GB. The single .shp file containing the coastline has a size of 288MB.
+The “EU-Hydro -- River Network Database” as well as the “EU-Hydro -- Coastline” were manually downloaded from the Copernicus - Land Monitoring Service website (Fig. \@ref(fig:workflowfigure)A) in GeoPackage (.gpkg) and in Shapefile (.shp) file format, respectively (Fig. \@ref(fig:workflowfigure)B) \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021}. The river network data is split into 2 .gpkg files for each of `r targets::tar_read(river_networks_files) %>% length()` the major river basins. All unzipped files have a total size of approximately 14GB. The single .shp file containing the coastline has a size of 288MB.
 
 
 ## Data import {-}
 
-The river network comprises the layers `r STREAM_TYPE_TO_INCLUDE %>% str_c("'", ., "'") %>% str_c(collapse = ", ")` in the "euhydro_\<name of the river basin\>\_v013" named .gpkg file of all river basins of the river network data. They are imported with the target "river_networks" in "import_targets.R" (Fig. \@ref(fig:projectdirtree), line !!29). The layer "Canals_l" contains canals, which are defined as "an artificial waterway with no flow, or a controlled flow, usable or built for navigation" \cite{gallaun_eu-hydro_2019}. The layer "Ditches_l" contains ditches, which are defined as "an artificial waterway with no flow, or a controlled flow, usually unlined, used for draining or irrigating land" \cite{gallaun_eu-hydro_2019}. The layer "Rivers_l" contains rivers, which are defined as "a naturally flowing watercourse" \cite{gallaun_eu-hydro_2019}. 
+The river network comprises the layers `r STREAM_TYPE_TO_INCLUDE %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{STREAM_TYPE_TO_INCLUDE[length(STREAM_TYPE_TO_INCLUDE)]}*"), sep = " and ")` in the "euhydro_\<name of the river basin\>\_v013" named .gpkg file of all river basins of the river network data. They are imported with the target *river_networks* in *import_targets.R* (Fig. \@ref(fig:projectdirtree), line !!29). The layer *Canals_l* contains canals, which are defined as "an artificial waterway with no flow, or a controlled flow, usable or built for navigation" \cite{gallaun_eu-hydro_2019}. The layer *Ditches_l* contains ditches, which are defined as "an artificial waterway with no flow, or a controlled flow, usually unlined, used for draining or irrigating land" \cite{gallaun_eu-hydro_2019}. The layer *Rivers_l* contains rivers, which are defined as "a naturally flowing watercourse" \cite{gallaun_eu-hydro_2019}. 
 
-The surface water bodies are derived from the layer 'InlandWater'. This layer is imported by the target "inland_waters" in "import_targets.R" and contains inland water defined as "a large body of water entirely surrounded by land." \cite{gallaun_eu-hydro_2019}. In this step, all geometries with an area smaller than $4 \cdot Cellsize = `r CELLSIZE^2 * 4`m^2$, where $Cellsize$ is the area of raster cells, are removed. The polygon geometries of wider river parts were not included in the surface water bodies.
+The surface water bodies are derived from the layer *InlandWater*. This layer is imported by the target *inland_waters* in *import_targets.R* and contains inland water defined as "a large body of water entirely surrounded by land." \cite{gallaun_eu-hydro_2019}. In this step, all geometries with an area smaller than $4 \cdot \text{cellsize} = `r CELLSIZE^2 * 4`m^2$, where cellsize is the area of raster cells, are removed to exclude geometries that only have a negligible impact on the result. The polygon geometries of wider river parts were not included in the surface water bodies.
 
-The river basins are based on the layer "\<name of river basin\>\_eudem2_basins_h1" in the "drainage_network_\<name of the river basin\>\_public_beta_v009" named .gpkg file. This layer is imported with the target "river_basins" in "studyarea_targets.R" (Fig. \@ref(fig:projectdirtree), line !!32) and contains polygon geometries of all sub-basins of a basin. The spatial coverage of the river basins is the basis for the study area. The study area itself delineates the area for which the EU-MOHP metrics will be calculated.
+The river basins are based on the layer "\<name of river basin\>\_eudem2_basins_h1" in the "drainage_network_\<name of the river basin\>\_public_beta_v009" named .gpkg file. This layer is imported with the target *river_basins* in *studyarea_targets.R* (Fig. \@ref(fig:projectdirtree), line !!32) and contains polygon geometries of all sub-basins of a basin. The spatial coverage of the river basins is the basis for the study area. The study area itself delineates the area for which the EU-MOHP metrics will be calculated.
 
-The fourth required data layer is the coastline. It is imported with the target "coastline_grouped" in "studyarea_targets.R" (Fig. \@ref(fig:projectdirtree), line !!32).
+The fourth required data layer is the coastline. It is imported with the target *coastline_grouped* in *studyarea_targets.R* (Fig. \@ref(fig:projectdirtree), line !!32).
 
 In this study, we used the coordinate reference system (CRS) ETRS89-extended / LAEA Europe with the EPSG code `r CRS_REFERENCE`. Therefore, all data was reprojected to this CRS after importing if necessary.
 
@@ -155,13 +153,13 @@ In this study, we used the coordinate reference system (CRS) ETRS89-extended / L
 
 ### River Basins/ Study Area {-}
 
-Firstly, the preprocessing steps related to the river basins are described because they aim at the determination of a study area, which is required for subsequent processing steps. This study area also serves as a basis for which the EU-MOHP measures are calculated. The following steps refer to targets that can be found in the file "studyarea_targets.R" (Fig. \@ref(fig:projectdirtree), line !!32). After the previously mentioned import, the sub-basins were unioned basin-wise (target: river_basins_unioned). Then, all polygons belonging to European oversea territories such as the French islands in the Caribbean were removed (target: river_basins_subset). The resulting polygon geometries were unioned in the PostgreSQl database (target: river_basins_subset_union_in_db). The PostgreSQl database has reduced the run-time of the union drastically compared to R. The polygon geometries have a large amount of nodes due to the high details in the digitized coastline which causes long run-times in R. Subsequently, out of these polygons of contiguous land masses the 10 area-wise largest polygons were chosen as study area (target: river_basins_region_name). Lastly, names were assigned to each of the polygons (target: selected_studyarea).
+The preprocessing steps related to the river basins are described first because they aim at the determination of a study area, which is required for subsequent processing steps. The EU-MOHP measures are then calculated for this area as a last step. The following steps refer to targets that can be found in the file *studyarea_targets.R* (Fig. \@ref(fig:projectdirtree), line !!32). After the previously mentioned import, the sub-basins were unioned basin-wise (target: *river_basins_unioned*). Then, all polygons belonging to European oversea territories such as the French islands in the Caribbean were removed (target: *river_basins_subset*). The resulting polygon geometries were unioned in the PostgreSQL database (target: *river_basins_subset_union_in_db*) to reduce the run-time of this union. Previous attempts to perform this union in R have shown too long run_times, because the polygon geometries have a large amount of nodes due to the high details in the digitized coastline. Subsequently, out of these polygons of contiguous land masses the 10 largest polygons by area were chosen as study area (target: *river_basins_region_name*). Lastly, names were automatically assigned to each of the polygons (target: *selected_studyarea*).
 
 ### River Network {-}
 
-After the data import, the next step is the filtering of linestring geometries from the river network based on attribute columns `DFDD` and `HYP` (target: river_networks_non_dry_selected_streamtypes in "preprocessing_targets.R" file; Fig. \@ref(fig:projectdirtree), line 30). `DFDD` classifies the geometries into BH140 (river), BH020 (canal) and BH030 (ditch). Canals and ditches were removed from the river network by only keeping the geometries with the value "BH140" for several reasons. Many of the canal and ditch geometries have missing stream order values, which is required for the following processing steps. Another reason is the assumption that canals might be hydraulically disconnected to the natural hydrologic system through walls with low permeability. Lastly, the overall importance of canals and ditches is low when comparing the number of geometries to rivers as shown in Fig. \@ref(fig:dfddstatsbarplot). !!The section [Technical Validation] provides a discussion on this issue. `HYP` classifies the geometries into the following degrees of hydrologic persistence: 1 (Perennial), 2 (Intermittent), 3 (Ephemeral) and 4 (Dry). Geometries with the value 4 (Dry) were removed. Then, missing and invalid stream order values are imputed the with the value 1 to include them in the first hydrologic order (target: river_networks_imputed_streamorder_canals_as_1). The river network geometries were clipped to the study area by only keeping geometries that intersect with the study area (target: db_river_networks_strahler_studyarea). 
+After the data import, the next step is the filtering of linestring geometries from the river network based on attribute columns *dfdd* and *hyp* (target: *river_networks_non_dry_selected_streamtypes* in *preprocessing_targets.R* file; Fig. \@ref(fig:projectdirtree), line 30). *dfdd* classifies the geometries into BH140 (river), BH020 (canal) and BH030 (ditch). Canals and ditches were removed from the river network by only keeping the geometries with the value BH140 for several reasons. Many of the canal and ditch geometries have missing stream order values, which is required for the following processing steps. Another reason is the assumption that canals might be hydraulically disconnected to the natural hydrologic system through walls with low permeability. Lastly, the overall importance of canals and ditches is low when comparing the number of geometries to rivers as shown in Fig. \@ref(fig:dfddstatsbarplot). !!The section [Technical Validation] provides a discussion on this issue. The column *hyp* classifies the geometries into the following degrees of hydrologic persistence: 1 (Perennial), 2 (Intermittent), 3 (Ephemeral) and 4 (Dry). Geometries with the value 4 (Dry) were removed. Then, missing and invalid stream order values are imputed with the value 1 to include them in the first hydrologic order (target: *river_networks_imputed_streamorder_canals_as_1*). The river network geometries were clipped to the study area by only keeping geometries that intersect with the study area (target: *db_river_networks_strahler_studyarea*). 
 
-The next processing step implements a method to obtain linestring geometries that represent the mainstems of the rivers and its tributaries (target: rivernetworks_merged_per_streamorder). This is achieved by merging the geometries by a column containing an unique id for each mainstem. The mainstem is defined here as the longest path from the head water to the most distant river mouth (see geometries with the same `Levelpath ID` in Fig. \@ref(fig:mainstemscheme)B). As the underlying river network data has no column providing this information, it is necessary to first generate this id column by which we will conduct the merging of the lines (!!\cite{belitz_multiorder_2019} used the already existing column `LevelPathI` from their underlying river network dataset). For doing so, it is now required to first derive a river network for each hydrologic order separately. This is achieved by keeping only geometries with a stream order equal or greater than the specific hydrologic order as described in [Background & Summary]. The river networks of each individual hydrologic order was then sorted by column `LONGPATH` in descending order.
+The next processing step implements a method to obtain linestring geometries that represent the mainstems of the rivers and its tributaries (target: *rivernetworks_merged_per_streamorder*). This is achieved by merging the geometries by a column containing an unique id for each mainstem. The mainstem is defined here as the longest path from the head water to the most distant river mouth (see geometries with the same *levelpath_id* in Fig. \@ref(fig:mainstemscheme)B). As the underlying river network data has no column providing this information, it is necessary to first generate this id column by which we will conduct the merging of the lines (!!\cite{belitz_multiorder_2019} used the already existing column *levelpathi* from their underlying river network dataset). For doing so, it is now required to first derive a river network for each hydrologic order separately. This is achieved by keeping only geometries with a stream order equal or greater than the specific hydrologic order as described in [Background & Summary]. The river networks of each individual hydrologic order was then sorted by column *longpath* in descending order.
 
 ```{r, eval=FALSE}
 river_network_path <- 
@@ -171,158 +169,173 @@ river_network_path <-
   select(object_id, nextdownid)
 ```
 
-`LONGPATH` indicates the length of the path from the start node of a geometry to the end node of the most downstream geometry of the river network. Starting with the topmost geometry, all downstream geometries that constitute the longest path to the river mouth are identified by making use of the columns `OBJECT_ID` and `NEXTDOWNID` and the R package `igraph`. This is the start of a loop over the sorted geometries. The column `OBJECT_ID` provides an unique ID for every linestring geometry and `NEXTDOWNID` indicates the `OBJECT_ID` of the next downstream geometry. Based on this information the function `subcomponent` of the `igraph` package identifies the `OBJECT_ID`s of all geometries that belong the the longest path. These identified geometries were then removed from the river network for the next iteration of the loop. The subsequent iteration identifies all geometries downstream of the current topmost geometry of the remaining river network. This is repeated until the river network has no geometries left. 
+*longpath* indicates the length of the path from the start node of a geometry to the end node of the most downstream geometry of the river network. Starting with the topmost geometry, all downstream geometries that constitute the longest path to the river mouth are identified by making use of the columns *object_id* and *nextdownid* and the R package *igraph*. This is the start of a loop over the sorted geometries. The column *object_id* provides an unique ID for every linestring geometry and *nextdownid* indicates the *object_id* of the next downstream geometry. Based on this information the function `subcomponent` of the *igraph* package identifies the *object_id*s of all geometries that belong the the longest path. These identified geometries were then removed from the river network for the next iteration of the loop. The subsequent iteration identifies all geometries downstream of the current topmost geometry of the remaining river network. This is repeated until the river network has no geometries left. 
 
 ```{r, eval=FALSE}
 longestpaths_list <- list()
 i <- 1
-while(nrow(river_network_path) > 0) {
-  
-  longestpaths_list[[i]] <- 
-    river_network_path %>% 
-    graph.data.frame(directed = TRUE) %>% 
-    subcomponent(1, mode = "out") %>% 
-    as.vector() %>% 
+while (nrow(river_network_path) > 0) {
+  longestpaths_list[[i]] <-
+    river_network_path %>%
+    graph.data.frame(directed = TRUE) %>%
+    subcomponent(1, mode = "out") %>%
+    as.vector() %>%
     slice(river_network_path, .)
-  
-  river_network_path <- 
-    river_network_path %>% 
+
+  river_network_path <-
+    river_network_path %>%
     filter(!(object_id %in% longestpaths_list[[i]]$object_id))
-  
+
   i <- i + 1
 }
 ```
 
-Subsequently, a column `levelpath_id` was added as a unique ID for all geometries belonging to the same mainstem. The geometries of the respective river network was then merged based on this column (see difference in linestring geometries between Fig. \@ref(fig:mainstemscheme)B and C). This results in a river network for each hydrologic order separately with a reduced number of geometries as multiple geometries are now summarised into mainstems.
+Subsequently, a column *levelpath_id* was added as a unique ID for all geometries belonging to the same mainstem. The geometries of the respective river network was then merged based on this column (see difference in linestring geometries between Fig. \@ref(fig:mainstemscheme)B and C). This results in a river network for each hydrologic order separately with a reduced number of geometries as multiple geometries are now summarised into mainstems.
 
-The next step addresses the occurence of flow splits in the river network (target: river_networks_treated_brackets). A flow split or divergence is defined here as junction of linestring geometries with more than one linestring geometry (Fig. \@ref(fig:divergencescheme)) that starts at the divergence. To transfer the methods from !!\cite{belitz_multiorder_2019} for the calculation of EU-MOHP, it is required to remove minor flow paths that originate from such divergences from the river network for all hydrologic orders except for the first order. A classification of linestring geometries into main and minor flow paths is not provided by any column directly. !!\cite{belitz_multiorder_2019} used the column `Divergence` for removing all minor flow paths. The assignment of the main flow paths results from the `OBJECT_ID` of the column `NEXTDOWNID` of the upstream linestring. Consequently, all other other linestring geometries starting at the divergence can be defined as minor flow paths. This differentiation was already implicitly implemented in the previous step where all consecutive linestring geometries were merged based on the attribute columns `OBJECT_ID` and `NEXTDOWNID`. In this step, all linestring geometries that intersect with the same other linestring geometry at their start and end node were removed from the river networks of all hydrologic orders except for the first order. Other minor paths that result from more complex divergences remain in the river network for further calculations (see `Feature ID` in Fig. \@ref(fig:divergencescheme)). 
+The next step addresses the occurrence of flow splits in the river network (target: *river_networks_treated_brackets*). A flow split or divergence is defined here as junction of linestring geometries with more than one linestring geometry (Fig. \@ref(fig:divergencescheme)) that starts at the divergence. To transfer the methods from Belitz et al. (2019)\cite{belitz_multiorder_2019} for the calculation of EU-MOHP, it is required to remove minor flow paths that originate from such divergences from the river network for all hydrologic orders except for the first order. A classification of linestring geometries into main and minor flow paths is not provided by any column directly. Belitz et al. (2019)\cite{belitz_multiorder_2019} used the column *divergence* for removing all minor flow paths. The assignment of the main flow paths results from the *object_id* of the column *nextdownid* of the upstream linestring. Consequently, all other other linestring geometries starting at the divergence can be defined as minor flow paths. This differentiation was already implicitly implemented in the previous step where all consecutive linestring geometries were merged based on the attribute columns *object_id* and *nextdownid*. In this step, all linestring geometries that intersect with the same other linestring geometry at their start and end node were removed from the river networks of all hydrologic orders except for the first order. Other minor paths that result from more complex divergences remain in the river network for further calculations (see *feature_id* in Fig. \@ref(fig:divergencescheme)). 
 
-Then, the river networks were sorted by the length of the linestring geometries in descending order and provided with an unique ID for each geometry in the column `feature_id` (target: rivernetworks_feature_id; see `Feature ID` in Fig. \@ref(fig:mainstemscheme)C).
+Then, the river networks were sorted by the length of the linestring geometries in descending order and provided with an unique ID for each geometry in the column *feature_id* (target: *rivernetworks_feature_id*; see *feature_id* in Fig. \@ref(fig:mainstemscheme)C).
 
 
 ### Surface Water Bodies {-}
 
-Besides the import, there is only one other step in the targets pipeline that preprocesses the surface water bodies (target: db_inland_waters_strahler in "preprocessing_targets.R" file; Fig. \@ref(fig:projectdirtree), line 30). A filter was applied to only keep those geometries of surface water bodies that intersect with the river network of a specific hydrologic order. To assign a stream order to the surface water bodies, the stream order of the river network geometries intersecting them was used although providing the surface water bodies with a stream order is not relevant for further processing. 
+Besides the import, there is only one other step in the targets pipeline that preprocesses the surface water bodies (target: *db_inland_waters_strahler* in *preprocessing_targets.R* file; Fig. \@ref(fig:projectdirtree), line 30). A filter was applied to only keep those geometries of surface water bodies that intersect with the river network of a specific hydrologic order. To assign a stream order to the surface water bodies, the stream order of the river network geometries intersecting them was used although providing the surface water bodies with a stream order is not relevant for further processing. 
 
 
 ### Coastline {-}
 
-The coastline geometries consist of a vast number of nodes which slows down many geometry operations and calculations. Therefore, many processing steps were parallelised across smaller batches of the coastline data which lead to many helper targets. First, the imported polygon geometries were basins-wise unioned (target: coastline_unioned). Contrary to the assumption based on the name "coastline", the geometry type of the coastline is polygons. Then, all geometries that don't intersect the previously derived study area were removed (target: coastline_filtered). This is mainly to reduce the large number of geometries contained in the data caused by islands. A buffer of 3000m was added to the remaining polygon geometries to compensate for inaccuracies of the match between the study area and the coastline contours. This is relevant for the second next step. First, the buffer added polygon geometries were unioned to a single multipolygon geometry in the PostGIS database for reducing the run-time of calculating the union (target: coastline_buffer_unioned). Now, the multipolygon geometry that represents the coastline is intersected with the study area as linestring geometry (target: studyarea_as_coastline). This intersection ensures that the shoreline lies exactly over the study area. Similarly, the next step determines the parts of the study area that are not coastline meaning where the contour of the coastline touches land instead of the ocean. This is achieved by calculating the difference of the study area and the same coastline geometry as before (target: coastline_watershed). All these targets can be found in the "studyarea_targets.R" file (Fig. \@ref(fig:projectdirtree), line 31).
+The coastline geometries consist of a vast number of nodes which slows down many geometry operations and calculations. Therefore, many processing steps were parallelised across smaller batches of the coastline data which lead to many helper targets. First, the imported polygon geometries were basins-wise unioned (target: *coastline_unioned*). Contrary to the assumption based on the name "coastline", the geometry type of the coastline is polygons. Then, all geometries that don't intersect the previously derived study area were removed (target: *coastline_filtered*). This is mainly to reduce the large number of geometries contained in the data caused by islands. A buffer of 3000m was added to the remaining polygon geometries to compensate for inaccuracies of the match between the study area and the coastline contours. This is relevant for the second next step. First, the buffer added polygon geometries were unioned to a single multipolygon geometry in the PostGIS database for reducing the run-time of calculating the union (target: *coastline_buffer_unioned*). Now, the multipolygon geometry that represents the coastline is intersected with the study area as linestring geometry (target: *studyarea_as_coastline*). This intersection ensures that the shoreline lies exactly over the study area. Similarly, the next step determines the parts of the study area that are not coastline meaning where the contour of the coastline touches land instead of the ocean. This is achieved by calculating the difference of the study area and the same coastline geometry as before (target: *coastline_watershed*). All these targets can be found in the *studyarea_targets.R* file (Fig. \@ref(fig:projectdirtree), line 31).
 
 
 ## EU-MOHP Calculation {-}
 
 After preprocessing all required data layers as described previously, the next and last processing step comprises multiple smaller steps with the final goal to calculate and export the EU-MOHP metrics. This core step is implemented in the target db_objects_to_grass which splits the processing for the hydrologic orders. Because the processing is analogous for all hydrologic orders, this step is described only once in general terms. This step also outsources all heavy raster based calculations to a GRASS GIS database. It starts with initiating a GRASS GIS database. Then, the linestring geometries of the river network are read from the PostGIS database. 
-The linestring geometries of the coastline are provided with a column `feature_id` to uniquely identify each geometry. The counter of this `feature_id` starts after the highest feature_id of the river network to avoid duplicate values in this column when adding the coastline geometries to the river network in the following. This merge of the geometries from the river network and the coastline is necessary to also include the coastline in the calculation of the Thiessen watersheds.
+The linestring geometries of the coastline are provided with a column *feature_id* to uniquely identify each geometry. The counter of this *feature_id* starts after the highest feature_id of the river network to avoid duplicate values in this column when adding the coastline geometries to the river network in the following. This merge of the geometries from the river network and the coastline is necessary to also include the coastline in the calculation of the Thiessen watersheds.
 After combining these geometries, they were written into the GRASS GIS database where they were converted into the raster layer "river_network_raster" (rasterized) using the GRASS command `v.to.rast`:
 
 ```{r, eval=FALSE}
-execGRASS("v.to.rast", 
-         input = "river_network", 
-         output = "river_network_raster",
-         type = "line",
-         use = "attr",
-         attribute_column = "feature_id",
-         flags = c("overwrite", "d"),
-         memory = GRASS_MAX_MEMORY)
+execGRASS(
+  cmd = "v.to.rast",
+  input = "river_network",
+  output = "river_network_raster",
+  type = "line",
+  use = "attr",
+  attribute_column = "feature_id",
+  flags = c("overwrite", "d"),
+  memory = GRASS_MAX_MEMORY
+)
 ```
 
-This results in a raster layer, where cell values represent the `feature_id` of the linestring geometries rasterized to raster features.
+This results in a raster layer, where cell values represent the *feature_id* of the linestring geometries rasterized to raster features.
 The GRASS command `r.neighbors` was used to ensure that mainstems of the river network in the raster layer are not interrupted by cells representing tributaries:
 
 ```{r, eval=FALSE}
-execGRASS("r.neighbors",
-          input = "river_network_raster",
-          selection = "river_network_raster",
-          output = "river_network_raster",
-          method = "minimum",
-          flags = c("overwrite", "c"))
+execGRASS(
+  cmd = "r.neighbors",
+  input = "river_network_raster",
+  selection = "river_network_raster",
+  output = "river_network_raster",
+  method = "minimum",
+  flags = c("overwrite", "c")
+)
 ```
 
-This command replaces a cell value with the minimum value of its neighboring cells by setting the parameter `method` to `minimum`. As the `feature_id` was added as continuous counter starting at 1 after sorting the river network by the linestring geometry length in descending order, cell values are replaced in favor of the mainstems. 
+This command replaces a cell value with the minimum value of its neighboring cells by setting the parameter *method* to *minimum*. As the *feature_id* was added as continuous counter starting at 1 after sorting the river network by the linestring geometry length in descending order, cell values are replaced in favor of the mainstems. 
 
-Subsequently, the polygon geometries of the surface water bodies were imported into R from the PostGIS database, written into the GRASS GIS database, rasterized and added to the raster layer "river_network_raster" using the GRASS command `r.patch`.
+Subsequently, the polygon geometries of the surface water bodies were imported into R from the PostGIS database, written into the GRASS GIS database, rasterized and added to the raster layer *river_network_raster* using the GRASS command `r.patch`.
 
 All further calculations were performed separately for each of the 10 polygon geometries of the study area. After setting the region to the spatial extent of the respective study area polygon, the study area polygon was written into the GRASS GIS database. From this polygon, a raster mask was created to limit the all further raster calculations to the study area.
 Then, the distance to the nearest stream (see DS in eq. \@ref(eq:eqlp), \@ref(eq:eqdsd) and \@ref(eq:eqsd)) was calculated using the GRASS command `r.grow.distance` with
 
 ```{r, eval=FALSE}
-execGRASS("r.grow.distance",
-          input = "river_network_raster",
-          distance = "river_network_distance_raster", 
-          value = "river_network_value_raster", 
-          flags = c("overwrite", "m"))
+execGRASS(
+  cmd = "r.grow.distance",
+  input = "river_network_raster",
+  distance = "river_network_distance_raster",
+  value = "river_network_value_raster",
+  flags = c("overwrite", "m")
+)
 ```
 
-This command creates the two raster layers "river_network_distance_raster" and "river_network_value_raster". The former contains the horizontal distance to the nearest linestring geometry of the river network and the coastline, the latter represents the value of the `feature_id` of the nearest raster feature. The raster layer "river_network_value_raster" already represents the Thiessen catchments. For deriving the Thiessen divides, this raster layer was converted into a vector layer of polygon geometries. The associated occurrence of dangling polygon outlines was reduced using the GRASS command `v.clean`. Subsequently, the rasterized outlines of these polygons were used as Thiessen divides. To calculate the distance the nearest Thiessen divide (see DD in eq. \@ref(eq:eqlp), \@ref(eq:eqdsd) and \@ref(eq:eqsd)) with the restriction to not cross a stream, the GRASS command `r.walk` was used as follows:
+This command creates the two raster layers "river_network_distance_raster" and "river_network_value_raster". The former contains the horizontal distance to the nearest linestring geometry of the river network and the coastline, the latter represents the value of the *feature_id* of the nearest raster feature. The raster layer "river_network_value_raster" already represents the Thiessen catchments. For deriving the Thiessen divides, this raster layer was converted into a vector layer of polygon geometries. The associated occurrence of dangling polygon outlines was reduced using the GRASS command *v.clean*. Subsequently, the rasterized outlines of these polygons were used as Thiessen divides. To calculate the distance the nearest Thiessen divide (see DD in eq. \@ref(eq:eqlp), \@ref(eq:eqdsd) and \@ref(eq:eqsd)) with the restriction to not cross a stream, the GRASS command `r.walk` was used as follows:
 
 ```{r, eval=FALSE}
-execGRASS("r.walk",
-          elevation = "river_network_distance_raster",
-          friction = "friction",
-          output = "thiessen_catchments_distance_raster",
-          start_raster = "thiessen_catchments_lines_raster_thin",
-          walk_coeff = "1,0,0,0",
-          lambda = 1,
-          memory = GRASS_MAX_MEMORY,
-          flags = c("overwrite"))
+execGRASS(
+  cmd = "r.walk",
+  elevation = "river_network_distance_raster",
+  friction = "friction",
+  output = "thiessen_catchments_distance_raster",
+  start_raster = "thiessen_catchments_lines_raster_thin",
+  walk_coeff = "1,0,0,0",
+  lambda = 1,
+  memory = GRASS_MAX_MEMORY,
+  flags = c("overwrite")
+)
 ```
 
-Through adjusting the parameters `walk_coeff` and `lambda`, this command calculates the horizontal distance between every cell and the nearest Thiessen divide in the raster layer "thiessen_catchments_lines_raster_thin" while being aware of the defined restriction. This restriction is taken into account by additionally providing the raster layer "friction" that represents friction costs. The "friction" raster layer was created by assigning a value of 1 billion to all non-empty cells of the "river_network_raster". For the calculation of the nearest divide by `r.walk`, the crossing of a river now results in high costs, which leads to a preference of divides that lie on the same side of the stream as the respective cell. The resulting distances are stored in the raster layer "thiessen_catchments_distance_raster".
+Through adjusting the parameters *walk_coeff* and *lambda*, this command calculates the horizontal distance between every cell and the nearest Thiessen divide in the raster layer *thiessen_catchments_lines_raster_thin* while being aware of the defined restriction. This restriction is taken into account by additionally providing the raster layer *friction* that represents friction costs. The *friction* raster layer was created by assigning a value of 1 billion to all non-empty cells of the *river_network_raster*. For the calculation of the nearest divide by `r.walk`, the crossing of a river now results in high costs, which leads to a preference of divides that lie on the same side of the stream as the respective cell. The resulting distances are stored in the raster layer "thiessen_catchments_distance_raster".
 
-Now, the EU-MOHP measures were calculated using the GRASS command `r.mapcalc` and the two raster layers "river_network_distance_raster" and "thiessen_catchments_distance_raster" containing the cell values for DS and DD respectively. The EU-MOHP measure DSD was calculated according to \@ref(eq:eqdsd) with
+Now, the EU-MOHP measures were calculated using the GRASS command `r.mapcalc` and the two raster layers *river_network_distance_raster* and *thiessen_catchments_distance_raster* containing the cell values for DS and DD respectively. The EU-MOHP measure DSD was calculated according to \@ref(eq:eqdsd) with
 
 ```{r, eval=FALSE}
-execGRASS("r.mapcalc",
-          expression = glue::glue(
-            "{FEATURE_NAMES[1]} = (river_network_distance_raster + thiessen_catchments_distance_raster)"
-            ),
-          flags = c("overwrite"))
+execGRASS(
+  cmd = "r.mapcalc",
+  expression = glue::glue(
+    "{FEATURE_NAMES[1]} = (river_network_distance_raster + thiessen_catchments_distance_raster)"
+  ),
+  flags = c("overwrite")
+)
 ```
 \noindent
-where `FEATURE_NAMES[1]` is the raster layer name "`r FEATURE_NAMES[1]`" for DSD.
+where *`FEATURE_NAMES[1]`* is the raster layer name *`r FEATURE_NAMES[1]`* for DSD.
 LP was calculated according to \@ref(eq:eqlp) with
 
 ```{r, eval=FALSE}
-execGRASS("r.mapcalc",
-          expression = glue::glue(
-            "{FEATURE_NAMES[2]} = round((river_network_distance_raster/{FEATURE_NAMES[1]})*10000)"
-            ),
-          flags = c("overwrite"))
+execGRASS(
+  cmd = "r.mapcalc",
+  expression = glue::glue(
+    "{FEATURE_NAMES[2]} = round((river_network_distance_raster/{FEATURE_NAMES[1]})*10000)"
+  ),
+  flags = c("overwrite")
+)
 ```
 \noindent
-where `FEATURE_NAMES[2]` is the raster layer name "`r FEATURE_NAMES[2]`" for LP. In order to be able to write the raster layer as integer data type with two decimals, the result of the division was multiplied by a factor of 10000 and rounded. The data type integer reduces storage space compared with float. For the same reason, the previously calculated raster layer "`r FEATURE_NAMES[1]`" was rounded, too. 
+where *`FEATURE_NAMES[2]`* is the raster layer name *`r FEATURE_NAMES[2]`* for LP. In order to be able to write the raster layer as integer data type with two decimals, the result of the division was multiplied by a factor of 10000 and rounded. The data type integer reduces storage space compared with float. For the same reason, the previously calculated raster layer *`r FEATURE_NAMES[1]`* was rounded, too. 
 
 As the last measure, SD was calculated according to \@ref(eq:eqsd) with
 ```{r, eval=FALSE}
-execGRASS("r.mapcalc",
-          expression = glue::glue(
-            "{FEATURE_NAMES[3]} = round(river_network_distance_raster)"
-            ),
-          flags = c("overwrite"))
+execGRASS(
+  cmd = "r.mapcalc",
+  expression = glue::glue(
+    "{FEATURE_NAMES[3]} = round(river_network_distance_raster)"
+  ),
+  flags = c("overwrite")
+)
 ```
 \noindent
-where `FEATURE_NAMES[3]` is the raster layer name "`r FEATURE_NAMES[3]`" for SD. Its calculation is simply performed by rounding the raster layer "river_network_distance_raster".
+where *`FEATURE_NAMES[3]`* is the raster layer name *`r FEATURE_NAMES[3]`* for SD. Its calculation is simply performed by rounding the raster layer "river_network_distance_raster".
 
-Lastly, the resulting raster layers for LP, DSD and SD were exported from the GRASS GIS database. Therefore, a the sub-directory "output_data" with further sub-directories `r FEATURE_NAMES %>% str_c('"', ., '"') %>% str_c(collapse = ", ")` is created. The raster layers were written into these sub-directories in the GeoTiff (.tif) file format.
+Lastly, the resulting raster layers for LP, DSD and SD were exported from the GRASS GIS database. Therefore, a the sub-directory *output_data* with further sub-directories `r FEATURE_NAMES %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{FEATURE_NAMES[length(FEATURE_NAMES)]}*"), sep = " and ")` is created. The raster layers were written into these sub-directories in the GeoTiff (.tif) file format.
 
 
 ## Hardware {-}
-The pipeline to generate the dataset was executed on a DELL PowerEdge C4140 Server with an Intel Xeon Gold 6240R CPU and 384 GB installed RAM. The installed operation system is Microsoft Windows Server 2019 Standard, version 10.0.17763 Build 17763. The total run-time of the pipeline as well as of individual targets is summarised in Tab. \@ref(tab:runtime).
+The computations to generate the presented dataset were performed on a DELL PowerEdge C4140 Server with an Intel Xeon Gold 6240R CPU and 384 GB installed RAM. The installed operation system is Microsoft Windows Server 2019 Standard, version 10.0.17763 Build 17763. The total run-time of the pipeline as well as of individual targets is summarised in Tab. \@ref(tab:runtime).
 
 # Data Records {-}
 
-The presented EU-MOHP v013.1.0 dataset is available in the hydroshare data portal at !!linktoDOI. The dataset represents gridded spatial information and is split into separate GeoTIFF files with a .tif file ending. Each file represents data on one of the three EU-MOHP measures LP, DSD and SD for one hydrologic order for different spatial coverage (Fig. \@ref(fig:studyareafigure)). The file names are composed following the file naming scheme "*mohp_europe_\<region name for spatial coverage\>\_\<abbreviation of the EU-MOHP measure\>\_\<hydrologic order\>\_\<spatial resolution\>.tif*". The placeholders including "<" and ">" can be replaced by any combination of the values summarized in Tab. \@ref(tab:outputdata). The combinations of all placeholder values results in a total number of $n_{measures}\cdot n_{hydrologic orders}\cdot n_{study area polygons} =  `r length(FEATURE_NAMES)`\cdot `r length(tar_read(streamorders))`\cdot `r nrow(tar_read(selected_studyarea))` = `r length(FEATURE_NAMES) * length(tar_read(streamorders)) * nrow(tar_read(selected_studyarea))`$ files. Files of the same EU-MOHP measure are stored together in the respective sub-directory `r FEATURE_NAMES[-3] %>% str_c('"', ., '"') %>% str_c(collapse = ", ")` or `r FEATURE_NAMES[3]`. 
+The presented EU-MOHP v013.1.0 dataset is available in the hydroshare data portal at !!linktoDOI. The dataset represents gridded spatial information and is split into separate GeoTIFF files with a .tif file ending. Each file represents data on one of the three EU-MOHP measures LP, DSD and SD for one hydrologic order for different a spatial coverage. The file names are composed following the file naming scheme "*mohp_europe_\<region name for spatial coverage\>\_\<abbreviation of the EU-MOHP measure\>\_\<hydrologic order\>\_\<spatial resolution\>.tif*". The placeholders including "*<*" and "*>*" can be replaced by any combination of the values summarized in Tab. \@ref(tab:outputdata). The combinations of all placeholder values results in a total number of $n_{measures}\cdot n_{hydrologic orders}\cdot n_{study area polygons} =  `r length(FEATURE_NAMES)`\cdot `r length(tar_read(streamorders))`\cdot `r nrow(tar_read(selected_studyarea))` = `r length(FEATURE_NAMES) * length(tar_read(streamorders)) * nrow(tar_read(selected_studyarea))`$ files. Files of the same EU-MOHP measure are stored together in the respective sub-directory `r FEATURE_NAMES[-3] %>% str_c('"', ., '"') %>% str_c(collapse = ", ")` or `r FEATURE_NAMES[3]`.
+
+If you want to check more precisely whether your study area or area of interest is covered by this dataset, please see the webmap at !!link to github readme.
 
 The presented EU-MOHP dataset has version v013.1.0 It is composed of the “EU-Hydro -- River Network Database” version (v013) and a major and a minor version number (1.0) that are related to the methods of this dataset.
 
 # Technical Validation {-}
 
-As the generation of this dataset is based on the “EU-Hydro -- River Network Database”, its accuracy and validity depends strongly on the quality of this underlying dataset. The “EU-Hydro -- River Network Database” was generated through a combination of photo interpretation of very high resolution imagery and drainage modelling based on the EU DEM with 25 m resolution. According to our search, there is no comprehensive quality assessment or validation for the used version v013. From a visual inspection, the following error becomes evident. A confusion of the classification of the linestring geometries into canals, ditches and rivers occurs frequently. An example for such a confusion is shown in Fig. \@ref(fig:rivercanalconfusionplot). Here, some relatively straight shaped linestring geometries are classified as river (`BH140` in column `DFDD`), whereas meandering geometries are classified as canal (`BH020` in column `DFDD`). Other errors might be introduced through the limitation of the spatial resolution of the photo imagery and the EU DEM. This potentially affects the detection and of smaller rivers, canals and ditches. Nevertheless, the “EU-Hydro -- River Network Database” is a valuable dataset that made this dataset possible. It might also be further improved in the future.
+As the generation of this dataset is based on the “EU-Hydro -- River Network Database”, its accuracy and validity depends strongly on the quality of this underlying dataset. The “EU-Hydro -- River Network Database” was generated through a combination of photo interpretation of very high resolution imagery and drainage modelling based on the EU DEM with 25 m resolution. According to our search, there is no comprehensive quality assessment or validation for the used version v013. From a visual inspection, the following error becomes evident. A confusion of the classification of the linestring geometries into canals, ditches and rivers occurs frequently. An example for such a confusion is shown in Fig. \@ref(fig:rivercanalconfusionplot). Here, some relatively straight shaped linestring geometries are classified as river (value BH140 in column `dfdd`), whereas meandering geometries are classified as canal (value BH020 in column `dfdd`). Other errors might be introduced through the limitation of the spatial resolution of the photo imagery and the EU DEM. This potentially affects the detection and of smaller rivers, canals and ditches. Nevertheless, the “EU-Hydro -- River Network Database” is a valuable dataset that made this dataset possible. It might also be further improved in the future.
 
 The accuracy of this dataset may also be reduced near the edges that run over land rather than along the coast. This includes the regions that are close tho the edges in the South and East of Turkey, in the East of continental Europe and in the East of Finland. Here, the edges of the underlying dataset, and thus this dataset, follow administrative boundaries instead of basin outlines. Therefore, calculated distances to the nearest stream in these regions may be inaccurate because another stream not in the dataset could be closer to a cell. The width of these potentially inaccurate regions along the margins increases with hydrologic order. Because the stream locations of adjacent stream networks are unknown, it is not possible to delineate this region or quantify its width. To address this issue when applying this dataset to such a region, a conservative option would be to truncate or mask these regions by shifting the corresponding edges inward by the maximum value in the stream distance map of the respective hydrologic order.
 
-Another inaccuracy is introduced by the method to calculate DD. This inaccuracy only affects a narrow area near headwaters. As described previously, the GRASS GIS command `r.walk` is used to calculate DD. The command `r.walk` originally aims at a different purpose than the one it was used for here. It calculates the cumulative costs for moving between two geographic locations based on topographic map and a map that represents friction costs. Because of the applied setting of the command parameters, it calculates the horizontal distance from a cell to the nearest Thiessen divide while prefering a path without crossing a stream. This behavior is usually achieved everywhere except for areas near headwaters. To illustrate this, an following case is considered. If a linestring geometry representing a stream is closer to one side of the Thiessen divide than to the other side, `r.walk` calculates an incorrect distance around the start of the linestring as it cheaper to "walk" around the stream than walking a straight path from the more distant side of the Thiessen divide. Thus, the straight path from this mistakenly nearest side of the Thiessen divide crosses the stream. Whereas the required and correct behaviour would be to calculate the distance as the length of a straight line to the Thiessen divide that does not cross the stream (see Fig. \@ref(fig:ddinaccuracies)).
+Another inaccuracy is introduced by the method to calculate DD. This inaccuracy only affects a narrow area near headwaters. As described previously, the GRASS GIS command `r.walk` is used to calculate DD. The command `r.walk` originally aims at a different purpose than the one it was used for here. It calculates the cumulative costs for moving between two geographic locations based on topographic map and a map that represents friction costs. Because of the applied setting of the command parameters, it calculates the horizontal distance from a cell to the nearest Thiessen divide while preferring a path without crossing a stream. This behavior is usually achieved everywhere except for areas near headwaters. To illustrate this, an following case is considered. If a linestring geometry representing a stream is closer to one side of the Thiessen divide than to the other side, `r.walk` calculates an incorrect distance around the start of the linestring as it cheaper to "walk" around the stream than walking a straight path from the more distant side of the Thiessen divide. Thus, the straight path from this mistakenly nearest side of the Thiessen divide crosses the stream. Whereas the required and correct behaviour would be to calculate the distance as the length of a straight line to the Thiessen divide that does not cross the stream (see Fig. \@ref(fig:ddinaccuracies)).
 
 The method for calculating DD also causes NA cells for cells that are located in lakes. This only affects the DSD raster maps ("*\<abbreviation of the EU-MOHP measure\> = dsd*"). 
 
@@ -356,7 +369,7 @@ The generation of this dataset would not have been possible without all the free
 
 # Author contributions statement {-}
 
-M.N. was involved in all phases and steps of the generation of this dataset. M.M supported to R and PostGIS code development of the methods and the data descriptor !!and set up the docker container. S.B. contributed to the conceptual design of the dataset. All authors reviewed the manuscript.
+M.N. was involved in all phases and steps of the generation of this dataset. M.M supported to R and PostGIS code development !!and set up the docker container. S.B. contributed to the conceptual design of the dataset. All authors reviewed the manuscript.
 
 # Competing interests {-}
 
@@ -383,7 +396,7 @@ targets::tar_read(input_data_table) %>%
 ```
 \renewcommand{\arraystretch}{1}
 
-```{r datasetmapoverviewplot, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= str_glue("Resulting maps of the three EU-MOHP measures lateral position (A, D), divide stream distance (B, E) and stream distance (C, F) for the two hydrologic orders {tar_read(selected_hydrologic_orders)[1]} (A, B, C) and {tar_read(selected_hydrologic_orders)[2]} (D, E, F). The colour gradients in the legend represents the mapped values of all plots in its column.")}
+```{r datasetmapoverviewplot, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= str_glue("Resulting maps of the three EU-MOHP measures lateral position (A, D), divide stream distance (B, E) and stream distance (C, F) in the columns exemplary for the two hydrologic orders {tar_read(selected_hydrologic_orders)[1]} (A, B, C) and {tar_read(selected_hydrologic_orders)[2]} (D, E, F) in the rows. The colour gradients in the legend represent the mapped values of all plots in their column.")}
 tar_read(dataset_map_overview_plot)
 ```
 
@@ -391,7 +404,7 @@ tar_read(dataset_map_overview_plot)
 include_graphics("data_descriptor/tex/workflow_figure.pdf")
 ```
 
-```{r studyareafigure, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= "Spatial coverage of this dataset. The legend labels show the names according to the outpu file name. If you want to check more precisely whether your study area or area of interest is covered by this dataset, please visit !!link to github readme."}
+```{r studyareafigure, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= "Spatial coverage of the dataset which is determined by the study area data layer."}
 tar_read(studyarea_figure)
 ```
 
@@ -399,7 +412,7 @@ tar_read(studyarea_figure)
 include_graphics("data_descriptor/tex/directory_tree.pdf")
 ```
 
-```{r schematicmohp, echo=FALSE, out.width = "100%", fig.cap= "Schematic representation of MOHP measures using two examples for the hydrologic orders 1 (A) and 2 (B)."}
+```{r schematicmohp, echo=FALSE, out.width = "100%", fig.cap= "Schematic representation of MOHP measures using two examples for the hydrologic orders 1 (A) and 2 (B). DS is the horizontal distance to the nearest stream and DD is the horizontal distance to the nearest Thiessen divide under the condition that the divide is on the same side of the stream."}
 include_graphics("data_descriptor/tex/mohp_scheme.pdf")
 ```
 

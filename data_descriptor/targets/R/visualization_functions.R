@@ -306,7 +306,7 @@ make_output_data_table <-
               str_glue("{CELLSIZE}m")
             ),
           description = c(
-            "Raster data covers the contiguous land area of continental Europe, ...", "...the Scandinavian countries Finland, Norway and Sweden", "...Turkey", "...United Kingdom", "...Iceland", "Ireland and North Ireland", "...Sicily", "...Sardinia", "...Corsica", "...Creta", "Lateral Position", "Divide stream distance", "Stream distance", rep("Hydrologic order", times = length(str_glue("streamorder{tar_read(streamorders)}"))),
+            "Raster data covers the contiguous land area of continental Europe, ...", "...the Scandinavian countries Finland, Norway and Sweden", "...Turkey", "...United Kingdom", "...Iceland", "Ireland and Northern Ireland", "...Sicily", "...Sardinia", "...Corsica", "...Creta", "Lateral Position", "Divide stream distance", "Stream distance", rep("Hydrologic order", times = length(str_glue("streamorder{tar_read(streamorders)}"))),
             "Spatial resolution"
           )
         )
@@ -344,28 +344,31 @@ make_studyarea_figure <-
       filter_intersecting_features(studyarea) %>% 
       summarise() %>% 
       st_cast("POLYGON") %>% 
-      st_join(studyarea)
+      st_join(studyarea) %>% 
+      mutate(studyarea = "covered")
     
     not_covered_areas <-
       administrative_borders %>%
       filter(!st_intersects(., coloured_areas, sparse = FALSE) %>% apply(1, any)) %>% 
-      mutate(same_colour = "not covered")
+      mutate(same_colour = "Not covered")
     
     administrative_borders <-
       administrative_borders %>% 
       filter(!st_intersects(., not_covered_areas, sparse = FALSE) %>% apply(1, any))
     
     tm_shape(coloured_areas) +
-      tm_fill(col = "region_name",
-                  title = "Spatial coverage\n(names as used\nin file names)",
-                  palette = distinct_colours) +
+      tm_fill(col = "studyarea",
+                  title = "Spatial coverage",
+                  palette = "#ffcf46") +
       tm_shape(not_covered_areas) +
       tm_fill(col = "same_colour",
               palette = "grey",
               title = "") +
       tm_shape(administrative_borders) +
-      tm_borders(col = "white") +
+      tm_borders(col = "white", lwd = 0.5) +
       tm_layout(frame = FALSE, fontfamily = "Corbel")
+      # tm_shape(studyarea) +
+      # tm_text(text = "region_name")
       # tm_text("name", remove.overlap = TRUE)
     
     # studyarea %>% 

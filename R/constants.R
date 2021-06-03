@@ -9,10 +9,9 @@ EXCLUDE_SCANDINAVIAN_BASINS <- purrr::chuck(YML_CONFIG, "exclude_scandinavian_ba
 SIMPLIFY_POLYGONS <- purrr::chuck(YML_CONFIG, "simplify_polygons")
 
 # Directories
-FILEPATH_STUDYAREA_GERMANY <- "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/germany_buffer/time_invariant/shape/self_processed/data/buffer_germany_point6.shp"
-FILEPATH_STUDYAREA_PIPELINETEST <- "J:/NUTZER/Noelscher.M/Studierende/Daten/study_area_polygons/arbitrary/pipeline_test_studyarea/macro_datapreparation_pipeline_test_studyarea_island.shp"
-DIRECTORY_RIVER_NETWORKS <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_streams/europe/time_invariant/vector/copernicus/data"
-FILEPATH_COASTLINE <- "J:/NUTZER/Noelscher.M/Studierende/Daten/waterbodies_coastline/europe/time_invariant/shape/EUHYDRO_Coastline_EEA39_v013/Shapefile/EUHYDRO_Coastline_EEA39_v013.shp"
+FILEPATH_STUDYAREA_PIPELINETEST <- "input_data/macro_datapreparation_pipeline_test_studyarea_island.shp"
+DIRECTORY_RIVER_NETWORKS <- "input_data/data"
+FILEPATH_COASTLINE <- "input_data/EUHYDRO_Coastline_EEA39_v013.shp"
 FILEPATH_CONFIG <- "config.yml"
 GRASS_DIRECTORY <- "grassdata"
 GRASS_STREAMORDER_DIRECTORY <- "db_streamorder"
