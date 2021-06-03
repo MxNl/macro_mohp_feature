@@ -9,9 +9,11 @@ EXCLUDE_SCANDINAVIAN_BASINS <- purrr::chuck(YML_CONFIG, "exclude_scandinavian_ba
 SIMPLIFY_POLYGONS <- purrr::chuck(YML_CONFIG, "simplify_polygons")
 
 # Directories
-FILEPATH_STUDYAREA_PIPELINETEST <- "input_data/macro_datapreparation_pipeline_test_studyarea_island.shp"
-DIRECTORY_RIVER_NETWORKS <- "input_data/data"
-FILEPATH_COASTLINE <- "input_data/EUHYDRO_Coastline_EEA39_v013.shp"
+INPUT_PATH <- if (Sys.getenv("IS_DOCKER") != "") "docker-mount" else "input_data"
+FILEPATH_STUDYAREA_PIPELINETEST <- fs::path(INPUT_PATH, "macro_datapreparation_pipeline_test_studyarea_island.shp")
+DIRECTORY_RIVER_NETWORKS <- fs::path(INPUT_PATH, "data")
+FILEPATH_COASTLINE <- fs::path(INPUT_PATH, "EUHYDRO_Coastline_EEA39_v013.shp")
+
 FILEPATH_CONFIG <- "config.yml"
 GRASS_DIRECTORY <- "grassdata"
 GRASS_STREAMORDER_DIRECTORY <- "db_streamorder"

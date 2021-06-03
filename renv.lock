@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.0.3",
+    "Version": "4.0.5",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -116,15 +116,10 @@
     },
     "RefManageR": {
       "Package": "RefManageR",
-      "Version": "1.3.2",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "RefManageR",
-      "RemoteUsername": "ropensci",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "5a8a8746de6c71f41ba34ccf71d857e31c4df377",
-      "Hash": "9ba98ae28dcaa8d0becf86ecc131607a"
+      "Version": "1.3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a31abee042741b1fc1bbb546da687f3f"
     },
     "Rttf2pt1": {
       "Package": "Rttf2pt1",
@@ -191,15 +186,10 @@
     },
     "bibtex": {
       "Package": "bibtex",
-      "Version": "0.4.3",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "bibtex",
-      "RemoteUsername": "ROpenSci",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "7ccf8eae7e2c6c3e1138662da12d30660fdd7bab",
-      "Hash": "15dd2f24dd1e0e6712585cb59c3c2668"
+      "Version": "0.4.2.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "76c015d8a12da5047be8aa6bead07077"
     },
     "bit": {
       "Package": "bit",
@@ -1272,27 +1262,17 @@
     },
     "tarchetypes": {
       "Package": "tarchetypes",
-      "Version": "0.1.1.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteUsername": "ropensci",
-      "RemoteRepo": "tarchetypes",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "b017204cd8bcd956aac96f088a68b02a5384cb0f",
-      "RemoteHost": "api.github.com",
-      "Hash": "ceec33a89f6e351a3d7d99e4d28fc2c4"
+      "Version": "0.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a5270db1c2b225697a08c5612b44facb"
     },
     "targets": {
       "Package": "targets",
-      "Version": "0.3.1.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteUsername": "ropensci",
-      "RemoteRepo": "targets",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "d0422b378eb5ed2900822c89112406ace3e9db7c",
-      "RemoteHost": "api.github.com",
-      "Hash": "bf2d51fbb93d615d9459b188134ac807"
+      "Version": "0.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a46df8ab3d40fd1627deeca2783df151"
     },
     "tibble": {
       "Package": "tibble",

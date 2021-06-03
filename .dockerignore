@@ -1,0 +1,6 @@
+.git/*
+.gitignore
+.idea
+renv/*
+.Rprofile
+docker-mount/*
