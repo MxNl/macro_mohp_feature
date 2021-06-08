@@ -1,28 +1,36 @@
 ---
-title: "Code for Generating  the EU-MOHP Dataset"
+title: "Generation of the EU-MOHP Dataset"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center', fig.pos = "H", out.width = "100%", message = FALSE, warning = FALSE, fig.showtext = TRUE)
+library(sf)
+library(mapview)
+library(tidyverse)
 ```
 
-## R Markdown
+<br />
+<br />
+<br />
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+knitr::include_graphics("README_files/MACRO_logo.svg")
+```
+<br />
+<br />
+<br />
+<br />
+<br />
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The EU-MOHP dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
 
-```{r cars}
-summary(cars)
+This repository contains the required code to generate the EU-MOHP v013.1.0 dataset. For further reading, we refer to the publication of the !!data descriptor. The dataset can be freely downloaded at !!
+
+# Study Area
+
+```{r}
+tar_read(selected_studyarea) %>% 
+  mapview(zcol = "region_name")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
