@@ -27,12 +27,9 @@ knitr::include_graphics("README_files/MACRO_logo.svg")
 
 The EU-MOHP dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
 
-This repository contains the required code to generate the EU-MOHP v013.1.0 dataset. For further reading, we refer to the publication of the !!data descriptor. The dataset can be freely downloaded at !!
+This repository contains the required code to generate the EU-MOHP v013.1.0 dataset. For further reading, we refer to the publication of the !!datadescriptorlink. The dataset can be freely downloaded at !!link
 
-# Study Area
+# Spatial Coverage
 
-```{r}
-sf::read_sf("output_data/studyarea.shp") %>% 
-  mapview::mapview()
-```
+A figure of the spatial coverage is included in corresponding data descriptor. If you want to check more precisely whether your area of interest is covered by this dataset and which files are relevant, please use this [interactive map](https://mxnl.github.io/macro_mohp_feature/)
 

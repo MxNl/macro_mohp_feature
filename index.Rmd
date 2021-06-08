@@ -1,5 +1,5 @@
 ---
-title: "Generation of the EU-MOHP Dataset"
+title: "Spatial coverage of EU-MOHP v13.1.0 Dataset"
 output: html_document
 ---
 
@@ -12,26 +12,8 @@ library(tmap)
 library(tidyverse)
 ```
 
-<br />
-<br />
-<br />
 
 ```{r}
-knitr::include_graphics("README_files/MACRO_logo.svg")
-```
-<br />
-<br />
-<br />
-<br />
-<br />
-
-The EU-MOHP dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
-
-This repository contains the required code to generate the EU-MOHP v013.1.0 dataset. For further reading, we refer to the publication of the !!data descriptor. The dataset can be freely downloaded at !!
-
-# Study Area
-
-```{r}
-sf::read_sf("output_data/studyarea.shp") %>% 
-  mapview::mapview()
+tar_read(selected_studyarea) %>% 
+  mapview::mapview(zcol = "region_name")
 ```
