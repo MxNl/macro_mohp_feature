@@ -414,6 +414,8 @@ The authors declare no competing interests.
 
 # Figures \& Tables {-}
 
+\FloatBarrier
+
 \renewcommand{\arraystretch}{2}
 ```{r inputdata, echo=FALSE}
 targets::tar_read(input_data_table) %>% 
@@ -461,7 +463,7 @@ tar_read(dfdd_stats_bar_plot)
 include_graphics("data_descriptor/tex/mainstem_scheme.pdf")
 ```
 
-```{r divergencescheme, echo=FALSE, out.width = "70%", fig.showtext = TRUE, fig.cap= knitr::escape_latex('Schematic representation of the river network and its linestring geometries including divergences before (A) and after (B) the removal of minor paths under the condition that they intersect with the same linestring geometry at the start and end node. The linestring geometry with the feature_id = 8 has been removed from the river network in B, because it intersects the linestring geometry with feature_id = 1 at the start and end node. Whereas linestring geometry with feature_id = 7 remains in the river network, because it intersects with two different linestring geometries at start and end node.')}
+```{r divergencescheme, echo=FALSE, out.width = "70%", fig.showtext = TRUE, fig.cap= knitr:::escape_latex('Schematic representation of the river network and its linestring geometries including divergences before (A) and after (B) the removal of minor paths under the condition that they intersect with the same linestring geometry at the start and end node. The linestring geometry with the feature_id = 8 has been removed from the river network in B, because it intersects the linestring geometry with feature_id = 1 at the start and end node. Whereas linestring geometry with feature_id = 7 remains in the river network, because it intersects with two different linestring geometries at start and end node.')}
 include_graphics("data_descriptor/tex/divergences_scheme.pdf")
 ```
 
