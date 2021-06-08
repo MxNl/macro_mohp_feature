@@ -1,8 +1,8 @@
 ---
 title: "Generation of the EU-MOHP Dataset"
-output: github_document
-always_allow_html: true
+output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, fig.align = 'center', fig.pos = "H", out.width = "100%", message = FALSE, warning = FALSE, fig.showtext = TRUE)
@@ -35,4 +35,3 @@ This repository contains the required code to generate the EU-MOHP v013.1.0 data
 sf::read_sf("output_data/studyarea.shp") %>% 
   mapview::mapview()
 ```
-
