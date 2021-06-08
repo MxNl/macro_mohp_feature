@@ -4,6 +4,12 @@ visualizations_data_descriptor_targets <-
       input_data_table,
       make_input_data_table()
     ),
+    tar_render(
+      directory_tree, 
+      "directory_tree.Rmd",
+      output_file = "data_descriptor/tex/directory_tree.pdf",
+      cue = tar_cue("always")
+      ),
     tar_target(
       selected_hydrologic_orders,
       c(3, 4)

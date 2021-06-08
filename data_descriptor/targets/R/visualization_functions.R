@@ -443,7 +443,7 @@ make_river_canal_confusion_example_plot <-
             axis.title.x = element_blank(),
             axis.title.y = element_blank()
       ) +
-      labs(colour = "DFDD")
+      labs(colour = "dfdd")
   }
 
 make_dfdd_stats_bar_plot <- 
@@ -468,9 +468,36 @@ make_dfdd_stats_bar_plot <-
       theme(text = element_text(family = "Corbel"),
             axis.title.y = element_blank(),
             plot.title = element_text(hjust = 0.5)) +
-      labs(x = "Number of geometries [x1000]",
-           title = "Histogram of the column DFDD")
+      labs(x = "Number of linestring geometries [x1000]",
+           title = "Histogram of the column dfdd")
   }
 
+deprintize <-
+  function(f) {
+    return(function(...) {
+      capture.output(w <- f(...))
+      return(w)
+    })
+  }
 
+make_dir_tree <-
+  function() {
+    fs::dir_tree(
+      ".",
+      recurse = 1,
+      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test",
+      invert = TRUE
+    )
+  }
 
+dirtree_lineno <- 
+  function(pattern) {
+    deprintize(make_dir_tree)() %>% 
+      tibble(rownames = as.character(.)) %>% 
+      select(rownames) %>% 
+      add_row(tibble(rownames = "."), .before = 1) %>% 
+      mutate(rownumber = row_number(), .before = 1) %>% 
+      mutate(rownames = str_remove(rownames, ".*/")) %>% 
+      filter(str_detect(rownames, str_glue("^{pattern}$"))) %>% 
+      pull(rownumber)
+  }
