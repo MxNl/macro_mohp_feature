@@ -1,10 +1,12 @@
 ---
 title: "Generation of the EU-MOHP Dataset"
 output: github_document
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, fig.align = 'center', fig.pos = "H", out.width = "100%", message = FALSE, warning = FALSE, fig.showtext = TRUE)
+library(targets)
 library(sf)
 library(mapview)
 library(tidyverse)
