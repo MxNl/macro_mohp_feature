@@ -168,11 +168,11 @@ make_dataset_map_overview_plot <-
           map(read_stars)
         
         raster_stars_mosaic <-
-          st_mosaic(raster_stars[[1]])
+          st_mosaic(st_as_stars(raster_stars[[1]]))
         
         for (i in 2:length(raster_stars)) {
           raster_stars_mosaic <-
-            st_mosaic(raster_stars_mosaic, raster_stars[[i]])
+            st_mosaic(raster_stars_mosaic, st_as_stars(raster_stars[[i]]))
         }
         
         final_plot <- 

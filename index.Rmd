@@ -1,6 +1,8 @@
 ---
-title: "Spatial coverage of EU-MOHP v13.1.0 Dataset"
-output: html_document
+title: "Spatial coverage of EU-MOHP v013.1.0 Dataset"
+output: 
+  html_document:
+    css: index_style.css
 ---
 
 
@@ -8,12 +10,27 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, fig.align = 'center', fig.pos = "H", out.width = "100%", message = FALSE, warning = FALSE, fig.showtext = TRUE)
 library(targets)
 library(sf)
-library(tmap)
+library(mapview)
 library(tidyverse)
 ```
 
+```{r, out.height="700px"}
+studyarea <- 
+  tar_read(selected_studyarea)
+  # slice(7:10) %>% 
+  # st_transform(4326)
 
-```{r}
-tar_read(selected_studyarea) %>% 
-  mapview::mapview(zcol = "region_name")
+colour_values <-
+  studyarea %>% 
+  nrow() %>%
+  hues::iwanthue()
+
+studyarea %>%
+  mapview(zcol = "region_name", col.regions = colour_values, lwd = 0, layer.name = "Spatial coverage (labels corresponding to file names)")
+
+
+# leaflet() %>% 
+#   addProviderTiles("OpenStreetMap") %>% 
+#   addProviderTiles("CartoDB.Positron") %>%
+#   addPolygons(data = studyarea, fillColor = colour_values)
 ```

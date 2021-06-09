@@ -196,13 +196,13 @@ union_studyarea_in_db <- function(river_basins, table_name_destination) {
 }
 
 merge_same_strahler_segments <- function(table_name_destination, table_source, river_basin_name, depends_on = NULL) {
-
+  
   length(depends_on)
   
   table_name_destination <-
     table_name_destination %>%
     str_c(river_basin_name, sep = "_")
-
+  
   query <- 
     glue::glue("
     CREATE TABLE {table_name_destination} AS (
@@ -557,11 +557,11 @@ streamorder_filter <-
     create_table(query, table, geo_index_column = "geometry")
     Sys.time()
   }
-  
+
 is_pq_geometry <- 
   function(column) { 
     class(column) == "pq_geometry" | class(column) == "pq_NA"
-    }
+  }
 
 from_wkb <- purrr::partial(sf::st_as_sfc, EWKB = TRUE)
 
@@ -601,7 +601,7 @@ write_inland_waters <- function(x, table_name_destination, index_column = NULL, 
   )
   
   connection <- connect_to_database()
- 
+  
   if (!is.null(geo_index_column)) {
     set_geo_index(table_name_destination, geo_index_column, connection)
   }
@@ -617,9 +617,9 @@ make_grid_centroids_in_db <- function(
   geo_index_column = NULL,
   depends_on = NULL
 ) {
-
+  
   length(depends_on)
-
+  
   query <-
     glue::glue("
         CREATE TABLE {table_name_destination} AS (
@@ -629,7 +629,7 @@ make_grid_centroids_in_db <- function(
          FROM {table_name_centroids_basis}
         )
         ")
-
+  
   create_table(query, table_name_destination, index_column, geo_index_column)
   Sys.time()
 }
@@ -647,17 +647,17 @@ nearest_neighbours_between <- function(
 ) {
   length(depends_on)
   connection <- connect_to_database()
-
+  
   if (length(intersect(left_columns, right_columns)) > 0) {
     stop('Ambiguous column names provided.')
   }
-
+  
   format_select <- function(table, columns) {
     validate(table, columns)
     select_statements <- paste0(table, '.', columns)
     paste0(select_statements, collapse = ', ')
   }
-
+  
   left_select <- format_select(left_table, left_columns) %>%
     str_replace("grid_grid_id", "grid_id") #TODO how can we make this more elegant?
   right_select <- NULL
@@ -667,15 +667,15 @@ nearest_neighbours_between <- function(
   select <- list(left_select, right_select) %>%
     compact() %>%
     str_c(collapse = ', ')
-
+  
   left_geometry <- geometry_of(left_table)
   right_geometry <- geometry_of(right_table)
   by_streamorder <- ifelse(is.null(stream_order_id), FALSE, TRUE)
-
+  
   distance <- glue::glue('ST_Distance({left_geometry}, {right_geometry}) AS distance_meters')
   #by_streamorder_clause <- glue::glue("AND {right_table}.stream_order_id = {stream_order_id}")
   table_destination <- composite_name(table_name_destination, stream_order_id)
-
+  
   query <- glue::glue("
     CREATE TABLE {table_destination} AS (
       SELECT
@@ -733,10 +733,10 @@ grid_catchment_distance <- function(nn_grid, catchment, table, stream_order_id, 
 make_thiessen_catchments <- function(stream_order_id, depends_on) {
   length(depends_on)
   connection <- connect_to_database()
-
+  
   table_name_destination <- composite_name(THIESSEN_CATCHMENTS_TABLE, stream_order_id)
   nearest_neighbours <- composite_name(NN_GRID_RIVERS_TABLE, stream_order_id)
-
+  
   query <- glue::glue("
     CREATE TABLE {table_name_destination} AS (
     	SELECT 
@@ -756,26 +756,26 @@ make_thiessen_catchments <- function(stream_order_id, depends_on) {
 }
 
 validate <- function(table, columns) {
-
+  
   connection <- connect_to_database()
-
+  
   if (!DBI::dbExistsTable(connection, table)) { stop(paste("Table", table, "not in database")) }
-
+  
   present_columns <- DBI::dbListFields(connection, name = table)
   if (!('geometry' %in% present_columns)) { stop(paste("Table", table, "does not have column 'geometry'")) }
-
+  
   missing_columns <- setdiff(columns, present_columns)
-
+  
   if (length(missing_columns) != 0) {
     message <- paste('Invalid columns selected:', paste(missing_columns, collapse = ', '), 'not in', table)
     stop(message)
-
+    
   }
 }
 
 calculate_lateral_position_stream_divide_distance <- function(stream_order_id, depends_on = NULL) {
   length(depends_on)
-
+  
   catchments_table <- composite_name(NN_GRID_CATCHMENTS_TABLE, stream_order_id)
   rivers_table <- composite_name(NN_GRID_RIVERS_TABLE, stream_order_id)
   table <- composite_name(MOHP_FEATURES_TABLE, stream_order_id)
@@ -799,11 +799,11 @@ calculate_lateral_position_stream_divide_distance <- function(stream_order_id, d
 # TODO: delete when last one is in its own target
 set_geo_indices <- function(table_names, index_columns = NULL, depends_on) {
   length(depends_on)
-
+  
   if (is.null(index_columns)) {
     index_columns <- rep("geometry", length(table_names))
   }
-
+  
   map2(table_names, index_columns, ~set_geo_index(.x, .y))
 }
 
@@ -819,7 +819,7 @@ db_execute <- function(query, connection = connect_to_database()) {
 
 read_lateral_position_stream_divide_distance_from_db <- function(table_name_source_prefix, streamorder, depends_on = NULL) {
   length(depends_on)
-
+  
   composite_name(
     table_name_source_prefix,
     streamorder) %>%

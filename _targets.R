@@ -64,13 +64,13 @@ source("R/export_functions.R")
 
 source("data_descriptor/targets/R/visualization_functions.R")
 
-# plan(multisession)
+plan(multisession)
 
 # Define targets
 c(
   import_targets,
   preprocessing_targets,
-  mohpcalculation_targets,
+  # mohpcalculation_targets,
   data_descriptor_targets,
   visualizations_data_descriptor_targets
 )

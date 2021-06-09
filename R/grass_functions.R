@@ -269,7 +269,7 @@ grass_calculations <-
     execGRASS("r.mapcalc",
               expression = str_glue("thiessen_catchments_distance_raster = if(thiessen_catchments_distance_raster >= {max_distance}, null(), thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
-
+    
     execGRASS("r.neighbors",
               input = "thiessen_catchments_distance_raster",
               selection = "river_network_raster",
@@ -326,7 +326,7 @@ grass_rasterize_and_clean_rivers <-
     
     execGRASS("r.null",
               map = "river_network_raster")
-
+    
     execGRASS("r.neighbors",
               input = "river_network_raster",
               selection = "river_network_raster",
