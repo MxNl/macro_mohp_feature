@@ -1,222 +1,126 @@
-
-pre_r_steps <-
-  function() {
-    char_vector <- c("Manual data download")
-  
-    names(char_vector) <- paste0("Step ", 1:(length(char_vector)))
-    
-    char_vector
+generate_discrete_colour_values <- 
+  function(x, var){
+    x %>% 
+      pull({{ var }}) %>% 
+      unique() %>% 
+      length() %>% 
+      hues::iwanthue()
   }
 
-r_steps <-
-  function() {
-    char_vector <- 
-      c(
-      "Data import",
-      "Study area definition",
-      "Preprocessing in R",
-      "Intitiate PostgreSQL steps",
-      "Rasterization of study area",
-      "Intitiate GRASS GIS steps"
-    )
-    
-    names(char_vector) <- paste0("Step ", 2:(length(char_vector)+1))
-    
-    char_vector
+get_mop_files <-
+  function(streamorder, directory, spatial_coverage) {
+    list.files(directory) %>%
+      tibble(files = .) %>%
+      filter(word(files, 2, sep = "_") == AREA) %>%
+      filter(word(files, 6, sep = "_") == str_glue("{CELLSIZE}m.tif")) %>%
+      filter(word(files, 5, sep = "_") %in% str_glue("streamorder{streamorder}")) %>%
+      filter(str_detect(word(files, 3, sep = "_"), str_c(spatial_coverage, collapse = "|")))
   }
 
-postgis_steps <-
-  function() {
-    char_vector <- c(
-      "Linemerge",
-      "Lines per hydrologic order"
+make_output_data_map_plot <-
+  function(feature_name, 
+           streamorder, 
+           legend_title = "", 
+           tag_title, 
+           guide_range_source = selected_hydrologic_orders, 
+           spatial_coverage = spatial_coverage) {
+    
+    if (feature_name == FEATURE_NAMES[2]) {
+      filepath_prefix_feature_name <- "lp"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+    } else if (feature_name == FEATURE_NAMES[1]) {
+      filepath_prefix_feature_name <- "dsd"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+    } else if (feature_name == FEATURE_NAMES[3]) {
+      filepath_prefix_feature_name <- "sd"
+      directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
+    } else {
+      stop("Provide valid value for the argument feature_name")
+    }
+    
+    files <-
+      streamorder %>%
+      get_mop_files(directory, spatial_coverage)
+    
+    guide_range <-
+      guide_range_source %>%
+      get_mop_files(directory, spatial_coverage) %>%
+      pull(files) %>%
+      str_c(directory, .) %>%
+      map(read_stars, proxy = FALSE) %>%
+      map(~ map(.x, range, na.rm = TRUE)) %>%
+      unlist() %>%
+      range(finite = TRUE)
+    
+    raster_stars <-
+      str_glue("{directory}{files$files}") %>%
+      map(read_stars, proxy = TRUE)
+    
+    raster_stars_mosaic <-
+      st_mosaic(raster_stars[[1]])
+    
+    if (length(raster_stars) > 1) {
+      for (i in 2:length(raster_stars)) {
+        raster_stars_mosaic <-
+          st_mosaic(raster_stars_mosaic, raster_stars[[i]])
+      }
+    }
+    
+    # guide_range <-
+    #   raster_stars_mosaic %>%
+    #   st_as_stars() %>%
+    #   as("Raster") %>%
+    #   getValues() %>%
+    #   range(na.rm = TRUE)
+    
+    final_plot <- 
+      ggplot() +
+      geom_stars(data = raster_stars_mosaic, downsample = 3) +
+      coord_equal() +
+      theme_void() +
+      labs(
+        fill = legend_title,
+        tag = tag_title
+      ) +
+      theme(
+        legend.position = "top",
+        text = element_text(family = "Corbel", size = 8)
+        # legend.key.width = unit(dev.size()[1] / 30, "inches")
+      ) +
+      guides(
+        fill = guide_colourbar(title.position = "top", title.hjust = 0.5, barheight = 0.5),
+        size = guide_legend(title.position = "top", title.hjust = 0.5)
       )
     
-    relation_node <- 5
-    names(char_vector) <- paste0("Step ", relation_node, ".", 1:(length(char_vector)))
-    
-    char_vector
+    if (feature_name == FEATURE_NAMES[2]) {
+      final_plot +
+        scale_fill_viridis_c(limits = guide_range, na.value = NA, 
+                             labels = scales::label_number(scale = 1e-2, accuracy = 1))
+    } else {
+      final_plot +
+        scale_fill_viridis_c(limits = guide_range, na.value = NA, 
+                             labels = scales::label_number(scale = 1e-3, accuracy = 1))
+    } 
   }
-
-grassgis_steps <-
-  function() {
-    char_vector <- c(
-      "Calculaction of EU-MOHP measures",
-      "Export raster images to disk")
-    
-    relation_node <- 7
-    names(char_vector) <- paste0("Step ", relation_node, ".", 1:(length(char_vector)))
-    
-    char_vector
-  }
-
-make_workflow_diagram <-
-  function(path) {
-
-    path %>% 
-      dirname() %>% 
-      fs::dir_create()
-    
-    diagramm <- DiagrammeR::grViz("
-    digraph {
-  graph [compound = true, nodesep = .5, ranksep = .25,
-         color = crimson, outputorder=edgesfirst]
-
-  node [shape = box, style = 'filled', fillcolor = white, fontname = Corbel, 
-        fontsize = 10, fontcolor = darkgray,
-        shape = rectangle,
-        color = darkslategray, fixedwidth = true, width = 2]
-
-  edge [color = grey, arrowhead = none, arrowtail = none]
-  
-
-    subgraph cluster0 {
-    style='rounded,filled';
-    color=Gainsboro;
-    fontsize=11;
-    node [style=filled,color=white]
-    label = 'R'
-    '@@2-1' -> '@@2-2' -> '@@2-3' -> '@@2-4' -> '@@2-5' -> '@@2-6'
-    }
-
-    subgraph cluster1 {
-    style='rounded,filled';
-    color='#31648C';
-    fontcolor='white';
-    fontsize=11;
-    node [style=filled,color=white]
-    label = 'PostgreSQL + PostGIS'
-    '@@3-1' -> '@@3-2'
-    }
-
-    subgraph cluster2 {
-    style='rounded,filled';
-    color='#0B8B36';
-    fontcolor='white';
-    fontsize=11;
-    node [style=filled,color=white, width = 3]
-    label = 'GRASS GIS'
-    '@@4-1' -> '@@4-2'
-    }
-
-
-  '@@1' -> '@@2-1'        [lhead = cluster0]
-  '@@2-4' -> '@@3-1'        [ltail = cluster0, lhead = cluster1]
-  '@@2-6' -> '@@4'        [ltail = cluster0, lhead = cluster2]
-  '@@3-2' -> '@@4'        [ltail = cluster1, lhead = cluster2]
-  
-  }
-      [1]: paste0(names(pre_r_steps()), '\\n ', pre_r_steps())
-      [2]: paste0(names(r_steps()), '\\n ', r_steps())                        
-      [3]: paste0(names(postgis_steps()), '\\n ', postgis_steps())                        
-      [4]: paste0(names(grassgis_steps()), '\\n ', grassgis_steps())                        
-                                  ",
-      height = 500
-    )
-
-    tmp <- capture.output(rsvg_pdf(charToRaw(export_svg(diagramm)), path))
-    return(path)
-    # cat("![Standards QA flowchart](stnds.qa.png){#fig:stnds.qa.flow}\n\n")
-  }
-
-# make_workflow_diagram("data_descriptor/test.pdf")
-
 
 make_dataset_map_overview_plot <-
-  function(selected_hydrologic_orders = c(2, 5)) {
-    
-    get_mop_files <-
-      function(streamorder, directory) {
-        list.files(directory) %>%
-          tibble(files = .) %>%
-          filter(word(files, 2, sep = "_") == AREA) %>%
-          filter(word(files, 6, sep = "_") == str_glue("{CELLSIZE}m.tif")) %>%
-          filter(word(files, 5, sep = "_") %in% str_glue("streamorder{streamorder}"))
-      }
-    
-    make_output_data_map_plot <-
-      function(feature_name, streamorder, legend_title = "", tag_title, guide_range_source = selected_hydrologic_orders) {
-        if (feature_name == FEATURE_NAMES[2]) {
-          filepath_prefix_feature_name <- "lp"
-          directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
-        } else if (feature_name == FEATURE_NAMES[1]) {
-          filepath_prefix_feature_name <- "dsd"
-          directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
-        } else if (feature_name == FEATURE_NAMES[3]) {
-          filepath_prefix_feature_name <- "sd"
-          directory <- glue::glue("{OUTPUT_DIRECTORY}/{feature_name}/")
-        } else {
-          stop("Provide valid value for the argument feature_name")
-        }
-        
-        files <-
-          streamorder %>%
-          get_mop_files(directory)
-        
-        guide_range <-
-          guide_range_source %>%
-          get_mop_files(directory) %>%
-          pull(files) %>%
-          str_c(directory, .) %>%
-          map(read_stars) %>%
-          map(~ map(.x, range, na.rm = TRUE)) %>%
-          unlist() %>%
-          range(finite = TRUE)
-        
-        raster_stars <-
-          str_glue("{directory}{files$files}") %>%
-          map(read_stars)
-        
-        raster_stars_mosaic <-
-          st_mosaic(st_as_stars(raster_stars[[1]]))
-        
-        for (i in 2:length(raster_stars)) {
-          raster_stars_mosaic <-
-            st_mosaic(raster_stars_mosaic, st_as_stars(raster_stars[[i]]))
-        }
-        
-        final_plot <- 
-          ggplot() +
-          geom_stars(data = raster_stars_mosaic, downsample = 3) +
-          coord_equal() +
-          theme_void() +
-          labs(
-            fill = legend_title,
-            tag = tag_title
-          ) +
-          theme(
-            legend.position = "top",
-            text = element_text(family = "Corbel", size = 8)
-            # legend.key.width = unit(dev.size()[1] / 30, "inches")
-          ) +
-          guides(
-            fill = guide_colourbar(title.position = "top", title.hjust = 0.5, barheight = 0.5),
-            size = guide_legend(title.position = "top", title.hjust = 0.5)
-          )
-        
-        if (feature_name == FEATURE_NAMES[2]) {
-          final_plot +
-            scale_fill_viridis_c(limits = guide_range, na.value = NA, 
-                                 labels = scales::label_number(scale = 1e-2, accuracy = 1))
-        } else {
-          final_plot +
-            scale_fill_viridis_c(limits = guide_range, na.value = NA, 
-                                 labels = scales::label_number(scale = 1e-3, accuracy = 1))
-        } 
-      }
+  function(selected_hydrologic_orders = c(3, 4), spatial_coverage = ".") {
     
     plot_lp_one <- make_output_data_map_plot(
       feature_name = FEATURE_NAMES[2],
       streamorder = selected_hydrologic_orders[1],
       legend_title = "Lateral position [%]",
-      tag_title = "A",
-      guide_range_source = selected_hydrologic_orders
+      tag_title = "A", 
+      guide_range_source = selected_hydrologic_orders,
+      spatial_coverage = spatial_coverage
     )
     plot_lp_two <- make_output_data_map_plot(
       FEATURE_NAMES[2],
       selected_hydrologic_orders[2],
       "Lateral position [%]",
-      "D"
+      "D", 
+      guide_range_source = selected_hydrologic_orders,
+      spatial_coverage = spatial_coverage
     )
     
     plot_lp <-
@@ -229,13 +133,17 @@ make_dataset_map_overview_plot <-
       FEATURE_NAMES[1],
       selected_hydrologic_orders[1],
       "Divide stream distance [km]",
-      "B"
+      "B", 
+      guide_range_source = selected_hydrologic_orders,
+      spatial_coverage = spatial_coverage
     )
     plot_dsd_two <- make_output_data_map_plot(
       FEATURE_NAMES[1],
       selected_hydrologic_orders[2],
       "Divide stream distance [km]",
-      "E"
+      "E", 
+      guide_range_source = selected_hydrologic_orders,
+      spatial_coverage = spatial_coverage
     )
     
     plot_dsd <-
@@ -248,13 +156,17 @@ make_dataset_map_overview_plot <-
       FEATURE_NAMES[3],
       selected_hydrologic_orders[1],
       "Stream distance [km]",
-      "C"
+      "C", 
+      guide_range_source = selected_hydrologic_orders,
+      spatial_coverage = spatial_coverage
     )
     plot_sd_two <- make_output_data_map_plot(
       FEATURE_NAMES[3],
       selected_hydrologic_orders[2],
       "Stream distance [km]",
-      "F"
+      "F", 
+      guide_range_source = selected_hydrologic_orders,
+      spatial_coverage = spatial_coverage
     )
     
     plot_sd <-
@@ -263,7 +175,7 @@ make_dataset_map_overview_plot <-
          theme(legend.position = "top")) +
       plot_layout(guides = "collect")
     
-    (plot_lp | plot_dsd | plot_sd)  + plot_annotation(theme = theme(plot.margin = margin()))
+    (plot_lp | plot_dsd | plot_sd) + plot_annotation(theme = theme(plot.margin = margin()))
   }
 
 make_input_data_table <- 
@@ -485,7 +397,7 @@ make_dir_tree <-
     fs::dir_tree(
       ".",
       recurse = 1,
-      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*",
+      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*|README.html",
       invert = TRUE
     )
   }

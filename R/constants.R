@@ -7,6 +7,7 @@ FILEPATH_PREFIX_SPATIAL_COVERAGE <- paste0("mohp_", AREA)
 DATABASENAME <- purrr::chuck(YML_CONFIG, "database_name")
 EXCLUDE_SCANDINAVIAN_BASINS <- purrr::chuck(YML_CONFIG, "exclude_scandinavian_basins")
 SIMPLIFY_POLYGONS <- purrr::chuck(YML_CONFIG, "simplify_polygons")
+PARALLEL <- purrr::chuck(YML_CONFIG, "parallel")
 
 # Directories
 FILEPATH_STUDYAREA_PIPELINETEST <- "input_data/studyarea_test/macro_datapreparation_pipeline_test_studyarea_island.shp"
@@ -23,7 +24,6 @@ LINES_MERGED <- "lines_merged"
 LINES_STUDYAREA <- "lines_studyarea"
 INLAND_WATERS <- "inland_waters"
 INLAND_WATERS_STRAHLER <- "inland_waters_strahler"
-LINES_BY_STREAMORDER <- "river_network_by_streamorder"
 COASTLINE_BUFFER <- "coastline_buffer"
 RIVER_BASINS_SUBSET <- "river_basins_subset"
 SELECTED_STUDYAREA_TABLE <- "selected_studyarea"
@@ -48,7 +48,6 @@ DFDD_RIVERS <- "BH140"
 STREAM_TYPES_TO_USE <- c(DFDD_RIVERS)
 GRASS_MAX_MEMORY <- 5E4
 SIMPLIFY_KEEP_NODES_PERCENTAGE <- 0.05
-MIN_AREA_ISLAND <- 3.6E9
 
 EEA39COUNTRIES <- 
   c(

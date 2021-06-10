@@ -14,6 +14,7 @@ qgis
 .idea
 logs
 *.yml
+!config.yml
 junk
 grassdata
 main_files
@@ -24,3 +25,4 @@ input_data/data
 input_data/EUHYDRO_Coastline_EEA39_v013
 data_descriptor/tex/data_descriptor.pdf
 data_descriptor/tex/data_descriptor.tex
+data_descriptor.log

@@ -14,10 +14,16 @@ visualizations_data_descriptor_targets <-
       selected_hydrologic_orders,
       c(3, 4)
     ),
-    # tar_target(
-    #   dataset_map_overview_plot,
-    #   make_dataset_map_overview_plot(selected_hydrologic_orders = selected_hydrologic_orders)
-    # ),
+    tar_target(
+      spatial_coverage,
+      if(AREA == "europe") "italy2" else "."
+    ),
+    tar_target(
+      dataset_map_overview_plot,
+      make_dataset_map_overview_plot(
+        selected_hydrologic_orders = selected_hydrologic_orders, 
+        spatial_coverage = spatial_coverage)
+    ),
     tar_target(
       output_data_table,
       make_output_data_table()

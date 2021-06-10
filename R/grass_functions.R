@@ -1,25 +1,3 @@
-initiate_grass_db <- 
-  function(studyarea) {
-    
-    
-    initGRASS(gisBase = "C:/Program Files/GRASS GIS 7.8",
-              addon_base = "C:/Noelscher.M/Anwendungsdaten/GRASS7/addons",
-              # home parameter necessary under UNIX-based systems
-              home = tempdir(),
-              gisDbase = tempdir(), 
-              location = "test", 
-              mapset = "PERMANENT", 
-              override = TRUE)
-    
-    execGRASS("g.proj", flags = c("c", "quiet"), 
-              proj4 = st_crs(studyarea)$proj4string)
-    # b_box = st_bbox(studyarea) 
-    # execGRASS("g.region", flags = c("quiet"), 
-    #           n = as.character(b_box["ymax"]), s = as.character(b_box["ymin"]), 
-    #           e = as.character(b_box["xmax"]), w = as.character(b_box["xmin"]), 
-    #           res = as.character(CELLSIZE))
-  }
-
 initiate_grass_db_parallel <- 
   function(studyarea, streamorder, crs_reference) {
     

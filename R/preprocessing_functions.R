@@ -367,9 +367,6 @@ union_river_basins <-
 subset_river_basins <-
   function(river_basins) {
     river_basins %>% 
-      # mutate(area = as.numeric(st_area(geometry))) %>% 
-      # filter(area >= MIN_AREA_ISLAND) %>% 
-      # select(-area) %>% 
       st_as_sf() %>% 
       sfheaders::sf_remove_holes() %>% 
       st_as_sf() %>% 

@@ -1,0 +1,6 @@
+area: europe
+cellsize: 30
+database_name: postgis
+exclude_scandinavian_basins: FALSE
+simplify_polygons: FALSE
+parallel: FALSE

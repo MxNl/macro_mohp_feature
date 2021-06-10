@@ -89,26 +89,6 @@ transform_crs_if_required <-
     
   }
 
-parallel_read_river_basins_land <- 
-  function(filepaths) {
-    
-    plan(multisession, workers = length(filepaths))
-    
-    river_basins <- 
-      filepaths %>% 
-      future_map_dfr(read_river_basins_land)
-    
-    plan(sequential)
-    
-    return(river_basins)
-  }
-
-test <- 
-  function(river_basin_name) {
-    river_basin_name %>% 
-      str_c("asda")
-  }
-
 read_river_basins <-
   function(river_basins_files, river_basin_name) {
 
@@ -149,22 +129,6 @@ read_coastline <-
       # gUnaryUnion() %>%
       # st_as_sf() %>%
       transform_crs_if_required()
-  }
-
-
-get_feature_ids_to_reclassify <-
-  function(filepath) {
-    filepath %>%
-      list.files() %>%
-      magrittr::extract(str_detect(., ".shp$")) %>%
-      str_c(filepath, "/", .) %>%
-      map_dfr(st_read) %>%
-      as_tibble() %>%
-      clean_names() %>%
-      distinct(inspire_id, .keep_all = TRUE) %>% 
-      verify(nrow(.) == length(unique(.$inspire_id))) %>%
-      pull(inspire_id) %>%
-      as.character()
   }
 
 generate_lines <-

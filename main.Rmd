@@ -5,7 +5,7 @@ author:
     affiliation:
     - Federal Institute for Geosciences and Natural Resources (BGR), Berlin, Germany
 abstract: |
-  The presented dataset EU-MOHP v013.1.0 provides information on the multiorder hydrologic position (MOHP) of a geographic point within its respective river network and catchment as gridded maps. More precisely, it comprises the three measures “lateral position” (LP) as a relative measure of the position between the stream and the catchment divide, “divide stream distance” (DSD) as sum of the distances to the nearest stream and divide and “stream distance” (SD) as an absolute measure of the distance to the nearest stream. These three measures are calculated for several hydrologic orders to reflect different spatial scales. Its spatial extent covers major parts of physiographical Europe or the European Economic Area (EEA39). Although there might be many potential use cases, this dataset serves predominantly as valuable static environmental predictor variable for hydrogeological and hydrological mapping or regionalization tasks using machine learning.
+  The presented dataset EU-MOHP v013.1.0 provides information on the multiorder hydrologic position (MOHP) of a geographic point within its respective river network and catchment as gridded maps. More precisely, it comprises the three measures “lateral position” (LP) as a relative measure of the position between the stream and the catchment divide, “divide stream distance” (DSD) as sum of the distances to the nearest stream and divide and “stream distance” (SD) as an absolute measure of the distance to the nearest stream. These three measures are calculated for several hydrologic orders to reflect different spatial scales. Its spatial extent covers major parts of the European Economic Area (EEA39) which also largely coincides with physiographical Europe. Although there might be many potential use cases, this dataset serves predominantly as valuable static environmental predictor variable for hydrogeological and hydrological mapping or regionalization tasks using machine learning.
 output: 
   bookdown::pdf_document2:
     number_sections: FALSE
@@ -117,7 +117,7 @@ Based on the river network and the Thiessen divides, the EU-MOHP measures can be
 <!-- further up, you use plain variable names, here italic ones. the convention for variable names comprising multiple letter is non-italic letters, also in formulas. -->
 where $i$ is the hydrologic order, DS is the horizontal distance from a point to the nearest stream (Fig. \@ref(fig:schematicmohp)) and DD is the horizontal distance to the nearest Thiessen divide under the condition that the divide is on the same side of the stream or in other words: the line that connects the nearest Thiessen divide and the point must not cross a stream (Fig. \@ref(fig:schematicmohp)). This condition arises from the fact that water flows towards the topographically lowest points namely the streams.
 
-Examples of the generated EU-MOHP v013.1.0 maps are shown in Fig. \@ref(fig:datasetmapoverviewplot) for the two hydrologic orders `r tar_read(selected_hydrologic_orders) %>% str_c(collapse= " and ")`. 
+Examples of the generated EU-MOHP v013.1.0 maps are shown in Fig. \@ref(fig:datasetmapoverviewplot) for the two hydrologic orders `r tar_read(selected_hydrologic_orders) %>% str_c(collapse= " and ")` for Sardinia. 
 
 # Methods {-}
 
@@ -127,7 +127,7 @@ To better refer to the code during the description of the methods, each processi
 
 ## Directory \& File Structure {-}
 
-The directory and file structure of the project folder containing all code and files to generate this dataset is summarized in Fig. \@ref(fig:projectdirtree) in a tree structure. Files and directories that are not relevant for describing the methods are not shown here. The file *config.yml* (line `r dirtree_lineno("config.yml")`) contains definitions of variables that are meant to be set by a user before running the targets pipeline. The most relevant variable is *cellsize* which sets the spatial resolution of the resulting EU-MOHP gridded maps. Another important variable is *area* to switch between a test study area and the complete study area for all EEA39. The test study area represents a small fraction of the study area. This reduces the runtime of the pipeline for testing purposes. The folder *grassdata* (line `r dirtree_lineno("grassdata")`) is used for writing the GRASS GIS databases to. The folder *input_data* (line `r dirtree_lineno("input_data")`) contains all required input data. Firstly, the sub-folder *data* (line `r dirtree_lineno("data")`) comprises the river network data as one single folder per basin as it is derived after unzipping the downloaded “EU-Hydro -- River Network Database” data (see [Underlying Dataset]). The second sub-folder *EUHYDRO_Coastline_EEA39_v013* (line `r dirtree_lineno("EUHYDRO_Coastline_EEA39_v013")`) contains the coastline data (see [Underlying Dataset]). The third sub-folder *studyarea_test* (line `r dirtree_lineno("studyarea_test")`) contains a test study area as Shape file for pipeline testing purposes only (see [Code availability]). The file *macro_mohp_feature.Rproj* (line `r dirtree_lineno("EUHYDRO_Coastline_EEA39_v013.shp")`) is the R project file. The folder *output_data* (line `r dirtree_lineno("output_data")`) contains three sub-directories where the final EU-MOHP gridded maps are written to. These directories are created by the pipeline if they don't already exist. *R* (line `r dirtree_lineno("R")`) contains R scripts where custom functions and constants are defined. *renv* (line `r dirtree_lineno("renv")`) and the file *renv.lock* (line `r dirtree_lineno("renv.lock")`) are related to the R package renv that tracks versions of package dependencies \cite{ushey_renv_2021}. The R script *run_pipeline.R* (line `r dirtree_lineno("run_pipeline.R")`) contains code to execute the targets pipeline that does all the data processing and calculations. *targets* (line `r dirtree_lineno("targets")`) contains the definition of all targets or processing steps of the pipeline. For overview reasons, it is split thematically across multiple files. *\_targets* (line `r dirtree_lineno("_targets")`) is used by the targets package internally. The file *\_targets.R* (line `r dirtree_lineno("_targets.R")`) sets up the targets pipeline and loads all dependencies.
+The directory and file structure of the project folder containing all code and files to generate this dataset is summarized in Fig. \@ref(fig:projectdirtree) in a tree structure. Files and directories that are not relevant for describing the methods are not shown here. The project folder as the top level directory is the working directory. The file *config.yml* (line `r dirtree_lineno("config.yml")`) contains definitions of variables that are meant to be set by a user before running the targets pipeline. The most relevant variable is *cellsize* which sets the spatial resolution of the resulting EU-MOHP gridded maps. Another important variable is *area* to switch between a test study area and the complete study area for all EEA39. The test study area represents a small fraction of the study area. This reduces the runtime of the pipeline for testing purposes. The folder *grassdata* (line `r dirtree_lineno("grassdata")`) is used for writing the GRASS GIS databases to. The folder *input_data* (line `r dirtree_lineno("input_data")`) contains all required input data. Firstly, the sub-folder *data* (line `r dirtree_lineno("data")`) comprises the river network data as one single folder per basin as it is derived after unzipping the downloaded “EU-Hydro -- River Network Database” data (see [Underlying Dataset]). The second sub-folder *EUHYDRO_Coastline_EEA39_v013* (line `r dirtree_lineno("EUHYDRO_Coastline_EEA39_v013")`) contains the coastline data (see [Underlying Dataset]). The third sub-folder *studyarea_test* (line `r dirtree_lineno("studyarea_test")`) contains a test study area as Shape file for pipeline testing purposes only (see [Code availability]). The file *macro_mohp_feature.Rproj* (line `r dirtree_lineno("EUHYDRO_Coastline_EEA39_v013.shp")`) is the R project file. The folder *output_data* (line `r dirtree_lineno("output_data")`) contains three sub-directories where the final EU-MOHP gridded maps are written to. These directories are created by the pipeline if they don't already exist. *R* (line `r dirtree_lineno("R")`) contains R scripts where custom functions and constants are defined. *renv* (line `r dirtree_lineno("renv")`) and the file *renv.lock* (line `r dirtree_lineno("renv.lock")`) are related to the R package renv that tracks versions of package dependencies \cite{ushey_renv_2021}. The R script *run_pipeline.R* (line `r dirtree_lineno("run_pipeline.R")`) contains code to execute the targets pipeline that does all the data processing and calculations. *targets* (line `r dirtree_lineno("targets")`) contains the definition of all targets or processing steps of the pipeline. For overview reasons, it is split thematically across multiple files. *\_targets* (line `r dirtree_lineno("_targets")`) is used by the targets package internally. The file *\_targets.R* (line `r dirtree_lineno("_targets.R")`) sets up the targets pipeline and loads all dependencies.
 
 ## Underlying Dataset {-}
 
@@ -151,7 +151,7 @@ In this study, the coordinate reference system (CRS) ETRS89-extended / LAEA Euro
 
 ### River Basins/ Study Area {-}
 
-The preprocessing steps related to the river basins are described first because they aim at the determination of a study area, which is required for subsequent processing steps. The EU-MOHP measures are then calculated for this area as a last step. The following steps refer to targets that can be found in the file *studyarea_targets.R* (Fig. \@ref(fig:projectdirtree), `r dirtree_lineno("studyarea_targets.R")`). After the previously mentioned import, the sub-basins are unioned basin-wise (target: *river_basins_unioned*). Then, all polygons belonging to European oversea territories such as the French islands in the Caribbean are removed (target: *river_basins_subset*). The resulting polygon geometries are unioned in the PostgreSQL database (target: *river_basins_subset_union_in_db*) to reduce the runtime of this union. Previous attempts to perform this union in R have shown too long run_times, because the polygon geometries have a large amount of nodes due to the high details in the digitized coastline. Subsequently, out of these polygons of contiguous land masses the 10 largest polygons by area are chosen as study area (target: *river_basins_region_name*). Lastly, names are automatically assigned to each of the polygons (target: *selected_studyarea*). These names are mainly used to generate the output file names at the end of the pipeline.
+The preprocessing steps related to the river basins are described first because they aim at the determination of a study area, which is required for subsequent processing steps. The EU-MOHP measures are then calculated for this area as a last step. The following steps refer to targets that can be found in the file *studyarea_targets.R* (Fig. \@ref(fig:projectdirtree), `r dirtree_lineno("studyarea_targets.R")`). After the previously mentioned import, the sub-basins are unioned basin-wise (target: *river_basins_unioned*). Then, all polygons belonging to European oversea territories such as the French islands in the Caribbean are removed (target: *river_basins_subset*). The resulting polygon geometries are unioned in the PostgreSQL database (target: *river_basins_subset_union_in_db*) to reduce the runtime of this union. Previous attempts to perform this union in R have shown too long runtimes, because the polygon geometries have a large amount of nodes due to the high details in the digitized coastline. Subsequently, out of these polygons of contiguous land masses the 10 largest polygons by area are chosen as study area (target: *river_basins_region_name*). Lastly, names are automatically assigned to each of the polygons (target: *selected_studyarea*). These names are mainly used to generate the output file names at the end of the pipeline.
 
 ### River Network {-}
 
@@ -202,7 +202,7 @@ Besides the import, there is only one other step in the targets pipeline that pr
 
 ### Coastline {-}
 
-The coastline geometries consist of a vast number of nodes which slows down many geometry operations and calculations. Therefore, many processing steps are parallelised across smaller batches of the coastline data which lead to many helper targets. First, the imported polygon geometries are unioned basin by basin (target: *coastline_unioned*). Contrary to the assumption based on the name "coastline", the geometry type of the coastline is polygons. Then, all geometries that don't intersect with the previously derived study area are removed (target: *coastline_filtered*). This is mainly to reduce the large number of geometries contained in the data caused by islands. A buffer of 3000 m is added to the remaining polygon geometries to compensate for inaccuracies of the match between the study area and the coastline contours. This is relevant for the second next step. First, the buffered polygon geometries are unioned to a single multipolygon geometry in the PostGIS database for reducing the runtime of calculating the union operation (target: *coastline_buffer_unioned*). Now, the multipolygon geometry that represents the coastline is intersected with the study area as linestring geometry (target: *studyarea_as_coastline*). This intersection ensures that the shoreline lies exactly over the study area. Similarly, the next step determines the parts of the study area that are not coastline meaning where the contour of the coastline touches land instead of the ocean. This is achieved by calculating the difference of the study area and the same coastline geometry as before (target: *coastline_watershed*). All these targets can be found in the *studyarea_targets.R* file (Fig. \@ref(fig:projectdirtree), line `r dirtree_lineno("studyarea_targets.R")`).
+The coastline geometries consist of a vast number of nodes which slows down many geometry operations and calculations. Therefore, many processing steps are parallelised across smaller batches of the coastline data which lead to many helper targets. First, the imported polygon geometries are unioned basin by basin (target: *coastline_unioned*). Contrary to the assumption based on the name "coastline", the geometry type of the coastline is polygons. Then, all geometries that don't intersect with the previously derived study area are removed (target: *coastline_filtered*). This is mainly to reduce the large number of geometries contained in the data caused by islands. A buffer of 3000 m is added to the remaining polygon geometries to compensate for inaccuracies of the match between the study area and the coastline contours. The value of 3000 m results from visual inspection of discrepancies between the coastline and the study area boundaries. This is relevant for the second next step. First, the buffered polygon geometries are unioned to a single multipolygon geometry in the PostGIS database for reducing the runtime of calculating the union operation (target: *coastline_buffer_unioned*). Now, the multipolygon geometry that represents the coastline is intersected with the study area as linestring geometry (target: *studyarea_as_coastline*). This intersection ensures that the shoreline lies exactly over the study area. Similarly, the next step determines the parts of the study area that are not coastline meaning where the contour of the coastline touches land instead of the ocean. This is achieved by calculating the difference of the study area and the same coastline geometry as before (target: *coastline_watershed*). All these targets can be found in the *studyarea_targets.R* file (Fig. \@ref(fig:projectdirtree), line `r dirtree_lineno("studyarea_targets.R")`).
 
 
 ## EU-MOHP Calculation {-}
@@ -313,7 +313,7 @@ execGRASS(
 \noindent
 where *`FEATURE_NAMES[3]`* is the raster layer name *`r FEATURE_NAMES[3]`* for SD. Its calculation is simply performed by rounding the raster layer "river_network_distance_raster".
 
-Lastly, the resulting raster layers for LP, DSD and SD are exported from the GRASS GIS database. Therefore, the directory *output_data* with further sub-directories `r FEATURE_NAMES %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{FEATURE_NAMES[length(FEATURE_NAMES)]}*"), sep = " and ")` is created. The raster layers are written into these sub-directories in the GeoTiff (.tif) file format.
+Lastly, the resulting raster layers for LP, DSD and SD are exported from the GRASS GIS database. Therefore, the directory *output_data* with the sub-directories `r FEATURE_NAMES %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{FEATURE_NAMES[length(FEATURE_NAMES)]}*"), sep = " and ")` is created. The raster layers are written into these sub-directories in the GeoTiff (.tif) file format. After completion, these GeoTiff files have been uploaded to the data hosting cloud-platform (see [Data Records]).
 
 ## Data Descriptor {-}
 
@@ -324,7 +324,9 @@ The computations to generate the presented dataset were performed on a DELL Powe
 
 # Data Records {-}
 
-The presented EU-MOHP v013.1.0 dataset is available on the Hydroshare data portal at !!linktoDOI. The dataset represents gridded spatial maps and is divided into separate GeoTIFF files with a .tif file extension. Each file represents data on one of the three EU-MOHP measures -- LP, DSD, and SD -- for one hydrologic order at different spatial coverage. The file names are structured according to the following scheme "*mohp_europe_\<region name for spatial coverage\>\_\<abbreviation of the EU-MOHP measure\>\_\<hydrologic order\>\_\<spatial resolution\>.tif*". The placeholders including "*<*" and "*>*" can be replaced by any combination of the values summarized in Tab. \@ref(tab:outputdata). The combinations of all placeholder values results in a total number of $n_{measures}\cdot n_{hydrologic\: orders}\cdot n_{study\: area\: polygons} =  `r length(FEATURE_NAMES)`\cdot `r length(tar_read(streamorders))`\cdot `r nrow(tar_read(selected_studyarea))` = `r length(FEATURE_NAMES) * length(tar_read(streamorders)) * nrow(tar_read(selected_studyarea))`$ files. Files of the same EU-MOHP measure are stored together in the respective sub-directory `r FEATURE_NAMES %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{FEATURE_NAMES[length(FEATURE_NAMES)]}*"), sep = " or ")`.
+The presented EU-MOHP v013.1.0 dataset is available on the Hydroshare cloud-platform at !!linktoDOI. The dataset represents gridded spatial maps and is divided into separate GeoTIFF files with a .tif file extension. Each file represents data on one of the three EU-MOHP measures -- LP, DSD, and SD -- for one hydrologic order for a different spatial coverage. The file names are structured according to the following scheme "*mohp_europe_\<region name for spatial coverage\>\_\<abbreviation of the EU-MOHP measure\>\_\<hydrologic order\>\_\<spatial resolution\>.tif*". The placeholders including "*<*" and "*>*" can be replaced by any combination of the values summarized in Tab. \@ref(tab:outputdata). The combinations of all placeholder values results in a total number of $n_{measures}\cdot n_{hydrologic\: orders}\cdot n_{study\: area\: polygons} =  `r length(FEATURE_NAMES)`\cdot `r length(tar_read(streamorders))`\cdot `r nrow(tar_read(selected_studyarea))` = `r length(FEATURE_NAMES) * length(tar_read(streamorders)) * nrow(tar_read(selected_studyarea))`$ files. Files of the same EU-MOHP measure are stored together in the respective sub-directory `r FEATURE_NAMES %>% tibble(a = .) %>% str_glue_data("*{.$a[-nrow(.)]}*") %>% str_c(collapse = ", ") %>% str_c(str_glue("*{FEATURE_NAMES[length(FEATURE_NAMES)]}*"), sep = " or ")`.
+
+On Hydroshare you have the option to either select all GeoTiff files and download them in a zipped folder or download a selection of files if your are only interested in a specific region (area of interest) or specific hydrologic orders. For creating a user defined selection you can use the search bar to filter the files for a spatial coverage or a hydrologic order. If you want to check more precisely whether your area of interest is covered by this dataset at all or which files are relevant, please see [this interactive map](https://mxnl.github.io/macro_mohp_feature/).
 
 The presented EU-MOHP dataset has version v013.1.0 It is composed of the “EU-Hydro -- River Network Database” version (v013) and a major and a minor version number (1.0) that are related to the methods of this dataset.
 
@@ -336,7 +338,7 @@ The accuracy of this dataset may also be reduced near the boundaries that run ov
 
 Another inaccuracy is introduced by the method to calculate DD. This inaccuracy only affects a narrow area near headwaters. As described previously, the GRASS GIS command `r.walk` is used to calculate DD. The command `r.walk` originally aims at a different purpose than the one it is used for here. It calculates the cumulative costs for moving between two geographic locations based on topographic map and a map that represents friction costs. Because of the applied setting of the command parameters, it calculates the horizontal distance from a cell to the nearest Thiessen divide while preferring a path without crossing a stream. This behavior is usually achieved everywhere except for areas near headwaters where "walking" around the stream becomes an option. To illustrate this, following case is considered. If a linestring geometry representing a stream is closer to one side of the Thiessen divide than to the other side, `r.walk` calculates an incorrect distance around the start of the linestring as it cheaper to "walk" around the stream than walking a straight path from the more distant but correct side of the Thiessen divide. Thus, the straight path from this mistakenly nearest side of the Thiessen divide crosses the stream. Whereas the required and correct behaviour would be to calculate the distance as the length of a straight line to the Thiessen divide that does not cross the stream (Fig. \@ref(fig:ddinaccuracies)).
 
-The method for calculating DD also causes missing (NA) values for cells that are located in lakes. This only affects the DSD raster maps ("*\<abbreviation of the EU-MOHP measure\> = dsd*"). 
+The method for calculating DD also causes missing (NA) values for cells that are located in lakes. This only affects the DSD raster maps ("*\<abbreviation of the EU-MOHP measure\> = dsd*").
 
 As stated below, we encourage readers and users of this dataset to report errors in the methods or the code in the mentioned github repository.
 
@@ -346,7 +348,7 @@ As described previously, the presented dataset can be used as features in any ma
 
 The raster cell values of all GeoTIFF files are stored as integers in the *INT32* data type to reduce storage size. Cell values of files that represent LP ("*\<abbreviation of the EU-MOHP measure\> = lp*") must be divided by 100 to obtain percentages with two decimals. The cell values of all other files represent a distance in meters and can be used as is. All files are stored using the coordinate reference system (CRS) ETRS89-extended / LAEA Europe with the EPSG code `r CRS_REFERENCE`.
 
-After downloading the dataset from the mentioned link in [Data Records], the dataset must be unzipped. Depending on the location of the area of interest (AOI) and the desired hydrologic orders, the relevant files can be selected from the sub-folders. If you want to check more precisely whether your AOI is covered by this dataset and which files are relevant, please see this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
+Some of the GeoTiff files representing DSD ("*\<abbreviation of the EU-MOHP measure\> = dsd*") contain defective data for a currently unknown reasons. This does not affect files for the spatial coverage of *europemainland* ("*\<region name for spatial coverage\> = europemainland*"). You can recognize these defective files by the values of the raster grid cells (-1,79769e+308 and 1,79769e+308).
 
 # Code availability {-}
 
@@ -358,41 +360,32 @@ The used software comprises R (version `r str_c(R.Version()$major, ".", R.Versio
 
 To reproduce this dataset, the subsequent steps are required. They have been tested under Windows as operating system (see [Hardware]), therefore deviations under Linux or MacOS are possible:
 
- 1. Install the the R language, PostgreSQL, PostGIS and GRASS GIS in their previously described versions. Furthermore, install the latest version of RStudio. RStudio is a free integrated development environment for R.
+1.  Install the the R language, PostgreSQL, PostGIS and GRASS GIS in their previously described versions. Furthermore, install the latest version of RStudio. RStudio is a free integrated development environment for R.
  
- 2. Create a PostgreSQL database with the name "postgis" or chose a different name and change the variable *database_name* in the *config.yml* file later. Also change the setting of the PostgreSQL database to not request a password for connection.
+2.  Create a PostgreSQL database with the name "postgis" or chose a different name and change the variable *database_name* in the *config.yml* file later. Also change the setting of the PostgreSQL database to not request a password for connection.
 
- 3. Download the project repository containing all required code and scripts from above mentioned static code repository.
+3.  Download the project repository containing all required code and scripts from above mentioned static code repository.
  
- 4. Download the required input data “EU-Hydro -- River Network Database” and “EU-Hydro -- Coastline” from the links below and store it in the directory *input_data* as described in [Underlying Dataset] and [Directory \& File Structure] to make it match the file structure of the *input_data* (Fig. \@ref(fig:projectdirtree), line `r dirtree_lineno("input_data")` - `r dirtree_lineno("studyarea_test")`). For downloading the data a free user account is required. Alternatively, if you want to keep the data at another directory, e.g. on a remote server, you need to change the file paths in the file *constants.R*.
+4.  Download the required input data “EU-Hydro -- River Network Database” and “EU-Hydro -- Coastline” from the links below and store it in the directory *input_data* as described in [Underlying Dataset] and [Directory \& File Structure] to make it match the file structure of the *input_data* (Fig. \@ref(fig:projectdirtree), line `r dirtree_lineno("input_data")` - `r dirtree_lineno("studyarea_test")`). For downloading the data a free user account is required. Alternatively, if you want to keep the data at another directory, e.g. on a remote server, you need to change the file paths in the file *constants.R*.
  
- 5. Create a plain text file in the project folder with the name *config.yml* and copy the following lines into it:
-```{r, eval=FALSE}
-area: europe
-cellsize: 30
-database_name: postgis
-exclude_scandinavian_basins: FALSE
-simplify_polygons: FALSE
-```
+5.  Navigate to the project directory and open the file *macro_mohp_feature.Rproj* with RStudio.
 
- 6. Navigate to the project directory and open the file *macro_mohp_feature.Rproj* with RStudio.
-
- 7. Install the package *renv* by running following command in the console
+6.  Install the package *renv* by running following command in the console
 ```{r, eval=FALSE}
 install.packages("renv")
 ```
  
- 8. Install all package dependencies with
+7.  Install all package dependencies with the subsequent line (Note that under Linux and MacOS some R-packages have system dependencies, such as the package _sf_, which depends on `libgeos-dev `, among others. Please consult the respective documentation when facing an issue.)
 ```{r, eval=FALSE}
 renv::restore()
 ```
  
- 9. Start the processing pipeline by running the file *run_pipeline.R* with
+8.  Start the processing pipeline by running the file *run_pipeline.R* with
 ```{r, eval=FALSE}
 source("run_pipeline.R")
 ```
 
- 10. If you encounter any problems, please contact the corresponding author. Errors can probably be caused by incorrect directories and file paths. If the available memory is insufficient, one option is to run the pipeline sequentially rather than in parallel. To do this, just remove the line `plan(multisession)` in the file *\_targets.R*. 
+9.  If you encounter any problems, please contact the corresponding author. Errors can probably be caused by incorrect directories and file paths. If the available memory is insufficient, one option is to run the pipeline sequentially rather than in parallel. To do this, change the variable *parallel* in the file *config.yml* from `TRUE` to `FALSE`. 
 
 The required underlying datasets “EU-Hydro -- River Network Database” version v013 can be downloaded [here](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-river-network-database?tab=download) and “EU-Hydro -- Coastline” version v013 [here](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-coastline?tab=download).
 In order to maximize and simplify reproducibility, we currently plan to set up a docker container. For availability updates, please visit the mentioned github repository.
@@ -404,7 +397,7 @@ The generation of this dataset would not have been possible without all the free
 
 # Author contributions statement {-}
 
-M.N. was involved in all phases and steps of the generation of this dataset. M.M supported to R and PostGIS code development and set up the docker container. S.B. contributed to the conceptual design of the dataset. All authors reviewed the manuscript.
+M.N. was involved in all phases and steps of the generation of this dataset including investigations and visualizations. M.M. contributed to software development in R and PostGIS and set up the docker container. M.M. also contributed to the methodology and validation. S.B. contributed to the conceptualization of the dataset, but also led the supervision, project administration and funding acquisition. All authors reviewed and edited the manuscript.
 
 # Competing interests {-}
 
@@ -431,7 +424,7 @@ targets::tar_read(input_data_table) %>%
 ```
 \renewcommand{\arraystretch}{1}
 
-```{r datasetmapoverviewplot, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= str_glue("Resulting maps of the three EU-MOHP measures lateral position (A, D), divide stream distance (B, E) and stream distance (C, F) in the columns exemplary for the two hydrologic orders {tar_read(selected_hydrologic_orders)[1]} (A, B, C) and {tar_read(selected_hydrologic_orders)[2]} (D, E, F) in the rows. The colour gradients in the legend represent the mapped values of all plots in their column.")}
+```{r datasetmapoverviewplot, echo=FALSE, out.width = "100%", fig.showtext = TRUE, fig.cap= str_glue("Resulting maps of the three EU-MOHP measures lateral position (A, D), divide stream distance (B, E) and stream distance (C, F) in the columns exemplary for the two hydrologic orders {tar_read(selected_hydrologic_orders)[1]} (A, B, C) and {tar_read(selected_hydrologic_orders)[2]} (D, E, F) in the rows for Sardinia. The colour gradients in the legend represent the mapped values of all plots in their column.")}
 tar_read(dataset_map_overview_plot)
 ```
 
@@ -455,7 +448,7 @@ include_graphics("data_descriptor/tex/mohp_scheme.pdf")
 tar_read(river_canal_confusion_plot)
 ```
 
-```{r dfddstatsbarplot, echo=FALSE, out.width = "80%", fig.asp=0.5, fig.showtext = TRUE, fig.cap= 'Distribution of the values in the attribute column dfdd. BH140 (= river) is by far the most frequent value.'}
+```{r dfddstatsbarplot, echo=FALSE, out.width = "80%", fig.asp=0.5, fig.showtext = TRUE, fig.cap= 'Distribution of the values in the attribute column dfdd.'}
 tar_read(dfdd_stats_bar_plot)
 ```
 
@@ -463,7 +456,7 @@ tar_read(dfdd_stats_bar_plot)
 include_graphics("data_descriptor/tex/mainstem_scheme.pdf")
 ```
 
-```{r divergencescheme, echo=FALSE, out.width = "70%", fig.showtext = TRUE, fig.cap= knitr:::escape_latex('Schematic representation of the river network and its linestring geometries including divergences before (A) and after (B) the removal of minor paths under the condition that they intersect with the same linestring geometry at the start and end node. The linestring geometry with the feature_id = 8 has been removed from the river network in B, because it intersects the linestring geometry with feature_id = 1 at the start and end node. Whereas linestring geometry with feature_id = 7 remains in the river network, because it intersects with two different linestring geometries at start and end node.')}
+```{r divergencescheme, echo=FALSE, out.width = "70%", fig.showtext = TRUE, fig.cap= knitr:::escape_latex('Schematic representation of the river network and its linestring geometries including divergences before (A) and after (B) the removal of minor paths under the condition that they intersect with the same linestring geometry at their start and end node. The linestring geometry with the feature_id = 8 has been removed from the river network in B, because it intersects the linestring geometry with feature_id = 1 at the start and end node. Whereas linestring geometry with feature_id = 7 remains in the river network, because it intersects with two different linestring geometries at its start and end node.')}
 include_graphics("data_descriptor/tex/divergences_scheme.pdf")
 ```
 
@@ -499,8 +492,10 @@ table_data <-
 table_data %>% 
   kableExtra::kable("latex",
         booktabs = TRUE,
+        # longtable = TRUE,
+        linesep = "",
         caption = "Overview of the runtime and data size of all targets or processing steps in descending order.") %>% 
-  kableExtra::kable_styling(full_width = TRUE) %>% 
+  kableExtra::kable_styling(full_width = TRUE, font_size = 9) %>% 
   kableExtra::column_spec(1, width = "20em") %>% 
   kableExtra::add_header_above(c(" " = 1, "Runtime" = 4, "Data size" = 1)) %>% 
   kableExtra::row_spec(nrow(table_data), bold = TRUE) %>% 

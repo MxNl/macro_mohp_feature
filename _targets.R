@@ -48,23 +48,18 @@ source("targets/studyarea_targets.R")
 source("targets/import_targets.R")
 source("targets/preprocessing_targets.R")
 source("targets/mohpcalculation_targets.R")
-source("targets/visualization_targets.R")
-source("targets/export_targets.R")
 source("data_descriptor/targets/targets/visualizations_data_descriptor_targets.R")
 source("data_descriptor/targets/targets/data_descriptor_targets.R")
 
 source("R/import_functions.R")
-source("R/plot_functions.R")
-source("R/directory_functions.R")
 source("R/preprocessing_functions.R")
 source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/grass_functions.R")
-source("R/export_functions.R")
 
 source("data_descriptor/targets/R/visualization_functions.R")
 
-plan(multisession)
+if(PARALLEL) plan(multisession)
 
 # Define targets
 c(
