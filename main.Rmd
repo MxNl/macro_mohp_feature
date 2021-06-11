@@ -469,41 +469,20 @@ include_graphics("data_descriptor/tex/dd_inaccuracies.pdf")
 ```
 
 ```{r runtime, echo=FALSE}
-branch_seconds <- 
-  targets::tar_meta() %>% 
-  select(name, type, bytes, seconds, parent) %>% 
-  drop_na(parent) %>% 
-  group_by(parent) %>% 
-  summarize(sum_seconds = sum(seconds))
+table_data <- tar_read(targets_runtime_table)
 
-table_data <- 
-  targets::tar_meta() %>% 
-  select(name, type, bytes, seconds, parent) %>% 
-  arrange(-seconds) %>% 
-  filter(!type %in% c("function", "object", "branch")) %>% 
-  left_join(branch_seconds, by = c("name" = "parent")) %>% 
-  mutate(seconds = if_else(is.na(sum_seconds), seconds, sum_seconds)) %>% 
-  mutate(minutes = seconds / 60,
-         hours = minutes / 60,
-         days = hours / 24,
-         mb = bytes / 1E6) %>% 
-  mutate(across(c("seconds", "minutes", "hours", "days", "mb"), round, 1)) %>% 
-  rename('target name' = name) %>% 
-  select(-parent, -sum_seconds, -type, -bytes) %>% 
-  set_names(str_to_sentence(names(.))) %>% 
-  janitor::adorn_totals("row")
-
-table_data %>% 
+table_data %>%
   kableExtra::kable("latex",
-        booktabs = TRUE,
-        # longtable = TRUE,
-        linesep = "",
-        caption = "Overview of the runtime and data size of all targets or processing steps in descending order.") %>% 
-  kableExtra::kable_styling(full_width = TRUE, font_size = 9) %>% 
-  kableExtra::column_spec(1, width = "20em") %>% 
-  kableExtra::add_header_above(c(" " = 1, "Runtime" = 4, "Data size" = 1)) %>% 
-  kableExtra::row_spec(nrow(table_data), bold = TRUE) %>% 
-  kableExtra::row_spec(nrow(table_data)-1, hline_after = T)
+    booktabs = TRUE,
+    # longtable = TRUE,
+    linesep = "",
+    caption = "Overview of the runtime and data size of all targets or processing steps in descending order."
+  ) %>%
+  kableExtra::kable_styling(full_width = TRUE) %>%
+  kableExtra::column_spec(1, width = "20em") %>%
+  kableExtra::add_header_above(c(" " = 1, "Runtime" = 4, "Data size" = 1)) %>%
+  kableExtra::row_spec(nrow(table_data), bold = TRUE) %>%
+  kableExtra::row_spec(nrow(table_data) - 1, hline_after = T)
 ```
 
 ```{r outputdata, echo=FALSE}

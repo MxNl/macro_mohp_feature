@@ -30,6 +30,10 @@ visualizations_data_descriptor_targets <-
       make_output_data_table(streamorders)
     ),
     tar_target(
+      targets_runtime_table,
+      make_targets_runtime_table()
+    ),
+    tar_target(
       studyarea_figure,
       make_studyarea_figure(selected_studyarea)
     ),

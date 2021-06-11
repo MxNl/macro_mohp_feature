@@ -227,6 +227,50 @@ make_output_data_table <-
       set_names(str_to_sentence(names(.)))
   }
 
+make_targets_runtime_table <-
+  function() {
+    branch_seconds <-
+      targets::tar_meta() %>%
+      select(name, type, bytes, seconds, parent) %>%
+      drop_na(parent) %>%
+      group_by(parent) %>%
+      summarize(sum_seconds = sum(seconds))
+
+    targets::tar_meta() %>%
+      select(name, type, bytes, seconds, parent) %>%
+      arrange(-seconds) %>%
+      filter(!type %in% c("function", "object", "branch")) %>%
+      left_join(branch_seconds, by = c("name" = "parent")) %>%
+      mutate(seconds = if_else(is.na(sum_seconds), seconds, sum_seconds)) %>%
+      mutate(
+        minutes = seconds / 60,
+        hours = minutes / 60,
+        days = hours / 24,
+        mb = bytes / 1E6
+      ) %>%
+      mutate(across(c("seconds", "minutes", "hours", "days", "mb"), round, 1)) %>%
+      rename("target name" = name) %>%
+      select(-parent, -sum_seconds, -type, -bytes) %>%
+      set_names(str_to_sentence(names(.))) %>%
+      filter(!(`Target name` %in% c("input_data_table",
+                                    "directory_tree",
+                                    "selected_hydrologic_orders",
+                                    "spatial_coverage",
+                                    "dataset_map_overview_plot",
+                                    "output_data_table",
+                                    "targets_runtime_table",
+                                    "studyarea_figure",
+                                    "river_canal_confusion_plot",
+                                    "dfdd_stats_bar_plot",
+                                    "data_descriptor",
+                                    "readme",
+                                    "readme_hydroshare",
+                                    "index"
+                                    ))
+             ) %>% 
+      janitor::adorn_totals("row")
+  }
+
 
 make_studyarea_figure <- 
   function(studyarea) {
