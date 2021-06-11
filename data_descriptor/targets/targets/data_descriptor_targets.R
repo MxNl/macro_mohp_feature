@@ -6,5 +6,6 @@ data_descriptor_targets <-
                cue = tar_cue("always")
                ),
     tar_render(readme, "README.Rmd"),
+    tar_render(readme_hydroshare, "readme_hydroshare.Rmd"),
     tar_render(index, "index.Rmd")
   )

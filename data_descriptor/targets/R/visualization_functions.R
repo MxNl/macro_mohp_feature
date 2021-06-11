@@ -104,7 +104,9 @@ make_output_data_map_plot <-
   }
 
 make_dataset_map_overview_plot <-
-  function(selected_hydrologic_orders = c(3, 4), spatial_coverage = ".") {
+  function(selected_hydrologic_orders = c(3, 4), spatial_coverage = ".", depends_on = NULL) {
+    
+    length(depends_on)
     
     plot_lp_one <- make_output_data_map_plot(
       feature_name = FEATURE_NAMES[2],
@@ -397,7 +399,7 @@ make_dir_tree <-
     fs::dir_tree(
       ".",
       recurse = 1,
-      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*|README.html",
+      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*|README.html|readme_hydroshare.*",
       invert = TRUE
     )
   }

@@ -1,0 +1,62 @@
+---
+title: "EU-MOHP v013.1.0 Dataset"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center', fig.pos = "H", out.width = "100%", message = FALSE, warning = FALSE, fig.showtext = TRUE)
+options(knitr.table.format = 'markdown')
+library(targets)
+library(tidyverse)
+```
+
+The EU-MOHP v013.1.0 dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
+
+This repository hosts the dataset EU-MOHP v013.1.0 as single GeoTiff files with .tif file extension.
+The corresponding publication, which is linked in the corresponding [github repository](https://github.com/MxNl/macro_mohp_feature), provides all background information. It also explains the file naming scheme. To select the files relevant four your application, please use the search bar to filter for spatial coverage or specific hydrologic orders by entering any of the values listed in the subsequent table. If you want to check more precisely whether your area of interest is covered by this dataset and which files are relevant, please use this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
+
+<br />
+
+```{r outputdata, echo=FALSE}
+tabledata <-
+  targets::tar_read(output_data_table) %>%
+  mutate(`Placeholder in output file name` = 
+           str_remove_all(`Placeholder in output file name`, "<|>")) %>%
+  rename(`Value (use this in search bar)` = Value) %>%
+  mutate(row = row_number(), .before = 1)
+
+placegolder_one <-
+  tabledata %>%
+  filter(`Placeholder in output file name` == "region name for spatial coverage") %>%
+  pull(row) %>%
+  range()
+placegolder_two <-
+  tabledata %>%
+  filter(`Placeholder in output file name` == "abbreviation of the EU-MOHP measure") %>%
+  pull(row) %>%
+  range()
+placegolder_three <-
+  tabledata %>%
+  filter(`Placeholder in output file name` == "hydrologic order") %>%
+  pull(row) %>%
+  range()
+
+tabledata %>%
+  select(-row) %>%
+  knitr::kable(
+    # booktabs = TRUE,
+  ) %>%
+  # kableExtra::kable_styling(font_size = 12) %>%
+  kableExtra::row_spec(placegolder_one[1]:placegolder_one[2], background = "#f2f2f2") %>%
+  kableExtra::row_spec(placegolder_two[1]:placegolder_two[2], background = "white") %>%
+  kableExtra::row_spec(placegolder_three[1]:placegolder_three[2], background = "#f2f2f2")
+# kableExtra::kable_styling(full_width = TRUE) %>%
+# kableExtra::column_spec(2, width = "12em") %>%
+# kableExtra::collapse_rows()
+```
+
+<br />
+
+The actively developed code can be found in this [github repository](https://github.com/MxNl/macro_mohp_feature).
+

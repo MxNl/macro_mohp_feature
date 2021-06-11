@@ -1,5 +1,5 @@
 ---
-title: "Spatial coverage of EU-MOHP v013.1.0 Dataset"
+title: "Spatial coverage of the EU-MOHP v013.1.0 Dataset"
 output: 
   html_document:
     css: index_style.css

@@ -22,7 +22,9 @@ visualizations_data_descriptor_targets <-
       dataset_map_overview_plot,
       make_dataset_map_overview_plot(
         selected_hydrologic_orders = selected_hydrologic_orders, 
-        spatial_coverage = spatial_coverage)
+        spatial_coverage = spatial_coverage,
+        depends_on = list(if(DATA_DESCRIPTOR_ONLY) NULL else db_objects_to_grass)
+        )
     ),
     tar_target(
       output_data_table,

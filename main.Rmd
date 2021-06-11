@@ -350,6 +350,8 @@ The raster cell values of all GeoTIFF files are stored as integers in the *INT32
 
 Some of the GeoTiff files representing DSD ("*\<abbreviation of the EU-MOHP measure\> = dsd*") contain defective data for a currently unknown reasons. This does not affect files for the spatial coverage of *europemainland* ("*\<region name for spatial coverage\> = europemainland*"). You can recognize these defective files by the values of the raster grid cells (-1,79769e+308 and 1,79769e+308).
 
+We also note that a file was created for each spatial coverage and for each hydrologic order regardless of the existence of a river network for a hydrologic order for a given spatial coverage. These files must be disregarded depending on the use case. 
+
 # Code availability {-}
 
 All processing and analysis is conducted using free open source software and free data.
@@ -379,13 +381,15 @@ install.packages("renv")
 ```{r, eval=FALSE}
 renv::restore()
 ```
- 
-8.  Start the processing pipeline by running the file *run_pipeline.R* with
+
+8.  Before running the pipeline on the full spatial coverage of the EEA39 countries, we recommend to test the pipeline with the smaller test study area by setting the variable *area* in the file *config.yml* to "test". If the pipeline works, you can change it back to "europe".
+
+9.  Start the processing pipeline by running the file *run_pipeline.R* with
 ```{r, eval=FALSE}
 source("run_pipeline.R")
 ```
 
-9.  If you encounter any problems, please contact the corresponding author. Errors can probably be caused by incorrect directories and file paths. If the available memory is insufficient, one option is to run the pipeline sequentially rather than in parallel. To do this, change the variable *parallel* in the file *config.yml* from `TRUE` to `FALSE`. 
+10.  If you encounter any problems, please contact the corresponding author. Errors can probably be caused by incorrect directories and file paths. If the available memory is insufficient, one option is to run the pipeline sequentially rather than in parallel. To do this, change the variable *parallel* in the file *config.yml* from `TRUE` to `FALSE`. 
 
 The required underlying datasets “EU-Hydro -- River Network Database” version v013 can be downloaded [here](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-river-network-database?tab=download) and “EU-Hydro -- Coastline” version v013 [here](https://land.copernicus.eu/imagery-in-situ/eu-hydro/eu-hydro-coastline?tab=download).
 In order to maximize and simplify reproducibility, we currently plan to set up a docker container. For availability updates, please visit the mentioned github repository.

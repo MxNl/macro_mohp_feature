@@ -114,6 +114,8 @@ calculate_mohp_metrics_in_grassdb <-
         streamorder,
         n_studyareas
       )
+    
+    Sys.time()
   }
 
 calculate_mohp_per_polygon <- 
