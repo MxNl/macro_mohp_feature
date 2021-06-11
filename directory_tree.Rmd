@@ -8,11 +8,6 @@ papersize: a5
 ---
 \pagenumbering{gobble}
 
-```{r, echo=FALSE, include=FALSE}
-if(DATA_DESCRIPTOR_ONLY) NULL else tar_read(db_objects_to_grass)
-```
-
-
 ```{r projectdirtree, fig = TRUE, comment=NA, echo=FALSE, attr.output = ".numberLines", fig.cap="Directory tree of the project directory; only relevant subdirectories and files are listed here"}
 make_dir_tree()
 ```

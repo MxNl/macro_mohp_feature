@@ -66,7 +66,7 @@ c(
   import_targets,
   preprocessing_targets,
   # mohpcalculation_targets,
-  data_descriptor_targets,
-  visualizations_data_descriptor_targets
+  if(DATA_DESCRIPTOR_ONLY) data_descriptor_targets,
+  if(DATA_DESCRIPTOR_ONLY) visualizations_data_descriptor_targets
 )
   

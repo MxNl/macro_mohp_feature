@@ -104,9 +104,7 @@ make_output_data_map_plot <-
   }
 
 make_dataset_map_overview_plot <-
-  function(selected_hydrologic_orders = c(3, 4), spatial_coverage = ".", depends_on = NULL) {
-    
-    length(depends_on)
+  function(selected_hydrologic_orders = c(3, 4), spatial_coverage = ".") {
     
     plot_lp_one <- make_output_data_map_plot(
       feature_name = FEATURE_NAMES[2],
