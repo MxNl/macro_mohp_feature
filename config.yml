@@ -1,7 +1,7 @@
-area: test
+area: europe
 cellsize: 30
-database_name: postgis_test
+database_name: postgis
 exclude_scandinavian_basins: FALSE
 simplify_polygons: FALSE
-data_descriptor_only: FALSE
-parallel: TRUE
+data_descriptor_only: TRUE
+parallel: FALSE
