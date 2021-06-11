@@ -28,7 +28,7 @@ visualizations_data_descriptor_targets <-
     ),
     tar_target(
       output_data_table,
-      make_output_data_table()
+      make_output_data_table(streamorders)
     ),
     tar_target(
       studyarea_figure,

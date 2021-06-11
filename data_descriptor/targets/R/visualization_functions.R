@@ -193,7 +193,7 @@ make_input_data_table <-
   }
 
 make_output_data_table <- 
-  function() {
+  function(streamorders) {
     expand_grid(
       '<region name for spatial coverage>' = c("europemainland", "finland-norway-sweden", "turkey", "unitedkingdom", 
                                         "iceland", "unitedkingdom-ireland", "italy1", "italy2", "france", 
@@ -216,7 +216,7 @@ make_output_data_table <-
             c("europemainland", "finland-norway-sweden", "turkey", "unitedkingdom", 
               "iceland", "unitedkingdom-ireland", "italy1", "italy2", "france", "greece",
               "lp", "dsd", "sd",
-              str_glue("streamorder{tar_read(streamorders)}"),
+              str_glue("streamorder{streamorders}"),
               str_glue("{CELLSIZE}m")
             ),
           description = c(
@@ -399,7 +399,7 @@ make_dir_tree <-
     fs::dir_tree(
       ".",
       recurse = 1,
-      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*|README.html|readme_hydroshare.*",
+      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*|README.html|readme_hydroshare.*|readme_hydroshare.html",
       invert = TRUE
     )
   }
