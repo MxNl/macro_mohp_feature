@@ -77,7 +77,7 @@ In recent years, data science tools such as machine learning are increasingly ap
 <!-- *[Motivation/goals]* -->
 
 The key motivation for this dataset is to partially close this gap by providing a set of features that introduce hydrological context to machine learning models regarding the horizontal position of a point within its catchment. Therefore, it serves as a proxy for multiple geophysical characteristics of a hydrologic system. and complements commonly available datasets such as land-use and land-cover, geological or soil maps.
-This dataset is strongly inspired by Belitz et al. (2019)\cite{belitz_multiorder_2019} and adapts their ideas and methods to the “EU-Hydro - River Network Database” as underlying river network but –- in contrast –- using free open source software and a strong focus on reproducibility. For more detailed background, we refer to Belitz et al. (2019)\cite{belitz_multiorder_2019}.
+This dataset is strongly inspired by Belitz et al. (2019)\cite{belitz_multiorder_2019} and adapts their ideas and methods to the “EU-Hydro - River Network Database” but –- in contrast –- using free open source software and a strong focus on reproducibility. For more detailed background, we refer to Belitz et al. (2019)\cite{belitz_multiorder_2019}.
 
 <!-- *[context of previous work and the literature]* -->
 
@@ -85,7 +85,7 @@ In their study, Belitz et al. (2019)\cite{belitz_multiorder_2019} also provide r
 
 <!-- *[potential reuse]* -->
 
-Being a static geophysical catchment attribute, the gridded maps of the EU-MOHP dataset can be used as features in any machine learning task in the domain of hydrology and hydrogeology. Because of the calculation based on hydrologic orders, this dataset can be applied at multiple spatial scales -- from local via regional to continental scales. Examples of use cases might be the mapping of hydrogeochemical parameters or hydraulic variables like depth to groundwater, the prediction of groundwater levels or catchment classification tasks using unsupervised machine learning methods.
+Being a static geophysical catchment attribute, the gridded maps of the EU-MOHP dataset can be used as features in any machine learning task in the domain of hydrology and hydrogeology. This dataset can be applied at multiple spatial scales -- from local via regional to continental scales. Examples of use cases might be the mapping of hydrogeochemical parameters or hydraulic variables like depth to groundwater, the prediction of groundwater levels or catchment classification tasks using unsupervised machine learning methods.
 
 <!-- *[schematic overview of the study and assay(s) design]* -->
 
@@ -100,11 +100,11 @@ for each of the `r tar_read(streamorders) %>% length()` hydrologic orders which 
 
 <!-- ## EU-MOHP Concept -->
 
-Conceptually, the three measures LP, DSD and SD of EU-MOHP are based on the idea that the location in hydrologic systems matters\cite{belitz_multiorder_2019}. A location can be e.g. close to the confluence of two large rivers or in another extreme close the catchment boundary of headwater streams. The location or hydrologic position refers to the position of a point between a stream and its catchment divide. Thiessen divides are used as catchment boundaries instead of divides that are generated from digital elevation models. One major advantage is that Thiessen divides can be calculated purely based on the river network itself while avoiding issues such as closed lows in the resulting metrics \cite{belitz_multiorder_2019}. A Thiessen divide is the outline of a Thiessen catchment which is the area that contains all points to which a stream is closer than any other stream \cite{johnston_evaluation_2009}. In other words, a Thiessen divide contains all points with equal distance to the two nearest streams. A detailed discussion on the preference of Thiessen divides over topographic divides is provided in Belitz et. al. (2019), section 2.2. \cite{belitz_multiorder_2019}.
+Conceptually, the three measures LP, DSD and SD of EU-MOHP are based on the idea that the location in hydrologic systems matters\cite{belitz_multiorder_2019}. A location can be e.g. close to the confluence of two large rivers or in another extreme close the catchment boundary of headwater streams. The location or hydrologic position refers to the position of a point between a stream and its catchment divide. Thiessen divides are used as catchment boundaries instead of divides that are generated from digital elevation models. One major advantage is that Thiessen divides can be calculated purely based on the river network itself while avoiding issues such as closed lows in the resulting metrics \cite{belitz_multiorder_2019}. A Thiessen divide is the outline of a Thiessen catchment which is the area that contains all points to which a stream is closer than any other stream \cite{johnston_evaluation_2009}. A detailed discussion on the preference of Thiessen divides over topographic divides is provided in Belitz et. al. (2019), section 2.2. \cite{belitz_multiorder_2019}.
 
 The overall concept also includes the spatial scale that the role or impotance of different hydrologic processes can depend upon. This issue is addressed by calculating the EU-MOHP measures for different hydrologic orders. The hydrologic orders are based on the stream orders of the river network. For a specific hydrologic order $i$ only streams with a stream order $>= i$ are used (e.g. for stream order 2, all streams with stream order 2, 3, 4 and greater, compare Fig. \@ref(fig:schematicmohp)A and B). This involves stepwise pruning of the smallest streams from the river network for each hydrologic order, which subsequently represent different spatial scales. Here, the stream orders are defined according to Strahler (1957)\cite{strahler_quantitative_1957} where all streams between the headwaters and the first confluence are assigned to the first stream order. The stream order downstream of a confluence increases by 1 if the upstream stream orders are equal. If the stream orders are not equal, it inherits the greater stream order.
 
-Based on the river network and the Thiessen divides, the EU-MOHP measures can be calculated with
+Based on the river network and the Thiessen divides, the EU-MOHP measures are calculated with
 
 \begin{equation}
 \text{LP}_i = \frac{\text{DS}_i}{\text{DS}_i + \text{DD}_i} (\#eq:eqlp)
@@ -120,7 +120,7 @@ Based on the river network and the Thiessen divides, the EU-MOHP measures can be
 
 \noindent
 <!-- further up, you use plain variable names, here italic ones. the convention for variable names comprising multiple letter is non-italic letters, also in formulas. -->
-where $i$ is the hydrologic order, DS is the horizontal distance from a point to the nearest stream (Fig. \@ref(fig:schematicmohp)) and DD is the horizontal distance to the nearest Thiessen divide under the condition that the divide is on the same side of the stream or in other words: the line that connects the nearest Thiessen divide and the point must not cross a stream (Fig. \@ref(fig:schematicmohp)). This condition arises from the fact that water flows towards the topographically lowest points namely the streams.
+where $i$ is the hydrologic order, DS is the horizontal distance from a point to the nearest stream (Fig. \@ref(fig:schematicmohp)) and DD is the horizontal distance to the nearest Thiessen divide under the condition that the divide is on the same side of the stream or in other words (Fig. \@ref(fig:schematicmohp)).
 
 Examples of the generated EU-MOHP v013.1.0 maps are shown in Fig. \@ref(fig:datasetmapoverviewplot) for the two hydrologic orders `r tar_read(selected_hydrologic_orders) %>% str_c(collapse= " and ")` for Sardinia. 
 
