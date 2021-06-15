@@ -250,13 +250,24 @@ grass_calculations <-
               expression = str_glue("thiessen_catchments_distance_raster = if(thiessen_catchments_distance_raster >= {max_distance}, null(), thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
     
-    execGRASS("r.neighbors",
-              input = "thiessen_catchments_distance_raster",
-              selection = "river_network_raster",
-              output = "thiessen_catchments_distance_raster",
-              method = "minimum",
+    # execGRASS("r.neighbors",
+    #           input = "thiessen_catchments_distance_raster",
+    #           selection = "river_network_raster",
+    #           output = "thiessen_catchments_distance_raster",
+    #           method = "minimum",
+    #           flags = c("overwrite"))
+    # print("neighbors")
+    
+    execGRASS("r.grow.distance",
+              input = "thiessen_catchments_lines_raster_thin",
+              distance = "lake_replacement",
+              flags = c("overwrite", "m"))
+    
+    execGRASS("r.mapcalc",
+              expression = 
+                str_glue("thiessen_catchments_distance_raster = if(!isnull(river_network_raster), lake_replacement, thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
-    print("neighbors")
+    
     # execGRASS("r.surf.idw",
     #           input = "thiessen_catchments_distance_raster",
     #           output = "thiessen_catchments_distance_raster",
