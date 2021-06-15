@@ -428,7 +428,7 @@ add_levelpathid <-
   }
 
 merge_rivernetworks_per_streamorder <- 
-  function(table_name, distinct_streamorders_in_riverbasins, depends_on = NULL) {
+  function(table_name, major_path_ids, distinct_streamorders_in_riverbasins, depends_on = NULL) {
     
     length(depends_on)
     
@@ -452,16 +452,11 @@ merge_rivernetworks_per_streamorder <-
                               river_basin_name = '{river_basin_name}'")
       )
     
-    river_network_test <- 
-      river_network %>% 
-      filter(object_id %in% unique(pull(river_network, nextdownid)) | strahler == streamorder)
-    
-    p1 <- river_network %>% 
-      ggplot() + geom_sf()
-    p2 <- river_network_test %>% 
-      ggplot() + geom_sf()
-    
-    p1 | p2
+    if(streamorder > 1) {
+      river_network <- 
+        river_network %>% 
+        filter(object_id %in% major_path_ids)
+    }
     
     river_network %>% 
       add_levelpathid() %>% 

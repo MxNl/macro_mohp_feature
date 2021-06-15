@@ -33,7 +33,7 @@ write_raster_mohp_features <-
         "_",
         filepath_prefix_feature_name,
         "_",
-        "streamorder",
+        "hydrologicorder",
         filepath_prefix_streamorder,
         "_",
         filepath_prefix_spatial_resolution,
