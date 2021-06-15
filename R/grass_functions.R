@@ -269,6 +269,11 @@ grass_calculations <-
                 str_glue("thiessen_catchments_distance_raster = if(!isnull(river_network_raster), lake_replacement, thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
     
+    execGRASS("r.patch",
+              input = c("thiessen_catchments_distance_raster", "lake_replacement"),
+              output = "thiessen_catchments_distance_raster",
+              flag = c("overwrite"))
+    
     # execGRASS("r.surf.idw",
     #           input = "thiessen_catchments_distance_raster",
     #           output = "thiessen_catchments_distance_raster",
