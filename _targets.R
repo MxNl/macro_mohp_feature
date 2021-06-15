@@ -13,6 +13,7 @@ tar_option_set(
   packages = c(
     "tmap",
     "igraph",
+    "magick",
     "here",
     "fs",
     "DBI",

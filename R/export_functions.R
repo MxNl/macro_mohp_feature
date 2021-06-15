@@ -51,3 +51,20 @@ write_raster_mohp_features <-
               output = filepath,
               type = "Int32")
   }
+
+modify_tex_file <- 
+  function(path, depends_on = NULL) {
+    
+    length(depends_on)
+    
+    path %>%
+      readLines() %>% 
+      str_replace_all("data_descriptor/tex/", "") %>% 
+      str_replace_all("\\.bib\\}", "\\}") %>% 
+      writeLines(path)
+  }
+
+copy_bib_file <- 
+  function() {
+    fs::file_copy("eu-mohp.bib", here::here("data_descriptor", "tex"), overwrite = TRUE)
+  }

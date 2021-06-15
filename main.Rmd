@@ -62,6 +62,11 @@ options(encoding = "UTF-8")
 ```
 -->
 
+```{r, echo=FALSE}
+tar_read(directory_tree_trimmed)
+```
+
+
 
 # Background & Summary {-}
 
@@ -133,7 +138,7 @@ The directory and file structure of the project folder containing all code and f
 
 The generation of this dataset is based on two data products, the “EU-Hydro -- River Network Database” version v013 and “EU-Hydro -- Coastline” version v013 with the advantage that data dependencies are low \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021-1}. Therefore, it is possible to transfer the methodology to other regions with only little effort. Tab. \@ref(tab:inputdata) provides an overview of the input data layers necessary for generating the dataset. These input data layers are all derived from layers of GeoPackages or Shape files of the two previously mentioned data products.
 
-The “EU-Hydro -- River Network Database” as well as the “EU-Hydro -- Coastline” has been manually downloaded from the Copernicus - Land Monitoring Service website (Fig. \@ref(fig:workflowfigure)A) in GeoPackage (.gpkg) and Shapefile (.shp) file format, respectively (Fig. \@ref(fig:workflowfigure)B) \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021}. The river network data is provided as two .gpkg files in one folder with the suffix *\_GPKG* in the folder name for each of the `r targets::tar_read(river_networks_files) %>% length()` major river basins in the EEA39 countries. All files have a total size of approximately 14GB when unzipped. The single .shp file containing the coastline has a size of 288MB. For instructions on accessing this underlying data, see [Code availability].
+The “EU-Hydro -- River Network Database” as well as the “EU-Hydro -- Coastline” has been manually downloaded from the Copernicus - Land Monitoring Service website (Fig. \@ref(fig:workflowfigure)A) in GeoPackage (.gpkg) and Shapefile (.shp) file format, respectively (Fig. \@ref(fig:workflowfigure)B) \cite{noauthor_eu-hydro_2021, noauthor_eu-hydro_2021-1}. The river network data is provided as two .gpkg files in one folder with the suffix *\_GPKG* in the folder name for each of the `r targets::tar_read(river_networks_files) %>% length()` major river basins in the EEA39 countries. All files have a total size of approximately 14GB when unzipped. The single .shp file containing the coastline has a size of 288MB. For instructions on accessing this underlying data, see [Code availability].
 
 ## Data Import {-}
 

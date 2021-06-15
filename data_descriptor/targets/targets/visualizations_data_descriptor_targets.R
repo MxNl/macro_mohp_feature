@@ -4,12 +4,20 @@ visualizations_data_descriptor_targets <-
       input_data_table,
       make_input_data_table()
     ),
+    tar_target(
+      filepath_directory_tree,
+      "data_descriptor/tex/directory_tree.pdf"
+    ),
     tar_render(
       directory_tree, 
       "directory_tree.Rmd",
-      output_file = "data_descriptor/tex/directory_tree.pdf",
+      output_file = filepath_directory_tree,
       cue = tar_cue("always")
-      ),
+    ),
+    tar_target(
+      directory_tree_trimmed,
+      trim_background_and_return_time(filepath_directory_tree, list(directory_tree))
+    ),
     tar_target(
       selected_hydrologic_orders,
       c(3, 4)
@@ -23,7 +31,7 @@ visualizations_data_descriptor_targets <-
       make_dataset_map_overview_plot(
         selected_hydrologic_orders = selected_hydrologic_orders, 
         spatial_coverage = spatial_coverage
-        )
+      )
     ),
     tar_target(
       output_data_table,
@@ -31,7 +39,8 @@ visualizations_data_descriptor_targets <-
     ),
     tar_target(
       targets_runtime_table,
-      make_targets_runtime_table()
+      make_targets_runtime_table(),
+      cue = tar_cue("always")
     ),
     tar_target(
       studyarea_figure,

@@ -103,6 +103,18 @@ make_output_data_map_plot <-
     } 
   }
 
+trim_background_and_return_time <-
+  function(path, depends_on = NULL) {
+    length(depends_on)
+    
+    image_read_pdf(path) %>%
+      image_trim() %>%
+      image_write(image = ., path = path, format = "pdf")
+    
+    Sys.time()
+  }
+
+
 make_dataset_map_overview_plot <-
   function(selected_hydrologic_orders = c(3, 4), spatial_coverage = ".") {
     
@@ -194,8 +206,8 @@ make_output_data_table <-
   function(streamorders) {
     expand_grid(
       '<region name for spatial coverage>' = c("europemainland", "finland-norway-sweden", "turkey", "unitedkingdom", 
-                                        "iceland", "unitedkingdom-ireland", "italy1", "italy2", "france", 
-                                        "greece"),
+                                               "iceland", "unitedkingdom-ireland", "italy1", "italy2", "france", 
+                                               "greece"),
       '<abbreviation of the EU-MOHP measure>' = c("lp", "dsd", "sd"),
       '<hydrologic order>' = str_glue("streamorder{tar_read(streamorders)}"),
       '<spatial resolution>' = str_glue("{CELLSIZE}m")
@@ -235,7 +247,7 @@ make_targets_runtime_table <-
       drop_na(parent) %>%
       group_by(parent) %>%
       summarize(sum_seconds = sum(seconds))
-
+    
     targets::tar_meta() %>%
       select(name, type, bytes, seconds, parent) %>%
       arrange(-seconds) %>%
@@ -265,16 +277,23 @@ make_targets_runtime_table <-
                                     "data_descriptor",
                                     "readme",
                                     "readme_hydroshare",
-                                    "index"
-                                    ))
-             ) %>% 
+                                    "index",
+                                    "directory_tree_trimmed",
+                                    "dataset_map_overview_europe_plot",
+                                    "filepath_directory_tree",
+                                    "tex_filepath",
+                                    "modified_tex_file",
+                                    "bibfile_copied",
+                                    "workflow_figure"
+      ))
+      ) %>% 
       janitor::adorn_totals("row")
   }
 
 
 make_studyarea_figure <- 
   function(studyarea) {
-
+    
     eea_countries <- 
       rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") %>% 
       filter(name %in% EEA39COUNTRIES) %>% 
@@ -293,7 +312,7 @@ make_studyarea_figure <-
     administrative_borders <-
       eea_countries %>%
       spatial_filter_europe()
-
+    
     coloured_areas <- 
       eea_countries %>% 
       st_cast("POLYGON") %>% 
@@ -314,8 +333,8 @@ make_studyarea_figure <-
     
     tm_shape(coloured_areas) +
       tm_fill(col = "studyarea",
-                  title = "Spatial coverage",
-                  palette = "#ffcf46") +
+              title = "Spatial coverage",
+              palette = "#ffcf46") +
       tm_shape(not_covered_areas) +
       tm_fill(col = "same_colour",
               palette = "grey",
@@ -323,9 +342,9 @@ make_studyarea_figure <-
       tm_shape(administrative_borders) +
       tm_borders(col = "white", lwd = 0.5) +
       tm_layout(frame = FALSE, fontfamily = "Corbel")
-      # tm_shape(studyarea) +
-      # tm_text(text = "region_name")
-      # tm_text("name", remove.overlap = TRUE)
+    # tm_shape(studyarea) +
+    # tm_text(text = "region_name")
+    # tm_text("name", remove.overlap = TRUE)
     
     # studyarea %>% 
     #   ggplot() +
@@ -415,7 +434,7 @@ make_dfdd_stats_bar_plot <-
         dfdd = if_else(dfdd == "BH140", str_glue("{dfdd} (=river)"), dfdd),
         dfdd = if_else(dfdd == "BH020", str_glue("{dfdd} (=canal)"), dfdd),
         dfdd = if_else(dfdd == "BH030", str_glue("{dfdd} (=ditch)"), dfdd)
-        ) %>% 
+      ) %>% 
       mutate(n = n/1000) %>% 
       ggplot(aes(n, reorder(dfdd, n))) +
       geom_col(fill = "#ffcf46",

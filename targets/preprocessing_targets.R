@@ -1,6 +1,6 @@
 preprocessing_targets <- c(
   pipeline_for(AREA),
-  
+
   # helper target -----------------------------------------------------------
   tar_target(
     db_selected_studyarea,
@@ -71,13 +71,13 @@ preprocessing_targets <- c(
     get_unique_streamorders(
       LINES_STUDYAREA,
       depends_on = list(db_river_networks_strahler_studyarea)
-      )
+    )
   ),
   # helper target -----------------------------------------------------------
   tar_target(
     distinct_streamorders_in_riverbasins,
-    get_distinct_streamorders_in_riverbasins(LINES_STUDYAREA) %>% 
-      rowwise() %>% 
+    get_distinct_streamorders_in_riverbasins(LINES_STUDYAREA) %>%
+      rowwise() %>%
       tar_group(),
     iteration = "group"
   ),
@@ -103,7 +103,7 @@ preprocessing_targets <- c(
   tar_target(
     river_networks_greater_one_grouped,
     rivernetworks_merged_per_streamorder %>%
-      filter(streamorder != 1) %>% 
+      filter(streamorder != 1) %>%
       group_by(streamorder) %>%
       tar_group(),
     iteration = "group"
@@ -119,8 +119,8 @@ preprocessing_targets <- c(
   tar_target(
     river_networks_grouped,
     river_networks_streamorderone %>%
-      bind_rows(river_networks_treated_brackets) %>% 
-      group_by(streamorder) %>% 
+      bind_rows(river_networks_treated_brackets) %>%
+      group_by(streamorder) %>%
       tar_group(),
     iteration = "group"
   ),
@@ -144,17 +144,16 @@ preprocessing_targets <- c(
   # db_inland_waters_strahler -----------------------------------------------
   tar_target(
     db_inland_waters_strahler,
-      join_streamorder_to_inland_waters(
-        INLAND_WATERS_STRAHLER,
-        INLAND_WATERS,
-        LINES_MERGED,
-        streamorders,
-        depends_on = list(
-          db_river_networks_merged_per_streamorder,
-          db_inland_waters
-          )
-        ),
+    join_streamorder_to_inland_waters(
+      INLAND_WATERS_STRAHLER,
+      INLAND_WATERS,
+      LINES_MERGED,
+      streamorders,
+      depends_on = list(
+        db_river_networks_merged_per_streamorder,
+        db_inland_waters
+      )
+    ),
     pattern = map(streamorders)
   )
-  
 )
