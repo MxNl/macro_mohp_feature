@@ -84,54 +84,32 @@ preprocessing_targets <- c(
       tar_group(),
     iteration = "group"
   ),
+  # helper target -----------------------------------------------------------
+  tar_target(
+    major_path_ids,
+    get_unique_major_path_ids(LINES_STUDYAREA)
+  ),
   # rivernetworks_merged_per_streamorder ------------------------------------
   tar_target(
     rivernetworks_merged_per_streamorder,
     merge_rivernetworks_per_streamorder(
       LINES_STUDYAREA,
+      major_path_ids,
       distinct_streamorders_in_riverbasins,
       depends_on = list(
         db_river_networks_strahler_studyarea
       )
-    ),
-    pattern = map(distinct_streamorders_in_riverbasins)
-  ),
-  # helper target -----------------------------------------------------------
-  tar_target(
-    river_networks_streamorderone,
-    rivernetworks_merged_per_streamorder %>%
-      filter(streamorder == 1)
-  ),
-  # helper target -----------------------------------------------------------
-  tar_target(
-    river_networks_greater_one_grouped,
-    rivernetworks_merged_per_streamorder %>%
-      filter(streamorder != 1) %>%
+    ) %>% 
       group_by(streamorder) %>%
       tar_group(),
-    iteration = "group"
-  ),
-  # river_networks_treated_brackets -----------------------------------------
-  tar_target(
-    river_networks_treated_brackets,
-    river_networks_greater_one_grouped %>%
-      remove_simple_brackets(),
-    pattern = map(river_networks_greater_one_grouped)
-  ),
-  # helper target -----------------------------------------------------------
-  tar_target(
-    river_networks_grouped,
-    river_networks_streamorderone %>%
-      bind_rows(river_networks_treated_brackets) %>%
-      group_by(streamorder) %>%
-      tar_group(),
-    iteration = "group"
+    iteration = "group",
+    pattern = map(distinct_streamorders_in_riverbasins),
   ),
   # rivernetworks_feature_id ------------------------------------------------
   tar_target(
     rivernetworks_feature_id,
-    order_by_length_and_add_feature_id(river_networks_grouped),
-    pattern = map(river_networks_grouped),
+    order_by_length_and_add_feature_id(rivernetworks_merged_per_streamorder),
+    pattern = map(rivernetworks_merged_per_streamorder),
     iteration = "group"
   ),
   # helper target -----------------------------------------------------------
