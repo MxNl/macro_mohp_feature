@@ -1,5 +1,5 @@
-area: europe
-cellsize: 30
+area: test
+cellsize: 100
 database_name: postgis_test
 exclude_scandinavian_basins: FALSE
 simplify_polygons: FALSE
