@@ -62,7 +62,7 @@ options(encoding = "UTF-8")
 ```
 -->
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, include=FALSE}
 tar_read(directory_tree_trimmed)
 ```
 
