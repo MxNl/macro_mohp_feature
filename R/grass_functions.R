@@ -268,6 +268,11 @@ grass_calculations <-
                 str_glue("thiessen_catchments_distance_raster = if(!isnull(river_network_raster), lake_replacement, thiessen_catchments_distance_raster)"),
               flags = c("overwrite"))
     
+    execGRASS("r.patch",
+              input = c("thiessen_catchments_distance_raster", "lake_replacement"),
+              output = "thiessen_catchments_distance_raster",
+              flag = c("overwrite"))
+    
     # execGRASS("r.surf.idw",
     #           input = "thiessen_catchments_distance_raster",
     #           output = "thiessen_catchments_distance_raster",
@@ -284,9 +289,9 @@ grass_calculations <-
               expression = glue::glue("{FEATURE_NAMES[2]} = round((river_network_distance_raster/{FEATURE_NAMES[1]})*10000)"),
               flags = c("overwrite"))
     
-    execGRASS("r.null",
-              map = FEATURE_NAMES[2],
-              null = 0)
+    # execGRASS("r.null",
+    #           map = FEATURE_NAMES[2],
+    #           null = 0)
     
     execGRASS("r.mapcalc",
               expression = glue::glue("{FEATURE_NAMES[1]} = round({FEATURE_NAMES[1]})"),
