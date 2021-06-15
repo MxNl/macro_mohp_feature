@@ -457,7 +457,7 @@ merge_rivernetworks_per_streamorder <-
         river_network %>% 
         filter(object_id %in% major_path_ids)
     }
-    
+
     river_network %>% 
       add_levelpathid() %>% 
       group_by(levelpath_id) %>% 
