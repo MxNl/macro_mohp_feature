@@ -452,6 +452,17 @@ merge_rivernetworks_per_streamorder <-
                               river_basin_name = '{river_basin_name}'")
       )
     
+    river_network_test <- 
+      river_network %>% 
+      filter(object_id %in% unique(pull(river_network, nextdownid)) | strahler == streamorder)
+    
+    p1 <- river_network %>% 
+      ggplot() + geom_sf()
+    p2 <- river_network_test %>% 
+      ggplot() + geom_sf()
+    
+    p1 | p2
+    
     river_network %>% 
       add_levelpathid() %>% 
       group_by(levelpath_id) %>% 
