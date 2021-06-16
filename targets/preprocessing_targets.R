@@ -76,7 +76,10 @@ preprocessing_targets <- c(
   # helper target -----------------------------------------------------------
   tar_target(
     distinct_streamorders_in_riverbasins,
-    get_distinct_streamorders_in_riverbasins(LINES_STUDYAREA) %>%
+    get_distinct_streamorders_in_riverbasins(
+      LINES_STUDYAREA,
+      depends_on = list(db_river_networks_strahler_studyarea)
+    ) %>%
       rowwise() %>%
       tar_group(),
     iteration = "group"
