@@ -102,17 +102,22 @@ preprocessing_targets <- c(
       depends_on = list(
         db_river_networks_strahler_studyarea
       )
-    ) %>% 
+    ),
+    pattern = map(distinct_streamorders_in_riverbasins)
+  ),
+  # rivernetworks_merged_per_streamorder ------------------------------------
+  tar_target(
+    rivernetworks_merged_per_streamorder_grouped,
+    rivernetworks_merged_per_streamorder %>% 
       group_by(streamorder) %>%
       tar_group(),
-    iteration = "group",
-    pattern = map(distinct_streamorders_in_riverbasins),
+    iteration = "group"
   ),
   # rivernetworks_feature_id ------------------------------------------------
   tar_target(
     rivernetworks_feature_id,
-    order_by_length_and_add_feature_id(rivernetworks_merged_per_streamorder),
-    pattern = map(rivernetworks_merged_per_streamorder),
+    order_by_length_and_add_feature_id(rivernetworks_merged_per_streamorder_grouped),
+    pattern = map(rivernetworks_merged_per_streamorder_grouped),
     iteration = "group"
   ),
   # helper target -----------------------------------------------------------
