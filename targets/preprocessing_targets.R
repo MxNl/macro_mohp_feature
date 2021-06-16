@@ -94,7 +94,7 @@ preprocessing_targets <- c(
         db_river_networks_strahler_studyarea
       )
     ),
-    pattern = map(distinct_streamorders_in_riverbasins),
+    pattern = map(distinct_streamorders_in_riverbasins)
   ),
   # helper target -----------------------------------------------------------
   tar_target(
