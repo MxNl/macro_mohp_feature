@@ -573,7 +573,9 @@ convert_geometry <-
   }
 
 get_distinct_streamorders_in_riverbasins <- 
-  function(table) {
+  function(table, depends_on = NULL) {
+    length(depends_on)
+    
     DBI::dbGetQuery(connect_to_database(),
                     str_glue("SELECT 
                                 DISTINCT river_basin_name, strahler 
@@ -583,7 +585,9 @@ get_distinct_streamorders_in_riverbasins <-
   }
 
 get_unique_major_path_ids <-
-  function(table) {
+  function(table, depends_on = NULL) {
+    length(depends_on)
+    
     nextdownid <-
       DBI::dbGetQuery(
         connect_to_database(),
