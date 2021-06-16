@@ -23,13 +23,6 @@
       "Repository": "CRAN",
       "Hash": "030aaec5bc6553f35347cbb1e70b1a17"
     },
-    "DiagrammeR": {
-      "Package": "DiagrammeR",
-      "Version": "1.0.6.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "3cb13b97961593b4a1ed0c8e37df9d9b"
-    },
     "KernSmooth": {
       "Package": "KernSmooth",
       "Version": "2.23-20",
@@ -332,13 +325,6 @@
       "Repository": "CRAN",
       "Hash": "0f22be39ec1d141fd03683c06f3a6e67"
     },
-    "cowplot": {
-      "Package": "cowplot",
-      "Version": "1.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "b418e8423699d11c7f2087c2bfd07da2"
-    },
     "cpp11": {
       "Package": "cpp11",
       "Version": "0.2.7",
@@ -401,13 +387,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "a0cbe758a531d054b537d16dff4d58a1"
-    },
-    "downloader": {
-      "Package": "downloader",
-      "Version": "0.4",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "f4f2a915e0dedbdf016a83b63477349f"
     },
     "dplyr": {
       "Package": "dplyr",
@@ -668,13 +647,6 @@
       "Repository": "CRAN",
       "Hash": "7b1f856410253d56ea67ad808f7cdff6"
     },
-    "influenceR": {
-      "Package": "influenceR",
-      "Version": "0.1.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "611f9a55ad32ccfa17ccbd77be7a2804"
-    },
     "isoband": {
       "Package": "isoband",
       "Version": "0.2.4",
@@ -828,6 +800,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "cf96b08482dfbed1b7ab7d0ba4395077"
+    },
+    "magick": {
+      "Package": "magick",
+      "Version": "2.7.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "db36bbb91bf293f0550c51ecbf6f1928"
     },
     "magrittr": {
       "Package": "magrittr",
@@ -1433,13 +1412,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "55e157e2aa88161bdb0754218470d204"
-    },
-    "visNetwork": {
-      "Package": "visNetwork",
-      "Version": "2.0.9",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "12545f2acf49d1d346d075580122d89c"
     },
     "webshot": {
       "Package": "webshot",

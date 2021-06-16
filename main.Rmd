@@ -41,21 +41,6 @@ font_add("Corbel", regular = "C:\\Windows\\Fonts\\corbel.ttf")
 # source("../../R/constants.R")
 ```
 
-```{r, echo=FALSE, include = FALSE}
-options(encoding = "UTF-8")
-
-# RefManageR::ReadZotero("5574385",
-#                .params = list(collection = "U4DY76U3",
-#                               key = "V0zS3yc7zT1NsT1bfHG6sfYQ")) %>%
-#       bibtex::write.bib("eumohp.bib")
-# 
-# renv::dependencies()$Package %>%
-#       purrr::chuck(1) %>%
-#       # knitr::write_bib() %>% 
-#       bibtex::write.bib("packages.bib", append = TRUE)
-```
-
-
 <!--
 ```{r eval=FALSE, code=readLines("data_descriptor/targets/R/visualization_functions.R")}
  
