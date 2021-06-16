@@ -322,7 +322,7 @@ Lastly, the resulting raster layers for LP, DSD and SD are exported from the GRA
 
 ## Data Descriptor {-}
 
-To ensure reproducibility of the data descriptor itself, it is generated as part of the targets pipeline (target: *data_descriptor*). Also all tables and some figures are created from within the pipeline (see all targets in file *visualizations_data_descriptor_targets*). The data descriptor is written using the R package *rmarkdown* in the file path *main.Rmd*. From there it is rendered as LaTeX (.tex) and PDF (.pdf) file format using the *knitr* package and exported to *data_descriptor/tex/* \cite{allaire_rmarkdown_2021, stodden_knitr_2014}.
+To ensure reproducibility of the data descriptor itself, it is generated as part of the targets pipeline (target: *data_descriptor*). Also all tables and some figures are created from within the pipeline (see all targets in file *visualizations_data_descriptor_targets*). The data descriptor is written using the R package *rmarkdown* in the file *main.Rmd*. From there it is rendered as LaTeX (.tex) and PDF (.pdf) file format using the *knitr* package and exported to *data_descriptor/tex/* \cite{allaire_rmarkdown_2021, stodden_knitr_2014}.
 
 ## Hardware {-}
 The computations to generate the presented dataset were performed on a DELL PowerEdge C4140 Server with an Intel Xeon Gold 6240R CPU and 384 GB installed RAM. The installed operation system is Microsoft Windows Server 2019 Standard, version 10.0.17763 Build 17763. The total runtime of the pipeline as well as of individual targets is summarised in Tab. \@ref(tab:runtime).
