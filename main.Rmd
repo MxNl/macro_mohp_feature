@@ -338,9 +338,7 @@ As described previously, the presented dataset can be used as features in any ma
 
 The raster cell values of all GeoTIFF files are stored as integers in the *INT32* data type to reduce storage size. Cell values of files that represent LP ("*\<abbreviation of the EU-MOHP measure\> = lp*") must be divided by 100 to obtain percentages with two decimals. The cell values of all other files represent a distance in meters and can be used as is. All files are stored using the coordinate reference system (CRS) ETRS89-extended / LAEA Europe with the EPSG code `r CRS_REFERENCE`.
 
-Some of the GeoTiff files representing DSD ("*\<abbreviation of the EU-MOHP measure\> = dsd*") contain defective data for a currently unknown reasons. This does not affect files for the spatial coverage of *europemainland* ("*\<region name for spatial coverage\> = europemainland*"). You can recognize these defective files by the values of the raster grid cells (-1,79769e+308 and 1,79769e+308).
-
-We also note that a file was created for each spatial coverage and for each hydrologic order regardless of the existence of a river network for a hydrologic order for a given spatial coverage. These files must be disregarded depending on the use case. 
+!!We also note that a file was created for each spatial coverage and for each hydrologic order regardless of the existence of a river network for a hydrologic order for a given spatial coverage. These files must be disregarded depending on the use case. 
 
 # Code availability {-}
 
