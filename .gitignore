@@ -20,7 +20,7 @@ grassdata
 main_files
 ~$*
 output_data/data_descriptor_files
-diagramms/directory_tree.pdf
+data_descriptor/tex/directory_tree.pdf
 input_data/data
 input_data/EUHYDRO_Coastline_EEA39_v013
 data_descriptor/tex/data_descriptor.pdf
