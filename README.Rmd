@@ -18,7 +18,7 @@ library(tidyverse)
 <br />
 <br />
 
-```{r, out.width="40%"}
+```{r, out.width="40%", fig.align='center'}
 knitr::include_graphics("README_files/eumohp_logo.svg")
 ```
 <br />
