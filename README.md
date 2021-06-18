@@ -3,8 +3,11 @@ Generation of the EU-MOHP Dataset
 
 <br /> <br /> <br />
 
-<img src="README_files/eumohp_logo.svg" width="40%" style="display: block; margin: auto;" />
-<br /> <br /> <br /> <br /> <br />
+<p align="center">
+<img width="40%" height="40%" src="README_files/eumohp_logo.svg">
+</p>
+
+<br /> <br /> <br />
 
 This repository contains the required code to generate the EU-MOHP
 v013.1.0 dataset. For further reading and more background information,

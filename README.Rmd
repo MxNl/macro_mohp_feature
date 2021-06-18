@@ -1,8 +1,6 @@
 ---
 title: "Generation of the EU-MOHP Dataset"
-output: 
-  github_document:
-  html_document:
+output: github_document
 always_allow_html: true
 ---
 
@@ -18,11 +16,10 @@ library(tidyverse)
 <br />
 <br />
 
-```{r, out.width="40%", fig.align='center'}
-knitr::include_graphics("README_files/eumohp_logo.svg")
-```
-<br />
-<br />
+<p align="center">
+  <img width="40%" height="40%" src="README_files/eumohp_logo.svg">
+</p>
+
 <br />
 <br />
 <br />
