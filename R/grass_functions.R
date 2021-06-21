@@ -99,6 +99,7 @@ calculate_mohp_metrics_in_grassdb <-
     studyarea <- 
       studyarea %>% 
       st_cast("POLYGON") %>% 
+      filter_intersecting_features(lines) %>% 
       st_transform(crs_reference) %>%
       rowwise() %>% 
       group_split()
