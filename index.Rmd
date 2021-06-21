@@ -17,7 +17,7 @@ library(tidyverse)
 ```{r, out.height="700px"}
 studyarea <- 
   tar_read(selected_studyarea) %>% 
-  st_simplify(dTolerance = 0.1)
+  st_simplify(dTolerance = 0.45)
 
 colour_values <-
   studyarea %>% 

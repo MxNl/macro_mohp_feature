@@ -27,3 +27,5 @@ A figure of the spatial coverage is included in corresponding data
 descriptor. If you want to check more precisely whether your area of
 interest is covered by this dataset and which files are relevant, please
 use this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
+
+[<img src="README_files/webmap_screenshot.png">](https://mxnl.github.io/macro_mohp_feature/)
