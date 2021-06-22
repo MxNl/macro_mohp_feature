@@ -17,15 +17,11 @@ library(tidyverse)
 ```{r, out.height="700px"}
 studyarea <- 
   tar_read(selected_studyarea) %>% 
-  st_simplify(dTolerance = 0.45)
-
-colour_values <-
-  studyarea %>% 
-  nrow() %>%
-  hues::iwanthue()
+  st_simplify(dTolerance = 0.45) %>% 
+  mutate(region_name = as.factor(region_name))
 
 studyarea %>%
-  mapview(zcol = "region_name", col.regions = colour_values, lwd = 0, layer.name = "Spatial coverage (labels corresponding to file names)")
+  mapview(zcol = "region_name", col.regions = hues::iwanthue, lwd = 0, layer.name = "Spatial coverage (labels corresponding to file names)")
 
 
 # leaflet() %>% 
