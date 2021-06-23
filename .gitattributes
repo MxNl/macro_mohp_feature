@@ -1,4 +1,4 @@
-*.html -linguist-vendored
-*.tex -linguist-vendored
-*.sty -linguist-vendored
-*.cls -linguist-vendored
+*.html linguist-vendored
+*.tex linguist-vendored
+*.sty linguist-vendored
+*.cls linguist-vendored
