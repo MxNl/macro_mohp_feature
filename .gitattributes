@@ -1,5 +1,6 @@
 *.html linguist-vendored
-main.tex linguist-vendored
+*tex linguist-vendored
 header.tex linguist-vendored
-jabbrv.sty.tex linguist-vendored
+jabbrv.sty linguist-vendored
+scientific_data_template.tex linguist-vendored
 *.cls linguist-vendored
