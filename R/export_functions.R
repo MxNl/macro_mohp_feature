@@ -60,7 +60,6 @@ modify_tex_file <-
     path %>%
       readLines() %>% 
       str_replace_all("data_descriptor/tex/", "") %>% 
-      str_replace_all("\\.bib\\}", "\\}") %>% 
       writeLines(path)
   }
 
