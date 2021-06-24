@@ -5,10 +5,12 @@ data_descriptor_targets <-
                output_file = "data_descriptor/tex/data_descriptor.pdf",
                priority = 1,
                cue = tar_cue("always")
-               ),
+    ),
     tar_target(
       tex_filepath,
-      here::here("data_descriptor", "tex", "data_descriptor.tex"),
+      return_path_to_data_descriptor_tex_file(
+        depends_on = list(data_descriptor)
+      ),
       format = "file"
     ),
     tar_target(

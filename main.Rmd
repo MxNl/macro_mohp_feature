@@ -367,12 +367,12 @@ To reproduce this dataset, the subsequent steps are required. They have been tes
 install.packages("renv")
 ```
  
-7.  Install all package dependencies with the subsequent line (Note that under Linux and MacOS some R-packages have system dependencies, such as the package _sf_, which depends on `libgeos-dev `, among others. Please consult the respective documentation when facing an issue.)
+7.  Install all package dependencies with the subsequent line (Note that under Linux and MacOS some R-packages have system dependencies, such as the package _sf_, which depends on `libgeos-dev`, among others. Please consult the respective documentation when facing an issue.)
 ```{r, eval=FALSE}
 renv::restore()
 ```
 
-8.  Before running the pipeline on the full spatial coverage of the EEA39 countries, we recommend to test the pipeline with the smaller test study area by setting the variable *area* in the file *config.yml* to "test". The runtime will be less than 45 min. The content of the *config.yml* should look like this (Note the empty line in line 6):
+8.  Before running the pipeline on the full spatial coverage of the EEA39 countries, we recommend to test the pipeline with the smaller test study area by setting the variable *area* in the file *config.yml* to "test". The runtime will be around 20 min. The content of the *config.yml* should look like this (Note the empty line in line 6):
 ```{r, eval=FALSE}
 area: test
 cellsize: 30

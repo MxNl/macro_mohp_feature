@@ -17,8 +17,13 @@ library(tidyverse)
 ```{r, out.height="700px"}
 studyarea <- 
   tar_read(selected_studyarea) %>% 
-  rmapshaper::ms_simplify(keep = 0.05) %>% 
   mutate(region_name = as.factor(region_name))
+
+if (AREA == "europe") {
+  studyarea <- 
+    studyarea %>% 
+    rmapshaper::ms_simplify(keep = 0.05)
+}
 
 studyarea %>%
   mapview(zcol = "region_name", col.regions = hues::iwanthue, lwd = 0, layer.name = "Spatial coverage (labels corresponding to file names)")

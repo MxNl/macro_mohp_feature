@@ -91,7 +91,7 @@ transform_crs_if_required <-
 
 read_river_basins <-
   function(river_basins_files, river_basin_name) {
-
+    
     if(river_basin_name == "fr_islands") {
       gpkg_layer <- glue::glue("{river_basin_name}_eudem2_basins")
     } else {
@@ -129,6 +129,12 @@ read_coastline <-
       # gUnaryUnion() %>%
       # st_as_sf() %>%
       transform_crs_if_required()
+  }
+
+return_path_to_data_descriptor_tex_file <- 
+  function(depends_on = NULL) {
+    length(depends_on)
+    here::here("data_descriptor", "tex", "data_descriptor.tex")
   }
 
 generate_lines <-
