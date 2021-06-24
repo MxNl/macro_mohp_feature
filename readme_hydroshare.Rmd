@@ -14,7 +14,12 @@ library(tidyverse)
 The EU-MOHP v013.1.0 dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
 
 This repository hosts the dataset EU-MOHP v013.1.0 as single GeoTIFF files with .tif file extension but compressed to *.7z* files for download.
-The corresponding publication, which is linked in the corresponding [github repository](https://github.com/MxNl/macro_mohp_feature), provides all background information. It also explains the file naming scheme. To select the files relevant to your study case or application, please use the search bar to filter by spatial coverage or specific hydrologic orders by entering one of the values listed in the table below. Note, however, that not every region or spatial coverage applies to all hydrologic orders. If you want to check in more detail whether your area of interest is covered by this dataset and which files are relevant, please use this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
+The corresponding publication, which is linked in the corresponding [github repository](https://github.com/MxNl/macro_mohp_feature), provides all background information. It also explains the file naming scheme. To select the files relevant to your study case or application, please use the search bar to filter by spatial coverage, EU-MOHP measures, or specific hydrologic orders by entering one of the values listed in the table below. 
+
+-  Example 1: If you are interested in all measures of all hydrologic orders for the island Sardinia, enter `italy2` in the search bar.
+-  Example 2: If you are interested in the measures lateral position (LP) of all hydrologic orders for the island Sardinia, enter `italy2_lp` in the search bar.
+
+Note, however, that not every region or spatial coverage applies to all hydrologic orders. If you want to check in more detail whether your area of interest is covered by this dataset and which files are relevant, please use this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
 
 <br />
 

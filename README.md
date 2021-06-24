@@ -3,9 +3,10 @@ Generation of the EU-MOHP Dataset
 
 <br /> <br /> <br />
 
-<p align="center">
-<img width="40%" height="40%" src="README_files/eumohp_logo.png">
-</p>
+<center>
+<a href="https://doi.org/10.4211/hs.0f02af18e5344ae7a65dfa7fe1444f34">
+<img width="40%" height="40%" src="README_files/eumohp_logo.png"> </a>
+</center>
 
 <br /> <br /> <br />
 
