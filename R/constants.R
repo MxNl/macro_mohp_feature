@@ -5,6 +5,8 @@ AREA <- purrr::chuck(YML_CONFIG, "area")
 CELLSIZE <- purrr::chuck(YML_CONFIG, "cellsize")
 FILEPATH_PREFIX_SPATIAL_COVERAGE <- paste0("mohp_", AREA)
 DATABASENAME <- purrr::chuck(YML_CONFIG, "database_name")
+EXCLUDE_SCANDINAVIAN_BASINS <- purrr::chuck(YML_CONFIG, "exclude_scandinavian_basins")
+SIMPLIFY_POLYGONS <- purrr::chuck(YML_CONFIG, "simplify_polygons")
 DATA_DESCRIPTOR_ONLY <- purrr::chuck(YML_CONFIG, "data_descriptor_only")
 PARALLEL <- purrr::chuck(YML_CONFIG, "parallel")
 
