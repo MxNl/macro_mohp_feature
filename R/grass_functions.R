@@ -45,7 +45,7 @@ calculate_mohp_metrics_in_grassdb <-
       # reference_raster <- tar_read(reference_raster)
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
       studyarea <- tar_read(selected_studyarea)
-      streamorder <- 1
+      streamorder <- 3
       coastline <- tar_read(coastline_watershed)
     }
     
@@ -166,16 +166,25 @@ grass_calculations <-
               flags = c("overwrite"))
     print("r.mask")
     
-    execGRASS("r.null",
-              map = "river_network_raster",
-              setnull = as.character(lines_to_remove_from_rivers))
-    print("r.null")
+    # execGRASS("r.null",
+    #           map = "river_network_raster",
+    #           setnull = as.character(lines_to_remove_from_rivers))
+    # print("r.null")
     
-    execGRASS("r.grow.distance",
-              input = "river_network_raster",
-              distance = "river_network_distance_raster", 
-              value = "river_network_value_raster", 
-              flags = c("overwrite", "m"))
+    
+    if(has_inland_waters){
+      execGRASS("r.grow.distance",
+                input = "river_network_raster_inland_waters",
+                distance = "river_network_distance_raster", 
+                value = "river_network_value_raster", 
+                flags = c("overwrite", "m")) 
+    } else {
+      execGRASS("r.grow.distance",
+                input = "river_network_raster",
+                distance = "river_network_distance_raster", 
+                value = "river_network_value_raster", 
+                flags = c("overwrite", "m")) 
+    }
     print("r.grow.distance")
     
     
@@ -258,6 +267,22 @@ grass_calculations <-
               method = "minimum",
               flags = c("overwrite"))
     print("neighbors")
+    
+    # execGRASS("r.grow.distance",
+    #           input = "thiessen_catchments_lines_raster_thin",
+    #           distance = "lake_replacement",
+    #           flags = c("overwrite", "m"))
+    # 
+    # execGRASS("r.mapcalc",
+    #           expression = 
+    #             str_glue("thiessen_catchments_distance_raster = if(!isnull(river_network_raster), lake_replacement, thiessen_catchments_distance_raster)"),
+    #           flags = c("overwrite"))
+    # 
+    # execGRASS("r.patch",
+    #           input = c("thiessen_catchments_distance_raster", "lake_replacement"),
+    #           output = "thiessen_catchments_distance_raster",
+    #           flag = c("overwrite"))
+    
     # execGRASS("r.surf.idw",
     #           input = "thiessen_catchments_distance_raster",
     #           output = "thiessen_catchments_distance_raster",
@@ -274,9 +299,9 @@ grass_calculations <-
               expression = glue::glue("{FEATURE_NAMES[2]} = round((river_network_distance_raster/{FEATURE_NAMES[1]})*10000)"),
               flags = c("overwrite"))
     
-    execGRASS("r.null",
-              map = FEATURE_NAMES[2],
-              null = 0)
+    # execGRASS("r.null",
+    #           map = FEATURE_NAMES[2],
+    #           null = 0)
     
     execGRASS("r.mapcalc",
               expression = glue::glue("{FEATURE_NAMES[1]} = round({FEATURE_NAMES[1]})"),
@@ -336,6 +361,8 @@ add_inland_waters_to_rivers_raster <-
       # mutate(feature_id = as.character(feature_id)) %>% 
       select(-streamorder)
     
+    if(AREA == "test") inland_waters <- inland_waters %>% st_buffer(dist = 1000)
+    
     if(nrow(inland_waters) != 0) {
       use_sf()
       inland_waters %>% 
@@ -361,7 +388,7 @@ add_inland_waters_to_rivers_raster <-
     if(has_inland_waters) {
       execGRASS("r.patch",
                 input = c("river_network_raster", "inland_waters_raster"),
-                output = "river_network_raster",
+                output = "river_network_raster_inland_waters",
                 flag = c("overwrite"))
     }
     
