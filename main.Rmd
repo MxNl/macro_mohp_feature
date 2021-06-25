@@ -1,5 +1,5 @@
 ---
-title: "Multiorder Hydrologic Position for Europe: A Set of Metrics for Hydrologic Modelling and Groundwater Mapping"
+title: "Multiorder Hydrologic Position for Europe as a Set of Metrics for Hydrologic Modelling and Groundwater Mapping"
 author:
   - name: Maximilian Noelscher
     affiliation:
