@@ -587,23 +587,23 @@ get_distinct_streamorders_in_riverbasins <-
 get_unique_major_path_ids <-
   function(table, depends_on = NULL) {
     length(depends_on)
-    
+
     nextdownid <-
       DBI::dbGetQuery(
         connect_to_database(),
-        str_glue("SELECT 
-                                DISTINCT nextdownid 
-                              FROM {table}")
+        str_glue("SELECT
+                    DISTINCT nextdownid
+                  FROM {table}")
       ) %>%
       as_vector()
-    
+
     firstorderid <-
       DBI::dbGetQuery(
         connect_to_database(),
-        str_glue("SELECT 
-                                DISTINCT object_id 
-                              FROM {table} 
-                              WHERE strahler = 1")
+        str_glue("SELECT
+                    DISTINCT object_id 
+                  FROM {table} 
+                  WHERE strahler = 1")
       ) %>%
       as_vector()
 

@@ -71,7 +71,7 @@ preprocessing_targets <- c(
     get_unique_streamorders(
       LINES_STUDYAREA,
       depends_on = list(db_river_networks_strahler_studyarea)
-    )
+    ) %>% rev()
   ),
   # helper target -----------------------------------------------------------
   tar_target(
