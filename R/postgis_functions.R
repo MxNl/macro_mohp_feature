@@ -588,27 +588,13 @@ get_unique_major_path_ids <-
   function(table, depends_on = NULL) {
     length(depends_on)
 
-    nextdownid <-
-      DBI::dbGetQuery(
-        connect_to_database(),
-        str_glue("SELECT
+    DBI::dbGetQuery(
+      connect_to_database(),
+      str_glue("SELECT
                     DISTINCT nextdownid
                   FROM {table}")
-      ) %>%
+    ) %>%
       as_vector()
-
-    firstorderid <-
-      DBI::dbGetQuery(
-        connect_to_database(),
-        str_glue("SELECT
-                    DISTINCT object_id 
-                  FROM {table} 
-                  WHERE strahler = 1")
-      ) %>%
-      as_vector()
-
-    nextdownid %>%
-      c(firstorderid)
   }
 
 write_selected_studyarea <- function(x, table_name_destination, index_column = NULL, geo_index_column = NULL) {
