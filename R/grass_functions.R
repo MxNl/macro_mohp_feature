@@ -166,10 +166,10 @@ grass_calculations <-
               flags = c("overwrite"))
     print("r.mask")
     
-    # execGRASS("r.null",
-    #           map = "river_network_raster",
-    #           setnull = as.character(lines_to_remove_from_rivers))
-    # print("r.null")
+    execGRASS("r.null",
+              map = "river_network_raster",
+              setnull = as.character(lines_to_remove_from_rivers))
+    print("r.null")
     
     
     if(has_inland_waters){
