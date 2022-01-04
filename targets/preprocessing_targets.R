@@ -92,6 +92,14 @@ preprocessing_targets <- c(
       depends_on = list(db_river_networks_strahler_studyarea)
       )
   ),
+  # helper target -----------------------------------------------------------
+  tar_target(
+    bracket_start_ids,
+    get_bracket_start_ids(
+      LINES_STUDYAREA,
+      major_path_ids
+      )
+  ),
   # rivernetworks_merged_per_streamorder ------------------------------------
   tar_target(
     rivernetworks_merged_per_streamorder,
@@ -99,6 +107,7 @@ preprocessing_targets <- c(
       LINES_STUDYAREA,
       major_path_ids,
       distinct_streamorders_in_riverbasins,
+      bracket_start_ids,
       depends_on = list(
         db_river_networks_strahler_studyarea
       )

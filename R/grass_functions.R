@@ -173,6 +173,11 @@ grass_calculations <-
     
     
     if(has_inland_waters){
+      execGRASS("r.null",
+                map = "river_network_raster_inland_waters",
+                setnull = as.character(lines_to_remove_from_rivers))
+      print("r.null")
+      
       execGRASS("r.grow.distance",
                 input = "river_network_raster_inland_waters",
                 distance = "river_network_distance_raster", 
@@ -353,7 +358,7 @@ add_inland_waters_to_rivers_raster <-
       # mutate(feature_id = as.character(feature_id)) %>% 
       select(-streamorder)
     
-    if(AREA == "test") inland_waters <- inland_waters %>% st_buffer(dist = 1000)
+    # if(AREA == "test") inland_waters <- inland_waters %>% st_buffer(dist = 1000)
     
     if(nrow(inland_waters) != 0) {
       use_sf()

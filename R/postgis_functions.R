@@ -597,6 +597,19 @@ get_unique_major_path_ids <-
       as_vector()
   }
 
+get_bracket_start_ids <-
+  function(table, major_path_ids) {
+    DBI::dbGetQuery(
+      connect_to_database(),
+      str_glue("SELECT
+                    object_id
+                  FROM {table}
+                    WHERE strahler > 1")
+    ) %>%
+      as_vector() %>%
+      setdiff(major_path_ids)
+  }
+
 write_selected_studyarea <- function(x, table_name_destination, index_column = NULL, geo_index_column = NULL) {
   write_to_table(
     x,
