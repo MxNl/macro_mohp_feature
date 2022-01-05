@@ -504,27 +504,28 @@ merge_rivernetworks_per_streamorder <-
         group_split() %>%
         map_df(get_number_endpoint_connections, river_network_with_minor_paths) %>%
         filter(endpoint_connections < 2) %>%
-        select(geometry, streamorder)
-      
-      river_network_without_minor_paths <-
-        river_network %>%
-        filter(object_id %in% major_path_ids) %>% 
-        add_levelpathid() %>%
-        group_by(levelpath_id) %>%
-        summarise() %>%
-        select(-levelpath_id) %>%
-        st_cast("MULTILINESTRING") %>%
-        mutate(streamorder = as.integer(streamorder)) %>%
+        select(geometry, streamorder) %>% 
         add_feature_index_column()
       
-      difference <- st_difference(summarise(river_network_without_minor_paths), 
-                                  summarise(river_network_with_minor_paths)) %>% 
-        mutate(streamorder = streamorder)
-      
-      river_network_with_minor_paths <- 
-        river_network_with_minor_paths %>% 
-        bind_rows(difference) %>% 
-        add_feature_index_column()
+      # river_network_without_minor_paths <-
+      #   river_network %>%
+      #   filter(object_id %in% major_path_ids) %>% 
+      #   add_levelpathid() %>%
+      #   group_by(levelpath_id) %>%
+      #   summarise() %>%
+      #   select(-levelpath_id) %>%
+      #   st_cast("MULTILINESTRING") %>%
+      #   mutate(streamorder = as.integer(streamorder)) %>%
+      #   add_feature_index_column()
+      # 
+      # difference <- st_difference(summarise(river_network_without_minor_paths), 
+      #                             summarise(river_network_with_minor_paths)) %>% 
+      #   mutate(streamorder = streamorder)
+      # 
+      # river_network_with_minor_paths <- 
+      #   river_network_with_minor_paths %>% 
+      #   bind_rows(difference) %>% 
+      #   add_feature_index_column()
     }
     river_network_with_minor_paths %>% 
       select(-feature_id)

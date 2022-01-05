@@ -55,22 +55,26 @@ DBI::dbDisconnect(connect_to_database())
 
 
 table_name <- LINES_STUDYAREA
-# major_path_ids <- tar_read(major_path_ids)
-major_path_ids <- tar_read(river_networks) %>% st_drop_geometry() %>% distinct(nextdownid) %>% as_vector()
+major_path_ids <- tar_read(major_path_ids)
+# major_path_ids <- tar_read(river_networks) %>% st_drop_geometry() %>% distinct(nextdownid) %>% as_vector()
 bracket_start_ids <- tar_read(bracket_start_ids)
 distinct_streamorders_in_riverbasins <- tar_read(distinct_streamorders_in_riverbasins)
-streamorder <- 2
-river_basin_name <- "rhine"
+streamorder <- 9
+river_basin_name <- "danube"
 
 river_network %>% 
   ggplot() +
   geom_sf()
 
-river_network_with_minor_paths %>% 
+{river_network_with_minor_paths %>% 
+  ggplot() +
+  geom_sf()} %>% plotly::ggplotly()
+
+river_network_without_minor_paths %>% 
   ggplot() +
   geom_sf()
 
-river_network_without_minor_paths %>% 
+difference %>% 
   ggplot() +
   geom_sf()
 
