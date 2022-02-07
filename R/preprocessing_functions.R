@@ -392,57 +392,164 @@ union_coastline <-
       st_cast("POLYGON")
   }
 
-add_levelpathid <- 
-  function(river_network) {
+correct_garonne_sorting <- function(river_network) {
+  river_network <- river_network %>% 
+    arrange(-longpath) %>%
+    add_feature_index_column() %>% 
+    mutate(ordercorr = 1)
+  
+  for (i in 1:nrow(river_network)) {
+    n_connections <- river_network %>%
+      slice(i) %>%
+      st_cast("MULTILINESTRING") %>%
+      get_number_connected_endpoints(river_network) %>%
+      pull(connected_endpoints)
     
-    river_network_path <- 
-      river_network %>% 
-      as_tibble() %>% 
-      arrange(-longpath) %>% 
-      select(object_id, nextdownid)
+    if (n_connections > 1) {
+      river_network <- river_network %>%
+        mutate(ordercorr = if_else(row_number() == i, 2, ordercorr))
+    }
+  }
+  
+  river_network <- river_network %>%
+    mutate(ordercorr = if_else(is.na(nextdownid), 3, ordercorr))
+  
+  river_network %>%
+    arrange(ordercorr, -longpath) %>%
+    as_tibble() %>% 
+    select(object_id, nextdownid)
+}
+
+correct_seine_nextdownidbug <- function(river_network) {
+  river_network %>%
+    mutate(nextdownid = if_else(object_id == "RL25001518", "RL25011818", nextdownid)) %>%
+    filter(!(object_id %in% c("RL25011817",
+                          "RL25001525",
+                          "RL25001526",
+                          "RL25001527",
+                          "RL25011812",
+                          "RL25011813"))) %>%
+    as_tibble() %>% 
+    arrange(-longpath) %>%
+    select(object_id, nextdownid)
+}
+
+add_levelpathid <- 
+  function(river_network, river_basin_name, bracket_start_ids, discard = FALSE) {
+    
+    if(river_basin_name %in% c("garonne", "loire")) {
+      river_network_path <- 
+        river_network %>%
+        correct_garonne_sorting()
+    } else if(river_basin_name == "seine") {
+      river_network_path <- 
+        river_network %>%
+        correct_seine_nextdownidbug()
+    } else {
+      river_network_path <- 
+        river_network %>% 
+        as_tibble() %>% 
+        arrange(-longpath) %>% 
+        select(object_id, nextdownid)
+    }
     
     longestpaths_list <- list()
+    ids_connected_geometries <- list()
     i <- 1
     while(nrow(river_network_path) > 0) {
       
-      longestpaths_list[[i]] <- 
-        river_network_path %>% 
+      connected_ids <- river_network_path %>% 
         graph.data.frame(directed = TRUE) %>% 
         subcomponent(1, mode = "out") %>% 
-        as.vector() %>% 
-        slice(river_network_path, .)
+        names()
+      
+      longestpaths_list[[i]] <- river_network_path %>% 
+        filter(object_id %in% connected_ids)
+      
+      ids_connected_geometries[[i]] <- c(
+        longestpaths_list[[i]]$object_id,
+        longestpaths_list[[i]]$nextdownid
+      ) %>%
+        unique() %>% 
+        tibble(object_id = .)
       
       river_network_path <- 
         river_network_path %>% 
-        filter(!(object_id %in% longestpaths_list[[i]]$object_id))
+        filter(!(object_id %in% ids_connected_geometries[[i]]$object_id))
       
       i <- i + 1
     }
     
-    longestpaths_list %>% 
+    if (discard) {
+      longestpaths_list <- 
+        longestpaths_list %>% 
+        discard(.p = minor_path_check, bracket_start_ids)
+    }
+    
+    longestpaths_list %>%
       imap(~mutate(.x, levelpath_id = .y)) %>% 
       reduce(bind_rows) %>% 
-      select(-nextdownid) %>% 
-      left_join(river_network, ., by = "object_id") %>% 
+      select(-nextdownid) %>%
+      inner_join(river_network, ., by = "object_id") %>% 
       select(-longpath, -nextdownid, -object_id)
   }
 
-merge_rivernetworks_per_streamorder <- 
-  function(table_name, distinct_streamorders_in_riverbasins, depends_on = NULL) {
+minor_path_check <- function(x, bracket_start_ids) {
+  x %>% pull(object_id) %>% discard(is.na) %in% bracket_start_ids %>% any()
+}
+
+get_number_endpoint_connections <-
+  function(single_geometry, river_network) {
+    start_end_points <-
+      single_geometry %>%
+      st_line_merge() %>%
+      get_start_and_endpoints()
     
+    n_row <- 
+      start_end_points %>%
+      st_join(river_network) %>%
+      filter(feature_id.x != feature_id.y) %>% 
+      nrow()
+    
+    single_geometry %>% 
+      mutate(endpoint_connections = n_row)
+  }
+
+get_number_connected_endpoints <-
+  function(single_geometry, river_network) {
+    start_end_points <-
+      single_geometry %>%
+      st_line_merge() %>%
+      get_start_and_endpoints() %>%
+      add_feature_index_column(column_name = "point_id")
+    
+    connected_endpoints <- 
+      start_end_points %>%
+      st_join(river_network) %>%
+      filter(feature_id.x != feature_id.y) %>% 
+      pull(point_id) %>%
+      unique() %>%
+      length()
+    
+    single_geometry %>% 
+      mutate(connected_endpoints = connected_endpoints)
+  }
+
+merge_rivernetworks_per_streamorder <-
+  function(table_name, major_path_ids, distinct_streamorders_in_riverbasins, bracket_start_ids, depends_on = NULL) {
     length(depends_on)
-    
-    streamorder <- 
-      distinct_streamorders_in_riverbasins %>% 
+
+    streamorder <-
+      distinct_streamorders_in_riverbasins %>%
       pull(strahler)
 
-    river_basin_name <- 
-      distinct_streamorders_in_riverbasins %>% 
+    river_basin_name <-
+      distinct_streamorders_in_riverbasins %>%
       pull(river_basin_name)
-    
-    river_network <- 
+
+    river_network <-
       st_read(
-        connect_to_database(), 
+        connect_to_database(),
         query = str_glue("SELECT 
                             * 
                           FROM {table_name} 
@@ -451,15 +558,64 @@ merge_rivernetworks_per_streamorder <-
                             AND
                               river_basin_name = '{river_basin_name}'")
       )
+
+    river_network_with_minor_paths <-
+      river_network %>%
+      add_levelpathid(river_basin_name) %>%
+      group_by(levelpath_id) %>%
+      summarise() %>%
+      select(-levelpath_id) %>%
+      st_cast("MULTILINESTRING") %>%
+      mutate(streamorder = as.integer(streamorder)) %>% 
+      add_feature_index_column()
     
-    river_network %>% 
-      add_levelpathid() %>% 
-      group_by(levelpath_id) %>% 
-      summarise() %>% 
-      select(-levelpath_id) %>% 
-      st_cast("MULTILINESTRING") %>% 
-      mutate(streamorder = as.integer(streamorder))
+    if(streamorder > 1) {
+      river_network_with_minor_paths <-
+        river_network_with_minor_paths %>%
+        group_by(feature_id) %>%
+        group_split() %>%
+        map_df(get_number_connected_endpoints, river_network_with_minor_paths) %>%
+        filter(connected_endpoints <= 1) %>%
+        select(geometry, streamorder) %>% 
+        add_feature_index_column()
+      
+      # river_network_without_minor_paths <-
+      #   river_network %>%
+      #   filter(object_id %in% major_path_ids) %>% 
+      #   add_levelpathid() %>%
+      #   group_by(levelpath_id) %>%
+      #   summarise() %>%
+      #   select(-levelpath_id) %>%
+      #   st_cast("MULTILINESTRING") %>%
+      #   mutate(streamorder = as.integer(streamorder)) %>%
+      #   add_feature_index_column()
+      # 
+      # difference <- st_difference(summarise(river_network_without_minor_paths), 
+      #                             summarise(river_network_with_minor_paths)) %>% 
+      #   mutate(streamorder = streamorder)
+      # 
+      # river_network_with_minor_paths <- 
+      #   river_network_with_minor_paths %>% 
+      #   bind_rows(difference) %>% 
+      #   add_feature_index_column()
+    }
+    river_network_with_minor_paths %>% 
+      select(-feature_id)
+    # river_network_without_minor_paths <-
+    #   river_network %>%
+    #   add_levelpathid(bracket_start_ids, discard = TRUE) %>%
+    #   group_by(levelpath_id) %>%
+    #   summarise() %>%
+    #   select(-levelpath_id) %>%
+    #   st_cast("MULTILINESTRING") %>%
+    #   mutate(streamorder = as.integer(streamorder))
+
+    # river_network_with_minor_paths %>%
+    #   filter(st_equals(river_network_with_minor_paths, river_network_without_minor_paths, sparse = FALSE)[, 1] |
+    #            st_overlaps(river_network_with_minor_paths, river_network_without_minor_paths, sparse = FALSE)[, 1])
   }
+
+
 
 order_by_length_and_add_feature_id <- 
   function(river_network) {

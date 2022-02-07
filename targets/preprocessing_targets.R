@@ -71,7 +71,7 @@ preprocessing_targets <- c(
     get_unique_streamorders(
       LINES_STUDYAREA,
       depends_on = list(db_river_networks_strahler_studyarea)
-    )
+    ) %>% rev()
   ),
   # helper target -----------------------------------------------------------
   tar_target(
@@ -79,50 +79,45 @@ preprocessing_targets <- c(
     get_distinct_streamorders_in_riverbasins(
       LINES_STUDYAREA,
       depends_on = list(db_river_networks_strahler_studyarea)
-    ) %>%
+      ) %>%
       rowwise() %>%
       tar_group(),
     iteration = "group"
+  ),
+  # helper target -----------------------------------------------------------
+  tar_target(
+    major_path_ids,
+    get_unique_major_path_ids(
+      LINES_STUDYAREA,
+      depends_on = list(db_river_networks_strahler_studyarea)
+      )
+  ),
+  # helper target -----------------------------------------------------------
+  tar_target(
+    bracket_start_ids,
+    get_bracket_start_ids(
+      LINES_STUDYAREA,
+      major_path_ids
+      )
   ),
   # rivernetworks_merged_per_streamorder ------------------------------------
   tar_target(
     rivernetworks_merged_per_streamorder,
     merge_rivernetworks_per_streamorder(
       LINES_STUDYAREA,
+      major_path_ids,
       distinct_streamorders_in_riverbasins,
+      bracket_start_ids,
       depends_on = list(
         db_river_networks_strahler_studyarea
       )
     ),
     pattern = map(distinct_streamorders_in_riverbasins)
   ),
-  # helper target -----------------------------------------------------------
+  # rivernetworks_merged_per_streamorder ------------------------------------
   tar_target(
-    river_networks_streamorderone,
-    rivernetworks_merged_per_streamorder %>%
-      filter(streamorder == 1)
-  ),
-  # helper target -----------------------------------------------------------
-  tar_target(
-    river_networks_greater_one_grouped,
-    rivernetworks_merged_per_streamorder %>%
-      filter(streamorder != 1) %>%
-      group_by(streamorder) %>%
-      tar_group(),
-    iteration = "group"
-  ),
-  # river_networks_treated_brackets -----------------------------------------
-  tar_target(
-    river_networks_treated_brackets,
-    river_networks_greater_one_grouped %>%
-      remove_simple_brackets(),
-    pattern = map(river_networks_greater_one_grouped)
-  ),
-  # helper target -----------------------------------------------------------
-  tar_target(
-    river_networks_grouped,
-    river_networks_streamorderone %>%
-      bind_rows(river_networks_treated_brackets) %>%
+    rivernetworks_merged_per_streamorder_grouped,
+    rivernetworks_merged_per_streamorder %>% 
       group_by(streamorder) %>%
       tar_group(),
     iteration = "group"
@@ -130,8 +125,8 @@ preprocessing_targets <- c(
   # rivernetworks_feature_id ------------------------------------------------
   tar_target(
     rivernetworks_feature_id,
-    order_by_length_and_add_feature_id(river_networks_grouped),
-    pattern = map(river_networks_grouped),
+    order_by_length_and_add_feature_id(rivernetworks_merged_per_streamorder_grouped),
+    pattern = map(rivernetworks_merged_per_streamorder_grouped),
     iteration = "group"
   ),
   # helper target -----------------------------------------------------------

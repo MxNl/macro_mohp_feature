@@ -33,7 +33,7 @@ write_raster_mohp_features <-
         "_",
         filepath_prefix_feature_name,
         "_",
-        "streamorder",
+        "hydrologicorder",
         filepath_prefix_streamorder,
         "_",
         filepath_prefix_spatial_resolution,
@@ -67,3 +67,21 @@ copy_bib_file <-
   function() {
     fs::file_copy("eu-mohp.bib", here::here("data_descriptor", "tex"), overwrite = TRUE)
   }
+
+compress_eumohp_files <- function(filepath) {
+  filepath %>%
+    str_c("./", .) %>%
+    utils::zip(
+      files = .,
+      zipfile = str_remove(., ".tif"),
+      zip = "C:/Program Files/7-Zip/7Z",
+      flags = "a -t7z -bso0 -bsp0"
+    )
+}
+
+list_eumohp_filepaths <- function(directory, depends_on = NULL) {
+  length(depends_on)
+  
+  directory %>% 
+    list.files(recursive = TRUE, full.names = TRUE)
+}

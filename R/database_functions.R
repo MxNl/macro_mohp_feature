@@ -98,7 +98,7 @@ write_as_lines_to_db <- function(sf_lines, table_name_destination, geo_index_col
 
 write_as_is_to_db <- function(sf_lines, table_name, geo_index_column = NULL) {
   
-  # sf_lines <- tar_read(river_networks_grouped)
+  # sf_lines <- tar_read(rivernetworks_feature_id)
   # river_basin_name <- tar_read(river_basin_names) %>% chuck(2)
   # table_name <- LINES_MERGED
   
