@@ -49,6 +49,7 @@ source("targets/studyarea_targets.R")
 source("targets/import_targets.R")
 source("targets/preprocessing_targets.R")
 source("targets/mohpcalculation_targets.R")
+source("targets/export_targets.R")
 source("data_descriptor/targets/targets/visualizations_data_descriptor_targets.R")
 source("data_descriptor/targets/targets/data_descriptor_targets.R")
 
@@ -68,6 +69,7 @@ c(
   import_targets,
   preprocessing_targets,
   if(!DATA_DESCRIPTOR_ONLY) mohpcalculation_targets,
+  if(!DATA_DESCRIPTOR_ONLY) export_targets,
   if(DATA_DESCRIPTOR_ONLY) data_descriptor_targets,
   if(DATA_DESCRIPTOR_ONLY) visualizations_data_descriptor_targets
 )
