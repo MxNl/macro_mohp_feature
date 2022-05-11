@@ -26,12 +26,45 @@ visualizations_data_descriptor_targets <-
       spatial_coverage,
       if(AREA == "europe") "italy2" else "."
     ),
+    # tar_target(
+    #   dataset_map_overview_plot,
+    #   make_dataset_map_overview_plot(
+    #     selected_hydrologic_orders = selected_hydrologic_orders, 
+    #     spatial_coverage = spatial_coverage
+    #   )
+    # ),
+    tar_target(
+      mohp_starsproxy,
+      read_mohp_starsproxy(OUTPUT_DIRECTORY),
+      iteration = "list",
+      cue = tar_cue(mode = "always")
+    ),
+    tar_target(
+      mohp_starsproxy_names,
+      names(mohp_starsproxy),
+      iteration = "list"
+    ),
+    tar_target(
+      mohp_raster_values,
+      stars_to_values(mohp_starsproxy, mohp_starsproxy_names),
+      pattern = map(mohp_starsproxy, mohp_starsproxy_names),
+      deployment = "main"
+    ),
+    tar_target(
+      quantile_breaks,
+      map_quantiles_breaks(mohp_raster_values),
+    ),
     tar_target(
       dataset_map_overview_plot,
-      make_dataset_map_overview_plot(
-        selected_hydrologic_orders = selected_hydrologic_orders, 
-        spatial_coverage = spatial_coverage
-      )
+      eumohp_plot(mohp_starsproxy, quantile_breaks),
+    ),
+    tar_target(
+      stats_ridge_plot,
+      make_stats_ridges_plot(mohp_raster_values),
+    ),
+    tar_target(
+      stats_table_data,
+      make_stats_summary(mohp_raster_values),
     ),
     tar_target(
       output_data_table,

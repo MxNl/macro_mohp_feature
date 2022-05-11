@@ -13,7 +13,7 @@ get_mop_files <-
       tibble(files = .) %>%
       filter(word(files, 2, sep = "_") == AREA) %>%
       filter(word(files, 6, sep = "_") == str_glue("{CELLSIZE}m.tif")) %>%
-      filter(word(files, 5, sep = "_") %in% str_glue("streamorder{streamorder}")) %>%
+      filter(word(files, 5, sep = "_") %in% str_glue("hydrologicorder{streamorder}")) %>%
       filter(str_detect(word(files, 3, sep = "_"), str_c(spatial_coverage, collapse = "|")))
   }
 
@@ -284,7 +284,16 @@ make_targets_runtime_table <-
                                     "tex_filepath",
                                     "modified_tex_file",
                                     "bibfile_copied",
-                                    "workflow_figure"
+                                    "workflow_figure",
+                                    "mohp_starsproxy",
+                                    "mohp_raster_values",
+                                    "eumohp_filepaths",
+                                    "stats_ridge_per_measure_plot",
+                                    "stats_ridge_plot",
+                                    "stats_ridge_per_measure_plot",
+                                    "stats_table_data",
+                                    "mohp_starsproxy_names",
+                                    "quantile_breaks"
       ))
       ) %>% 
       janitor::adorn_totals("row")
@@ -376,9 +385,9 @@ make_river_canal_confusion_example_plot <-
       filter_intersecting_features(clip_polygon) %>% 
       st_intersection(clip_polygon)
     
-    colours <- 
-      clipped_geometries %>% 
-      generate_discrete_colour_values(dfdd)
+    # colours <- 
+    #   clipped_geometries %>% 
+    #   generate_discrete_colour_values(dfdd)
     
     clipped_geometries %>% 
       mutate(dfdd = if_else(dfdd == "BH140", 
@@ -389,7 +398,7 @@ make_river_canal_confusion_example_plot <-
                             ))) %>% 
       ggplot() +
       geom_sf(aes(colour = dfdd), size = 1) +
-      scale_colour_manual(values = colours) +
+      scale_colour_viridis_d() +
       geom_curve(data = data.frame(x = 4628921.04384992, y = 3250201.40311892, xend = 4628817.60981672, yend = 3246581.09972031),
                  colour = "grey",
                  mapping = aes(x = x, y = y, xend = xend, yend = yend),
@@ -476,3 +485,284 @@ dirtree_lineno <-
       filter(str_detect(rownames, str_glue("^{pattern}$"))) %>% 
       pull(rownumber)
   }
+
+make_ridges_per_measure <- function(data) {
+  plot <- data %>%
+    ggplot(aes(
+      x = value,
+      y = hydrologic_order,
+      fill = stat(x)
+    )) +
+    ggridges::geom_density_ridges_gradient(
+      quantile_lines = TRUE, quantiles = 2,
+      vline_size = .7, vline_color = "white",
+      position = ggridges::position_raincloud(
+        adjust_vlines = TRUE,
+        ygap = -.15,
+        height = .15
+      ),
+      colour = "white",
+      alpha = .1,
+      scale = 2,
+      # panel_scaling = FALSE,
+      # rel_min_height = 0.01,
+      show.legend = FALSE
+    ) +
+    # ggridges::geom_density_ridges_gradient(quantile_lines = TRUE, scale = 0.9, alpha = 0.7,
+    #   vline_size = 1, vline_color = "red",
+    #   point_size = 0.4, point_alpha = 1,
+    #   position = ggridges::position_raincloud(adjust_vlines = TRUE),
+    #   show.legend = FALSE) +
+    scale_fill_viridis_c() +
+    labs(y = "Hydrologic order") +
+    # scale_y_reverse() +
+    scale_x_continuous(expand = c(0, 0), guide = guide_axis(check.overlap = TRUE)) +
+    scale_y_discrete(expand = expansion(mult = c(0.01, .3))) +
+    ggridges::theme_ridges() +
+    # theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, family = "Corbel"),
+      axis.title.x = element_text(size = 10, hjust = 0.5),
+      axis.text = element_text(family = "Corbel"),
+      axis.title.y = element_text(size = 10, family = "Corbel"),
+      text = element_text(family = "Corbel")
+    )
+
+  if (data %>% slice_head(n = 1) %>% pull(measure) %>% magrittr::is_in(c("dsd", "sd"))) {
+    plot <- plot +
+      scale_x_continuous(
+        trans = scales::pseudo_log_trans(base = 10),
+        breaks = 10^(0:4),
+        # labels = scales::comma,
+        expand = c(0, 0),
+        guide = guide_axis(check.overlap = TRUE)
+      )
+  }
+  if (data %>% slice_head(n = 1) %>% pull(measure) %>% magrittr::is_in(c("lp", "sd"))) {
+    plot <- plot +
+      theme(
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank()
+      )
+  }
+  if (data %>% slice_head(n = 1) %>% pull(measure) %>% magrittr::is_in(c("lp"))) {
+    plot <- plot +
+      xlab(data %>%
+        slice_head(n = 1) %>%
+        pull(measure) %>%
+        stringr::str_to_upper() %>%
+        stringr::str_c(" [-]"))
+  } else {
+    plot <- plot +
+      xlab(data %>%
+             slice_head(n = 1) %>%
+             pull(measure) %>%
+             stringr::str_to_upper() %>%
+             stringr::str_c(" [km]"))
+  }
+  plot
+}
+
+make_stats_ridges_plot <- function(data) {
+  data %>% 
+    group_by(measure) %>% 
+    group_split() %>% 
+    map(make_ridges_per_measure) %>% 
+    patchwork::wrap_plots(nrow = 1) +
+    plot_annotation(title = "Distribution of the calculated measures") &
+    theme(plot.title = element_text(hjust = 0.5, family = "Corbel"))
+}
+
+stars_to_values <- function(stars_object, index) {
+  stars_object %>% 
+    lazy_dt() %>% 
+    rename("value" = 3) %>% 
+    mutate(index = index) %>% 
+    filter(!is.na(value)) %>% 
+    lazy_dt() %>% 
+    mutate(measure = stringr::word(index, end = 1, sep = "_")) %>% 
+    mutate(hydrologic_order = stringr::str_extract(index, "hydrologicorder\\d")) %>% 
+    mutate(hydrologic_order = stringr::str_remove(hydrologic_order, "hydrologicorder")) %>% 
+    select(-index, -x, -y) %>% 
+    mutate(value = if_else(measure == "lp", value / 1E4, value)) %>% 
+    mutate(value = if_else(measure %in% c("dsd", "sd"), value / 1E3, value)) %>% 
+    mutate(hydrologic_order = factor(hydrologic_order, levels = 9:1)) %>% 
+    as_tibble()
+}
+
+round_off <- function (x, digits=0) 
+{
+  posneg = sign(x)
+  z = trunc(abs(x) * 10 ^ (digits + 1)) / 10
+  z = floor(z * posneg + 0.5) / 10 ^ digits
+  return(z)
+}
+
+make_stats_summary <- function(data) {
+  data %>%
+    lazy_dt() %>%
+    mutate(hydrologic_order = factor(hydrologic_order, levels = 1:9)) %>%
+    group_by(measure, hydrologic_order) %>%
+    summarise(
+      min = min(value),
+      median = median(value),
+      mean = mean(value),
+      max = max(value),
+      .groups = "drop"
+    ) %>%
+    as_tibble() %>%
+    tidyr::pivot_wider(
+      id_cols = "hydrologic_order",
+      names_from = "measure",
+      values_from = c("min", "median", "mean", "max")
+    ) %>%
+    mutate(across(where(is.numeric), round_off, 2)) %>%
+    relocate(
+      hydrologic_order,
+      contains("dsd"),
+      contains("lp"),
+      contains("sd")
+    )
+}
+
+map_quantiles_breaks <- function(mohp_raster_values) {
+  mohp_raster_values %>% 
+    filter(hydrologic_order %in% HYDROLOGIC_ORDERS_TO_PLOT) %>% 
+    mutate(value = if_else(measure == "lp", value * 1E4, value)) %>% 
+    mutate(value = if_else(measure %in% c("dsd", "sd"), value * 1E3, value)) %>% 
+    group_by(measure) %>% 
+    group_split() %>% 
+    map(quantiles_breaks)
+}
+
+quantiles_breaks <- function(x) {
+  x %>%
+    drop_na(value) %>%
+    pull(value) %>%
+    quantile(probs = seq(0, 1, 1 / QUANTILE_SCALE_NUMBER_BINS)) %>%
+    enframe() %>%
+    mutate(name = as.numeric(str_remove(name, "%"))) %>%
+    deframe()
+}
+
+.patchwork_measures <- function(plot_list) {
+  patch <- plot_list %>%
+    patchwork::wrap_plots(col = 1)
+
+  patch +
+    # grid::textGrob(plot_list %>%
+    #                        names() %>%
+    #                        purrr::chuck(1) %>%
+    #                        stringr::word(start = 2, sep = "_") %>%
+    #                        stringr::str_to_upper()) +
+    patchwork::guide_area() +
+    patchwork::plot_layout(
+      guides = "collect",
+      tag_level = "new",
+      heights = c(
+        rep_len(
+          10,
+          length.out = length(plot_list)
+        ),
+        4
+      )
+    )
+}
+patchwork_all <- function(plot_list) {
+  plot_list %>%
+    patchwork::wrap_plots(ncol = length(plot_list)) &
+    patchwork::plot_annotation(
+      theme = ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          hjust = .5,
+          size = 12
+        )
+      ),
+      tag_levels = c("A", "1")
+    ) &
+    theme(
+      plot.tag = element_text(size = 10, family = "Corbel"),
+      plot.tag.position = c(0.1, 0.96))
+}
+plot_single_order <- function(stars_object, name, downsample = 50, quantiles_breaks) {
+  eumohp_measures <- filename_placeholders_values[
+    names(filename_placeholders_values) == "abbreviation_measure"
+  ]
+  eumohp_measure <- name %>% stringr::word(end = 1, sep = "_")
+
+  if (eumohp_measure == eumohp_measures[1]) {
+    quantiles_breaks <- quantiles_breaks[[1]] %>% round_half_up(-3)
+  } else if (eumohp_measure == eumohp_measures[2]) {
+    quantiles_breaks <- quantiles_breaks[[2]] %>% round_half_up(-2)
+  } else if (eumohp_measure == eumohp_measures[3]) {
+    quantiles_breaks <- quantiles_breaks[[3]] %>% round_half_up(-3)
+  }
+
+  if (eumohp_measure == eumohp_measures[2]) {
+    labels <- function(x) {
+      x / 1E4
+    }
+    unit_label <- "[ - ]"
+  } else if (eumohp_measure %in% eumohp_measures[c(1, 3)]) {
+    labels <- function(x) {
+      x / 1E3
+    }
+    unit_label <- "[km]"
+  }
+
+  ggplot2::ggplot() +
+    stars::geom_stars(
+      data = stars_object,
+      downsample = downsample
+    ) +
+    ggplot2::binned_scale("fill",
+      "measures_binned_quantiles",
+      ggplot2:::binned_pal(scales::manual_pal(viridis::viridis_pal()(QUANTILE_SCALE_NUMBER_BINS))),
+      labels = labels,
+      limits = range(quantiles_breaks),
+      show.limits = FALSE,
+      guide = ggplot2::guide_coloursteps(
+        direction = "horizontal",
+        barheight = ggplot2::unit(2, units = "mm"),
+        barwidth = ggplot2::unit(50, units = "mm"),
+        draw.ulim = TRUE,
+        title.position = "top",
+        title.hjust = 0.5,
+        label.hjust = 0.5,
+        order = 1
+      ),
+      breaks = quantiles_breaks %>% as.vector()
+    ) +
+    ggplot2::coord_equal() +
+    ggplot2::theme_void() +
+    ggplot2::theme(
+      legend.position = "top",
+      legend.title = ggplot2::element_text(hjust = .5, size = 9, family = "Corbel")
+    ) +
+    ggplot2::labs(
+      fill = str_glue("{stringr::str_to_upper(eumohp_measure)} {unit_label}")
+    )
+}
+
+eumohp_plot <- function(eumohp_starsproxy, quantiles_breaks) {
+  eumohp_measures <- filename_placeholders_values[
+    names(filename_placeholders_values) == "abbreviation_measure"
+  ]
+
+  selection_suffix <- HYDROLOGIC_ORDERS_TO_PLOT %>% 
+    as.character() %>% 
+    str_c("hydrologicorder", .)
+  
+  single_plots <- eumohp_starsproxy %>%
+    tidyselect:::select(dplyr::contains(selection_suffix)) %>%
+    purrr::imap(
+      plot_single_order, 
+      downsample = 1, 
+      quantiles_breaks = quantiles_breaks
+      )
+
+  single_plots %>%
+    split(f = str_remove(names(single_plots), "hydrologicorder\\d_")) %>%
+    map(.patchwork_measures) %>%
+    patchwork_all()
+}

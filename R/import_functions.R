@@ -207,3 +207,17 @@ generate_lines <-
     return(sf_lines)
   }
 
+read_mohp_starsproxy <- function(directory) {
+  spatial_extent <- filename_placeholders_values[names(filename_placeholders_values) == "region_name_spatcov"]
+  
+  eumohp_starsproxy <- eumohp_clip(directory,
+                                    region_name_spatcov = spatial_extent,
+                                    # hydrologic_order = c(5),
+                                    # abbreviation_measure = "dsd",
+                                    eumohp_version = "v013.1.1"
+  )
+  
+  eumohp_starsproxy %>% 
+    purrr::set_names(str_remove(names(eumohp_starsproxy), "europemainland-finland-norway-sweden-france-greece-iceland-italy1-italy2-turkey-unitedkingdom-unitedkingdom-ireland_")) %>%
+    map(stars::st_downsample, n =100)
+}
