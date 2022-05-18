@@ -33,3 +33,6 @@ data_descriptor/tex/figure-*
 other-resources.bib
 technical_report.pdf
 data_descriptor/tex/techrep-*
+main.tex
+main.pdf
+playground.R
