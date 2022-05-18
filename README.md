@@ -10,10 +10,10 @@ Generation of the EU-MOHP Dataset
 
 <br /> <br /> <br />
 
-This repository contains the required code to generate the EU-MOHP
-v013.1.0 dataset. For further reading and more background information,
-we refer to the corresponding publication of the !!datadescriptorlink.
-The dataset can be freely downloaded at
+This repository contains the required code to generate the most recent
+version of the EU-MOHP dataset. For further reading and more background
+information, we refer to the corresponding publication of the
+!!datadescriptorlink. The dataset can be freely downloaded at
 [Hydroshare](https://doi.org/10.4211/hs.0f02af18e5344ae7a65dfa7fe1444f34).
 
 A static code repository with the version used for generating the

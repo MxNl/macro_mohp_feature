@@ -52,11 +52,34 @@ visualizations_data_descriptor_targets <-
     ),
     tar_target(
       quantile_breaks,
-      map_quantiles_breaks(mohp_raster_values),
+      map_quantiles_breaks(
+        mohp_raster_values, 
+        HYDROLOGIC_ORDERS_TO_PLOT
+        ),
+    ),
+    tar_target(
+      quantile_breaks_hydrologicorder9,
+      map_quantiles_breaks(
+        mohp_raster_values, 
+        9
+        ),
     ),
     tar_target(
       dataset_map_overview_plot,
-      eumohp_plot(mohp_starsproxy, quantile_breaks),
+      eumohp_plot(
+        mohp_starsproxy, 
+        quantile_breaks, 
+        HYDROLOGIC_ORDERS_TO_PLOT
+        ),
+    ),
+    tar_target(
+      dataset_map_hydrologicorder9_plot,
+      eumohp_plot(
+        mohp_starsproxy, 
+        quantile_breaks_hydrologicorder9, 
+        9,
+        FALSE
+        ),
     ),
     tar_target(
       stats_ridge_plot,
@@ -82,6 +105,10 @@ visualizations_data_descriptor_targets <-
     tar_target(
       river_canal_confusion_plot,
       make_river_canal_confusion_example_plot(871980.836, 5802002.409, 7E3, river_networks)
+    ),
+    tar_target(
+      coastline_plot,
+      make_coastline_plot(coastline_watershed)
     ),
     tar_target(
       dfdd_stats_bar_plot,

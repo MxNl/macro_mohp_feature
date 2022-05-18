@@ -68,6 +68,7 @@ source("R/export_functions.R")
 
 source("data_descriptor/targets/R/visualization_functions.R")
 source("data_descriptor/targets/R/eumohpclipr_functions.R")
+source("data_descriptor/targets/R/helper_functions.R")
 source("data_descriptor/targets/R/constants.R")
 
 if(PARALLEL) plan(multisession)
