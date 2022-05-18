@@ -1,5 +1,5 @@
 ---
-title: "EU-MOHP v013.1.0 Dataset"
+title: "EU-MOHP v013.1.1 Dataset"
 output: github_document
 always_allow_html: true
 ---
@@ -11,15 +11,15 @@ library(targets)
 library(tidyverse)
 ```
 
-The EU-MOHP v013.1.0 dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
+The EU-MOHP v013.1.1 dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
 
-This repository hosts the dataset EU-MOHP v013.1.0 as single GeoTIFF files with .tif file extension but compressed to *.7z* files for download.
-The corresponding publication, which is linked in the corresponding [github repository](https://github.com/MxNl/macro_mohp_feature), provides all background information. It also explains the file naming scheme. To select the files relevant to your study case or application, please use the search bar to filter by spatial coverage, EU-MOHP measures, or specific hydrologic orders by entering one of the values listed in the table below. 
+This repository hosts the dataset EU-MOHP v013.1.1 as single GeoTIFF files with .tif file extension, but compressed to *.7z* files for download.
+For more background information, see the corresponding publication of the data descriptor. It also explains the file naming scheme. To select the files relevant to your study area or application, please use the search bar to filter by spatial coverage, EU-MOHP measures, or specific hydrologic orders by entering one of the values listed in the table below. 
 
 -  Example 1: If you are interested in all measures of all hydrologic orders for the island Sardinia, enter `italy2` in the search bar.
--  Example 2: If you are interested in the measures lateral position (LP) of all hydrologic orders for the island Sardinia, enter `italy2_lp` in the search bar.
+-  Example 2: If you are interested in the measure lateral position (LP) of all hydrologic orders for the island Sardinia, enter `italy2_lp` in the search bar.
 
-Note, however, that not every region or spatial coverage applies to all hydrologic orders. If you want to check in more detail whether your area of interest is covered by this dataset and which files are relevant, please use this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
+Note, however, that not every region or spatial coverage applies to all hydrologic orders. If you want to check more in detail whether your study area is covered by this dataset and which files are relevant, please use this [interactive map](https://mxnl.github.io/macro_mohp_feature/).
 
 <br />
 
@@ -50,18 +50,14 @@ placegolder_three <-
 tabledata %>%
   select(-row) %>%
   knitr::kable(
-    # booktabs = TRUE,
   ) %>%
-  # kableExtra::kable_styling(font_size = 12) %>%
   kableExtra::row_spec(placegolder_one[1]:placegolder_one[2], background = "#f2f2f2") %>%
   kableExtra::row_spec(placegolder_two[1]:placegolder_two[2], background = "white") %>%
-  kableExtra::row_spec(placegolder_three[1]:placegolder_three[2], background = "#f2f2f2")
-# kableExtra::kable_styling(full_width = TRUE) %>%
-# kableExtra::column_spec(2, width = "12em") %>%
-# kableExtra::collapse_rows()
+  kableExtra::row_spec(placegolder_three[1]:placegolder_three[2], background = "#f2f2f2") %>% 
+  kableExtra::collapse_rows()
 ```
 
 <br />
 
-The actively developed code can be found in this [github repository](https://github.com/MxNl/macro_mohp_feature).
+The corresponding code can be found on Hydroshare and the actively developed code at this [github repository](https://github.com/MxNl/macro_mohp_feature).
 

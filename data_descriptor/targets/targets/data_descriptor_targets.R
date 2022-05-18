@@ -3,8 +3,8 @@ data_descriptor_targets <-
     tar_render(data_descriptor, 
                "main.Rmd",
                output_file = "data_descriptor/tex/data_descriptor.pdf",
-               priority = 1,
-               cue = tar_cue("always")
+               priority = 1#,
+               # cue = tar_cue("always")
     ),
     tar_target(
       tex_filepath,
@@ -26,6 +26,9 @@ data_descriptor_targets <-
     ),
     tar_render(readme, 
                "README.Rmd",
+               cue = tar_cue("always")),
+    tar_render(technical_report, 
+               "technical_report.Rmd",
                cue = tar_cue("always")),
     tar_render(readme_hydroshare, 
                "readme_hydroshare.Rmd",

@@ -18,6 +18,9 @@ tar_option_set(
     "fs",
     "DBI",
     "glue",
+    "dtplyr",
+    "data.table",
+    "ggridges",
     "rmapshaper",
     "rnaturalearth",
     "rgeos",
@@ -42,6 +45,9 @@ tar_option_set(
   garbage_collection = TRUE
 )
 
+library(showtext)
+# Add font for ggplots
+font_add("Corbel", regular = "C:\\Windows\\Fonts\\corbel.ttf")
 
 source("R/constants.R")
 
@@ -61,6 +67,9 @@ source("R/grass_functions.R")
 source("R/export_functions.R")
 
 source("data_descriptor/targets/R/visualization_functions.R")
+source("data_descriptor/targets/R/eumohpclipr_functions.R")
+source("data_descriptor/targets/R/helper_functions.R")
+source("data_descriptor/targets/R/constants.R")
 
 if(PARALLEL) plan(multisession)
 
