@@ -79,3 +79,7 @@ tabledata %>%
 
 The corresponding code can be found on [Hydroshare](https://doi.org/10.4211/hs.8ea376970c904c6698fc8cfe392689de) and the actively developed code at this [github repository](https://github.com/MxNl/macro_mohp_feature).
 
+# R package `eumohpclipr`
+
+
+Alternatively, you can download the whole dataset and use the R package `eumohpclipr` (available on [github](https://github.com/MxNl/eumohpclipr)) to subset, clip and plot this dataset.
