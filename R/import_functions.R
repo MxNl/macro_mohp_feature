@@ -219,5 +219,5 @@ read_mohp_starsproxy <- function(directory) {
   
   eumohp_starsproxy %>% 
     purrr::set_names(str_remove(names(eumohp_starsproxy), "europemainland-finland-norway-sweden-france-greece-iceland-italy1-italy2-turkey-unitedkingdom-unitedkingdom-ireland_")) %>%
-    map(stars::st_downsample, n =500)
+    map(stars::st_downsample, n =20)
 }

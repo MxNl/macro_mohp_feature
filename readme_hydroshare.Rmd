@@ -1,5 +1,4 @@
 ---
-title: "EU-MOHP v013.1.1 Dataset"
 output: github_document
 always_allow_html: true
 ---
@@ -11,10 +10,29 @@ library(targets)
 library(tidyverse)
 ```
 
+# Abstract
+
+The presented dataset EU-MOHP v013.1.1 provides cross-scale information on the hydrologic position (MOHP) of a geographic point within its respective river network and catchment as gridded maps. More precisely, it comprises the three measures “divide to stream distance” (DSD) as sum of the distances to the nearest stream and catchment divide, “lateral position” (LP) as a relative measure of the position between the stream and the divide and “stream distance” (SD) as the distance to the nearest stream. These three measures are calculated for several hydrologic orders to reflect different spatial scales from local to continental. Its spatial extent covers major parts of the European Economic Area (EEA39) which also largely coincides with physiographical Europe. Although there are multiple potential use cases, this dataset serves predominantly as valuable static environmental descriptor or predictor variable for hydrogeological and hydrological modelling such as mapping or forecasting tasks using machine learning. The generation of this dataset uses free open source software only and therefore can be transferred to other regions or input datasets.
+
+# Details
+
 The EU-MOHP v013.1.1 dataset was developed and generated as part of the [MACRO project](https://www.bgr.bund.de/EN/Themen/Wasser/Projekte/laufend/F+E/Macro/macro_projektbeschr_en.html?nn=1548270).
 
-This repository hosts the dataset EU-MOHP v013.1.1 as single GeoTIFF files with .tif file extension, but compressed to *.7z* files for download.
-For more background information, see the corresponding publication of the data descriptor. It also explains the file naming scheme. To select the files relevant to your study area or application, please use the search bar to filter by spatial coverage, EU-MOHP measures, or specific hydrologic orders by entering one of the values listed in the table below. 
+This repository hosts the dataset EU-MOHP v013.1.1 as single GeoTIFF files with .tif file extension, but compressed to *.7z* files for download. Further details are listed as follows:
+
+- File format: GeoTIFF
+- File extension: .tif
+- Compressed file extension: .7z
+- Grid/raster cell size: 30m
+- Temporal characteristic: static
+- Coordinate Reference System (PROJ string): +proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs
+- Coordinate Reference System (EPSG): 3035
+
+For more background information, see the corresponding publication of the data descriptor. 
+
+# Download Instructions
+
+The data descriptor also explains the file naming scheme. You can use the search bar above to subset the total dataset. The two following examples help defining a search term to subset the dataset for your study area or the required EU-MOHP measures or specific hydrologic orders by combining the the terms in the column **Value** of the table further down. 
 
 -  Example 1: If you are interested in all measures of all hydrologic orders for the island Sardinia, enter `italy2` in the search bar.
 -  Example 2: If you are interested in the measure lateral position (LP) of all hydrologic orders for the island Sardinia, enter `italy2_lp` in the search bar.
@@ -59,5 +77,5 @@ tabledata %>%
 
 <br />
 
-The corresponding code can be found on Hydroshare and the actively developed code at this [github repository](https://github.com/MxNl/macro_mohp_feature).
+The corresponding code can be found on [Hydroshare](https://doi.org/10.4211/hs.8ea376970c904c6698fc8cfe392689de) and the actively developed code at this [github repository](https://github.com/MxNl/macro_mohp_feature).
 
