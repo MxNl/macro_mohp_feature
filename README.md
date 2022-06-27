@@ -1,4 +1,4 @@
-Generation of the EU-MOHP Dataset
+EU-MOHP dataset - Code Repository
 ================
 
 <br /> <br /> <br />
@@ -33,3 +33,10 @@ use this [interactive map](https://mxnl.github.io/macro_mohp_feature/)
 (it takes a few seconds to load).
 
 [<img src="README_files/webmap_screenshot.png">](https://mxnl.github.io/macro_mohp_feature/)
+
+# R package `eumohpclipr`
+
+If you plan to use the EU-MOHP dataset in you research project or use
+case, check out the R package `eumohpclipr` (available on
+[github](https://github.com/MxNl/eumohpclipr)). It helps with
+subsetting, clipping and plotting the EU-MOHP dataset.
