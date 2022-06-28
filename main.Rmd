@@ -1,5 +1,5 @@
 ---
-title: "Multiorder Hydrologic Position for Europe as a Set of Static Features for Modelling and Analysis in the Domain of Hydrology and Hydrogeology"
+title: "Multiorder Hydrologic Position for Europe: A Set of Features for Machine Learning and Analysis in Hydrology"
 author:
   - name: Maximilian Noelscher
     affiliation:
@@ -83,6 +83,7 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/grass_functions.R")
 source("R/export_functions.R")
+source("data_descriptor/targets/R/helper_functions.R")
 
 source("data_descriptor/targets/R/visualization_functions.R")
 source("data_descriptor/targets/R/eumohpclipr_functions.R")
@@ -202,7 +203,7 @@ The surface water bodies are derived from the layer *InlandWater* (see Table \@r
 
 ### Coastline {-}
 
-The coastline is derived from the “EU-Hydro -- Coastline” dataset\cite{noauthor_eu-hydro_2021-1} (see Table \@ref(tab:inputdata)). The coastline is relevant for the generation of this dataset as, in this context, the coast functions exactly like rivers or surface water bodies in the river network. Its preprocessing starts with unioning the polygon geometries of the underlying dataset\cite{noauthor_eu-hydro_2021-1}. A buffer of 3000 m is added to the unioned geometries to compensate for inaccuracies of the match between the study area and the coastline contours. The value of 3000 m results from visual inspection of discrepancies between the coastline and the study area boundaries. The resulting multipolygon geometries are intersected with the study area as linestring geometry to derive the coastline as linestring. Those parts of the study area that do not intersect with the polygon geometries are defined as "administrative borders over land". This intersection ensures that the coastline exactly aligns with the study area. The coastline will be added to the river network later, when calculating the distances to the nearest river or coastline. 
+The coastline is derived from the “EU-Hydro -- Coastline” dataset\cite{noauthor_eu-hydro_2021-1} (see Table \@ref(tab:inputdata)). The coastline is relevant for the generation of this dataset as, in this context, the coast functions exactly like rivers or surface water bodies in the river network\cite{belitz_multiorder_2019}. Its preprocessing starts with unioning the polygon geometries of the underlying dataset\cite{noauthor_eu-hydro_2021-1}. A buffer of 3000 m is added to the unioned geometries to compensate for inaccuracies of the match between the study area and the coastline contours. The value of 3000 m results from visual inspection of discrepancies between the coastline and the study area boundaries. The resulting multipolygon geometries are intersected with the study area as linestring geometry to derive the coastline as linestring. Those parts of the study area that do not intersect with the polygon geometries are defined as "administrative borders over land". This intersection ensures that the coastline exactly aligns with the study area. The resulting coastline is shown in Figure \@ref(fig:coastlineplot). The coastline will be added to the river network later, when calculating the distances to the nearest river or coastline. 
 
 ## EU-MOHP {-}
 
@@ -257,7 +258,7 @@ As previously mentioned in [River Network], additional errors were found in the 
 
 ## Administrative Borders Over Land {-}
 
-The accuracy of this dataset may also be reduced near the boundaries that run over land rather than along the coast or river basin boundaries. This includes the regions that are close to the borders in the South and East of Turkey, in the East of continental Europe and in the East of Finland. Here, the boundaries of the underlying dataset, and thus this dataset, follow administrative borders instead of river basin boundaries Therefore, calculated distances to the nearest stream in these regions may be inaccurate because another stream not included in the dataset could be closer to a raster cell center. The width of these potentially inaccurate regions along the margins increases with hydrologic order. Because the stream locations of adjacent stream networks are unknown, it is not possible to delineate this region or quantify its width. To address this issue when applying this dataset to such a region, a conservative option would be to truncate or mask these regions by shifting the corresponding boundaries inward by the maximum value in the stream distance map of the respective hydrologic order.
+The accuracy of this dataset may also be reduced near the boundaries that run over land rather than along the coast or river basin boundaries. This includes the regions that are close to the borders in the South and East of Turkey, in the East of continental Europe and in the East of Finland (see yellowish lines in Figure \@ref(fig:coastlineplot)). Here, the boundaries of the underlying dataset, and thus this dataset, follow administrative borders instead of river basin boundaries Therefore, calculated distances to the nearest stream in these regions may be inaccurate because another stream not included in the dataset could be closer to a raster cell center. The width of these potentially inaccurate regions along the margins increases with hydrologic order. Because the stream locations of adjacent stream networks are unknown, it is not possible to delineate this region or quantify its width. To address this issue when applying this dataset to such a region, a conservative option would be to truncate or mask these regions by shifting the corresponding boundaries inward by the maximum value in the stream distance map of the respective hydrologic order.
 
 ## Calculation of DD {-}
 
@@ -382,7 +383,7 @@ include_graphics("data_descriptor/tex/mainstem_scheme.pdf")
 include_graphics("data_descriptor/tex/divergences_scheme.pdf")
 ```
 
-```{r coastlineplot, echo=FALSE, out.width = "80%", fig.showtext = TRUE, fig.cap= "Map showing the spatial distribution of coastline and administrative borders over land resulting from the preprocessing."}
+```{r coastlineplot, echo=FALSE, out.width = "80%", fig.showtext = TRUE, fig.cap= "Map showing location and the spatial distribution of coastline and administrative borders over land resulting from the preprocessing."}
 tar_read(coastline_plot)
 ```
 
@@ -398,12 +399,12 @@ tar_read(dataset_map_hydrologicorder9_plot)
 tar_read(river_canal_confusion_plot)
 ```
 
-```{r projectdirtree, crop=TRUE, echo=FALSE, out.width = "70%", fig.cap="Directory tree of the project directory; only relevant subdirectories and files are listed here."}
-include_graphics("data_descriptor/tex/directory_tree.pdf")
-```
-
 ```{r ddinaccuracies, echo=FALSE, out.width = "70%", fig.showtext = TRUE, fig.cap= 'Schematic example showing the source of inaccurate of DD in areas near headwaters caused by the applied method to calculate DD. The red distance as DD is incorrect, because it crosses the stream and therefore does not fulfill the defined condition. The correct DD would be the dark grey distance. The path to the correct side is equal to the correct DD (dark grey solid line) and therefore not drawn on the schematic map.'}
 include_graphics("data_descriptor/tex/dd_inaccuracies.pdf")
+```
+
+```{r projectdirtree, crop=TRUE, echo=FALSE, out.width = "70%", fig.cap="Directory tree of the project directory; only relevant subdirectories and files are listed here."}
+include_graphics("data_descriptor/tex/directory_tree.pdf")
 ```
 
 ```{r outputdata, echo=FALSE}
