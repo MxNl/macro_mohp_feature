@@ -72,5 +72,19 @@ validation_targets <-
         nhdplus_coastline_contiguous
       ),
       deployment = "main"
+    ),
+    tar_target(
+      sampling_area,
+      studyarea_validation %>% 
+        st_buffer(BUFFER_SAMPLING_AREA)
+    ),
+    tar_target(
+      sampling_points,
+      sampling_area %>% 
+        st_sample(size = SAMPLING_SIZE)
+    ),
+    tar_target(
+      plot_validation_sampling,
+      make_validation_sampling_plot()
     )
   )

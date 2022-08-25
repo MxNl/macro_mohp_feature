@@ -4,4 +4,4 @@ database_name: postgis_test
 exclude_scandinavian_basins: FALSE
 simplify_polygons: FALSE
 data_descriptor_only: TRUE
-parallel: TRUE
+parallel: FALSE

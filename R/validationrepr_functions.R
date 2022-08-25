@@ -76,6 +76,7 @@ read_studyarea_validation <- function(filepath) {
     clean_names() %>%
     filter(!(states %in% c("CAN", "MEX", "GU", "HI", "PR", "TT", "CM", "AS", "VI"))) %>%
     filter(!(hu_12_type %in% c("W", "I"))) %>%
+    filter(!(hu_12_ds %in% c("OCEAN"))) %>%
     rename(geometry = Shape) %>% 
     st_make_valid()
 }
@@ -725,3 +726,13 @@ calculate_mohp_metrics_in_grassdb_validation <-
     
     Sys.time()
   }
+
+make_validation_sampling_plot <- function(studyarea_validation, sampling_area, sampling_points) {
+  studyarea_validation %>%
+    # slice_sample(n = 100) %>%
+    ggplot() +
+    geom_sf(colour = NA, fill = "grey90") +
+    geom_sf(data = sampling_area, colour = NA, fill = "grey60") +
+    geom_sf(data = sampling_points, colour = "#ffcf46", size = 1.3, shape = 16) +
+    theme_minimal()
+}
