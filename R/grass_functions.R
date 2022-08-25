@@ -45,7 +45,7 @@ calculate_mohp_metrics_in_grassdb <-
       # reference_raster <- tar_read(reference_raster)
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
       studyarea <- tar_read(selected_studyarea)
-      streamorder <- 3
+      streamorder <- 7
       coastline <- tar_read(coastline_watershed)
     }
     

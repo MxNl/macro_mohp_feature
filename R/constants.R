@@ -92,3 +92,9 @@ EEA39COUNTRIES <-
     "Serbia",
     "United Kingdom"
   )
+
+#Validation
+FILEPATH_NHDPLUS <- "input_data/validation/NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb"
+HYDROLOGICORDER_VALIDATION <- 7
+CELLSIZE_VALIDATION <- 500
+VALIDATION_STUDYAREA <- "validation_studyarea"
