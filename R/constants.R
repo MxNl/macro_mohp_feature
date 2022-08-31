@@ -95,9 +95,12 @@ EEA39COUNTRIES <-
 
 #Validation
 FILEPATH_NHDPLUS <- "input_data/validation/NHDPlusNationalData/NHDPlusV21_National_Seamless_Flattened_Lower48.gdb"
+FILEPATH_LP7_ORIGINAL <- "input_data/validation/MOHP_original/LP/LP_90m_export.tif"
+FILEPATH_LP7_REPRODUCED <- "output_data/lateral_position/mohp_europe_us_validation_lp_hydrologicorder7_30m.tif"
+FILEPATH_MOHP_LP7 <- "input_data/validation/Order7_DSD_LP_90m.gdb/"
 HYDROLOGICORDER_VALIDATION <- 7
 CELLSIZE_VALIDATION <- 500
 VALIDATION_STUDYAREA <- "validation_studyarea"
-CRS_VALIDATION <- 102003
-BUFFER_SAMPLING_AREA <- -300000
+CRS_VALIDATION <- 5072
+BUFFER_SAMPLING_AREA <- -3E5
 SAMPLING_SIZE <- 1000

@@ -1,5 +1,7 @@
-read_nhdplus_lines <- function(filepath) {
-  read_sf(
+read_nhd_lines <- function(filepath) {
+  print(CRS_VALIDATION)
+  
+  result <- read_sf(
     filepath,
     query = str_glue(
       "SELECT
@@ -17,7 +19,12 @@ read_nhdplus_lines <- function(filepath) {
   ) %>%
     # st_drop_geometry() %>%
     clean_names() %>%
-    st_zm()
+    st_zm() %>% 
+    st_transform(CRS_VALIDATION)
+  
+  print(result %>% st_crs())
+  
+  return(result)
 }
 
 # read_nhdplus_lines <- function(filepath) {
@@ -40,7 +47,7 @@ read_nhdplus_lines <- function(filepath) {
 #     )
 # }
 
-read_nhdplus_coastline <- function(filepath) {
+read_nhd_coastline <- function(filepath) {
   read_sf(
     filepath,
     query = "SELECT
@@ -51,7 +58,8 @@ read_nhdplus_coastline <- function(filepath) {
   ) %>%
     clean_names() %>%
     st_zm() %>%
-    summarise()
+    summarise() %>% 
+    st_transform(CRS_VALIDATION)
 }
 
 linemerge_ala_horton <- function(x) {
@@ -65,10 +73,11 @@ linemerge_ala_horton <- function(x) {
     ) %>% 
     rename(geometry = Shape) %>% 
     st_cast("MULTILINESTRING") %>% 
-    st_transform(CRS_REFERENCE)
+    st_transform(CRS_VALIDATION)
 }
 
-read_studyarea_validation <- function(filepath) {
+read_nhd_studyarea <- function(filepath) {
+  
   read_sf(
     filepath,
     layer = "HUC12"
@@ -78,10 +87,11 @@ read_studyarea_validation <- function(filepath) {
     filter(!(hu_12_type %in% c("W", "I"))) %>%
     filter(!(hu_12_ds %in% c("OCEAN"))) %>%
     rename(geometry = Shape) %>% 
-    st_make_valid()
+    st_make_valid() %>% 
+    st_transform(CRS_VALIDATION)
 }
 
-make_coastline_contiguous <- function(x) {
+make_coastline_clean <- function(x) {
   
   ne_contiguous_us <- rnaturalearth::ne_countries(
     scale = "medium", 
@@ -98,7 +108,7 @@ make_coastline_contiguous <- function(x) {
     filter_intersecting_features(ne_contiguous_us) %>% 
     mutate(type = "coastline", .before = 1) %>% 
     rename(geometry = Shape) %>% 
-    st_transform(CRS_REFERENCE)
+    st_transform(CRS_VALIDATION)
 }
 
 make_contiguous_us_single_polygon <- function(x) {
@@ -107,33 +117,34 @@ make_contiguous_us_single_polygon <- function(x) {
     st_convex_hull()
 }
 
-read_water_bodies_validation <- function(filepath) {
+read_waterbodies_validation <- function(filepath) {
   read_sf(
     filepath,
     layer = "NHDWaterbody"
   ) %>%
-    clean_names()
+    clean_names() %>% 
+    st_transform(CRS_VALIDATION)
 }
 
-filter_and_intersect_waterbodies <- function(waterbodies, rivers) {
-  sf::sf_use_s2(FALSE)
-  crs_origin <- st_crs(waterbodies)$epsg
+filter_intersecting_waterbodies <- function(waterbodies, rivers) {
+  # sf::sf_use_s2(FALSE)
+  # crs_origin <- st_crs(waterbodies)$epsg
   
   waterbodies %>%
     filter(areasqkm > 1) %>%
     st_make_valid() %>%
-    st_transform(CRS_REFERENCE) %>% 
+    # st_transform(CRS_VALIDATION) %>% 
     filter(
       st_intersects(
         .,
         summarise(rivers) %>%
-          rename(geometry = Shape) %>%
-          st_make_valid() %>% 
-          st_transform(CRS_REFERENCE),
+          # rename(geometry = Shape) %>%
+          st_make_valid(),
+          # st_transform(CRS_VALIDATION),
         sparse = FALSE
-      )[1, ]
-    ) %>% 
-    st_transform(crs_origin)
+      ) %>% apply(1, any)
+    )
+    # st_transform(crs_origin)
 }
 
 make_watershed_boundary <- function(studyarea, coastline) {
@@ -143,7 +154,7 @@ make_watershed_boundary <- function(studyarea, coastline) {
     st_difference(summarise(coastline))
 }
 
-union_studyarea_in_db <- function(river_basins, table_name_destination, crs_target) {
+union_nhd_studyarea_in_db <- function(river_basins, table_name_destination) {
   
   river_basins %>%
     st_make_valid() %>%
@@ -167,7 +178,7 @@ union_studyarea_in_db <- function(river_basins, table_name_destination, crs_targ
     glue::glue(
       "-- Force the column to rewrite
       UPDATE {table_name_destination}
-      SET geometry = ST_SetSRID(geometry, {crs_target});"
+      SET geometry = ST_SetSRID(geometry, {CRS_VALIDATION});"
     )
   
   DBI::dbExecute(connection, query)
@@ -363,7 +374,7 @@ adaptor_studyarea_validation <- function(x) {
   x %>%
     st_cast("POLYGON") %>%
     filter(st_area(geometry) == max(st_area(geometry))) %>%
-    st_transform(CRS_REFERENCE) %>%
+    st_transform(CRS_VALIDATION) %>%
     mutate(region_name = "us_validation")
 }
 
@@ -424,7 +435,7 @@ add_inland_waters_to_rivers_raster_validation <-
     if(!is.null(inland_waters)) {
       use_sf()
       inland_waters %>% 
-        st_transform(CRS_REFERENCE) %>% 
+        st_transform(CRS_VALIDATION) %>% 
         writeVECT("inland_waters", 
                   v.in.ogr_flags = c("overwrite"))
       
@@ -660,7 +671,7 @@ calculate_mohp_metrics_in_grassdb_validation <-
     
     test <- FALSE
     if (test) {
-      lines <- tar_read(nhdplus_hortonmerge) %>% st_cast("MULTILINESTRING")
+      lines <- tar_read(nhdplus_hortonmerge)
       inland_waters <- NULL
       # reference_raster <- tar_read(reference_raster)
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
@@ -693,7 +704,7 @@ calculate_mohp_metrics_in_grassdb_validation <-
     lines %>% 
       arrange(-st_length(geometry)) %>% 
       bind_rows(select(coastline, -type)) %>% 
-      st_transform(CRS_REFERENCE) %>% 
+      st_transform(CRS_VALIDATION) %>% 
       # mutate(feature_id = as.character(feature_id)) %>%
       writeVECT("river_network", 
                 v.in.ogr_flags = c("overwrite", "o"))
@@ -708,7 +719,7 @@ calculate_mohp_metrics_in_grassdb_validation <-
       studyarea %>% 
       st_cast("POLYGON") %>% 
       filter_intersecting_features(lines) %>% 
-      st_transform(CRS_REFERENCE) %>%
+      st_transform(CRS_VALIDATION) %>%
       rowwise() %>% 
       group_split()
     
@@ -735,4 +746,33 @@ make_validation_sampling_plot <- function(studyarea_validation, sampling_area, s
     geom_sf(data = sampling_area, colour = NA, fill = "grey60") +
     geom_sf(data = sampling_points, colour = "#ffcf46", size = 1.3, shape = 16) +
     theme_minimal()
+}
+
+make_raster_difference <- function(x, y, as_percentage = FALSE) {
+  x <- st_as_stars(x)
+
+  if (as_percentage) {
+    (x - y) / 1E4 / x
+  } else {
+    (x - y) / 1E4
+  }
+}
+
+make_raster_difference_plot <- function(x) {
+  ggplot() +
+    geom_stars(data = x, downsample = 50) +
+    scico::scale_fill_scico(palette = "broc", na.value = NA) +
+    coord_sf() +
+    theme_void() +
+    theme(
+      legend.position = "top",
+      text = element_text(family = "Corbel", size = 10)
+    ) +
+    labs(fill = "Difference between original and reproduced LP7") +
+    guides(fill = guide_colourbar(
+      title.position = "top",
+      title.hjust = 0.5,
+      barheight = 0.5,
+      barwidth = 20
+    ))
 }

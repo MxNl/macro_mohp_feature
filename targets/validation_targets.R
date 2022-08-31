@@ -2,28 +2,15 @@ validation_targets <-
   list(
     tar_target(
       nhdplus_lines,
-      read_nhdplus_lines(FILEPATH_NHDPLUS)
+      read_nhd_lines(FILEPATH_NHDPLUS)
     ),
-    # tar_target(
-    #   nhdplus_lines,
-    #   read_nhdplus_lines(FILEPATH_NHDPLUS)
-    # ),
-    # tar_target(
-    #   nhdplus_joined,
-    #   join_nhdplus_data(nhdplus_attributes, nhdplus_lines)
-    # ),
-    # tar_target(
-    #   nhdplus_rivers,
-    #   nhdplus_joined %>%
-    #     filter(flowdir == "With Digitized")
-    # ),
     tar_target(
       nhdplus_coastline,
-      read_nhdplus_coastline(FILEPATH_NHDPLUS)
+      read_nhd_coastline(FILEPATH_NHDPLUS)
     ),
     tar_target(
       nhdplus_coastline_contiguous,
-      make_coastline_contiguous(nhdplus_coastline)
+      make_coastline_clean(nhdplus_coastline)
     ),
     tar_target(
       nhdplus_hortonmerge,
@@ -31,14 +18,13 @@ validation_targets <-
     ),
     tar_target(
       catchments_contiguous_us,
-      read_studyarea_validation(FILEPATH_NHDPLUS)
+      read_nhd_studyarea(FILEPATH_NHDPLUS)
     ),
     tar_target(
       contiguous_us_single_polygon,
-      union_studyarea_in_db(
+      union_nhd_studyarea_in_db(
         catchments_contiguous_us,
-        VALIDATION_STUDYAREA,
-        st_crs(catchments_contiguous_us)$epsg
+        VALIDATION_STUDYAREA
       )
     ),
     tar_target(
@@ -52,16 +38,16 @@ validation_targets <-
         make_watershed_boundary(nhdplus_coastline_contiguous)
     ),
     tar_target(
-      water_bodies_validation,
-      read_water_bodies_validation(FILEPATH_NHDPLUS)
+      waterbodies_validation,
+      read_waterbodies_validation(FILEPATH_NHDPLUS)
     ),
-    # tar_target(
-    #   water_bodies_validation_intersected,
-    #   filter_and_intersect_waterbodies(
-    #     water_bodies_validation,
-    #     nhdplus_horton_merge
-    #   )
-    # ),
+    tar_target(
+      water_bodies_validation_intersected,
+      filter_intersecting_waterbodies(
+        waterbodies_validation,
+        nhdplus_hortonmerge
+      )
+    ),
     tar_target(
       usmohp_reproduction_data,
       calculate_mohp_metrics_in_grassdb_validation(
@@ -75,16 +61,56 @@ validation_targets <-
     ),
     tar_target(
       sampling_area,
-      studyarea_validation %>% 
+      studyarea_validation %>%
         st_buffer(BUFFER_SAMPLING_AREA)
     ),
     tar_target(
       sampling_points,
-      sampling_area %>% 
+      sampling_area %>%
         st_sample(size = SAMPLING_SIZE)
     ),
     tar_target(
       plot_validation_sampling,
-      make_validation_sampling_plot()
+      make_validation_sampling_plot(
+        studyarea_validation,
+        sampling_area,
+        sampling_points
+      )
+    ),
+    tar_target(
+      lp7_original,
+      read_stars(FILEPATH_LP7_ORIGINAL, proxy = TRUE)
+    ),
+    tar_target(
+      lp7_reproduced,
+      read_stars(FILEPATH_LP7_REPRODUCED, proxy = TRUE) %>%
+        st_warp(lp7_original)
+    ),
+    tar_target(
+      raster_difference,
+      make_raster_difference(
+        lp7_original,
+        lp7_reproduced
+      )
+    ),
+    tar_target(
+      raster_difference_perc,
+      make_raster_difference(
+        lp7_original,
+        lp7_reproduced,
+        as_percentage = TRUE
+      )
+    ),
+    tar_target(
+      raster_difference_plot,
+      make_raster_difference_plot(
+        raster_difference
+      )
+    ),
+    tar_target(
+      raster_difference_perc_plot,
+      make_raster_difference_plot(
+        raster_difference_perc
+      )
     )
   )

@@ -11,6 +11,7 @@ options(
 
 tar_option_set(
   packages = c(
+    "scico",
     "tmap",
     "igraph",
     "magick",
