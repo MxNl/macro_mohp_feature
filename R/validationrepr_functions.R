@@ -85,7 +85,7 @@ read_nhd_studyarea <- function(filepath) {
     clean_names() %>%
     filter(!(states %in% c("CAN", "MEX", "GU", "HI", "PR", "TT", "CM", "AS", "VI"))) %>%
     filter(!(hu_12_type %in% c("W", "I"))) %>%
-    filter(!(hu_12_ds %in% c("OCEAN"))) %>%
+    # filter(!(hu_12_ds %in% c("OCEAN"))) %>%
     rename(geometry = Shape) %>% 
     st_make_valid() %>% 
     st_transform(CRS_VALIDATION)
@@ -437,7 +437,7 @@ add_inland_waters_to_rivers_raster_validation <-
       inland_waters %>% 
         st_transform(CRS_VALIDATION) %>% 
         writeVECT("inland_waters", 
-                  v.in.ogr_flags = c("overwrite"))
+                  v.in.ogr_flags = c("overwrite", "o"))
       
       execGRASS("v.to.rast", 
                 input = "inland_waters", 
@@ -677,9 +677,9 @@ calculate_mohp_metrics_in_grassdb_validation <-
       # filepaths_reference_raster <- tar_read(filepaths_reference_raster_write)
       studyarea <- tar_read(studyarea_validation)
       streamorder <- 7
+      inland_waters <- tar_read(water_bodies_validation_intersected)
       coastline <- tar_read(nhdplus_coastline_contiguous)
     }
-    
     # Initiate GRASS database
     crs_reference <- st_crs(studyarea)$proj4string
     initiate_grass_db_parallel_validation(studyarea, streamorder, crs_reference)
@@ -740,11 +740,10 @@ calculate_mohp_metrics_in_grassdb_validation <-
 
 make_validation_sampling_plot <- function(studyarea_validation, sampling_area, sampling_points) {
   studyarea_validation %>%
-    # slice_sample(n = 100) %>%
     ggplot() +
     geom_sf(colour = NA, fill = "grey90") +
     geom_sf(data = sampling_area, colour = NA, fill = "grey60") +
-    geom_sf(data = sampling_points, colour = "#ffcf46", size = 1.3, shape = 16) +
+    geom_sf(data = sampling_points %>% slice_sample(prop = 0.5), colour = "#ffcf46", size = 0.5, shape = 16) +
     theme_minimal()
 }
 
@@ -752,7 +751,7 @@ make_raster_difference <- function(x, y, as_percentage = FALSE) {
   x <- st_as_stars(x)
 
   if (as_percentage) {
-    (x - y) / 1E4 / x
+    (x - y) / x * 100
   } else {
     (x - y) / 1E4
   }
@@ -769,10 +768,119 @@ make_raster_difference_plot <- function(x) {
       text = element_text(family = "Corbel", size = 10)
     ) +
     labs(fill = "Difference between original and reproduced LP7") +
-    guides(fill = guide_colourbar(
-      title.position = "top",
-      title.hjust = 0.5,
-      barheight = 0.5,
-      barwidth = 20
-    ))
+    guides(
+      fill = guide_colourbar(
+        title.position = "top",
+        title.hjust = 0.5,
+        barheight = 0.5,
+        barwidth = 20
+      )
+    )
+}
+
+make_raster_difference_perc_plot <- function(x) {
+  ggplot() +
+    geom_stars(data = x, downsample = 50) +
+    scico::scale_fill_scico(
+      palette = "broc",
+      na.value = NA,
+      limits = c(-100, 100),
+      oob = scales::oob_squish
+    ) +
+    coord_sf() +
+    theme_void() +
+    theme(
+      legend.position = "top",
+      text = element_text(family = "Corbel", size = 10)
+    ) +
+    labs(fill = "Difference between original and reproduced LP7") +
+    guides(
+      fill = guide_colourbar(
+        title.position = "top",
+        title.hjust = 0.5,
+        barheight = 0.5,
+        barwidth = 20
+      )
+    )
+}
+
+read_lp7_reproduced <- function(filepath, target_raster, depends_on = NULL) {
+  length(depends_on)
+  
+  read_stars(filepath, proxy = TRUE) %>%
+    st_warp(target_raster)
+}
+
+waterbodies_add_riverid <- function(x, y) {
+  x %>% 
+    rename(geometry = Shape) %>% 
+    select(geometry) %>% 
+    st_cast("MULTIPOLYGON") %>% 
+    mutate(waterbody_id = row_number()) %>% 
+    # slice_sample(n = 3) %>% 
+    st_join(y) %>% 
+    group_by(waterbody_id) %>% 
+    arrange(feature_id) %>% 
+    slice_head(n = 1) %>% 
+    ungroup()
+}
+
+extract_raster_values <- function(x, y, column_name_extracted) {
+  y <- y %>% 
+    st_transform(crs = st_crs(x))
+  
+  x %>% 
+    st_extract(at = y) %>% 
+    st_drop_geometry() %>%  
+    set_names(column_name_extracted) %>% 
+    as_tibble()
+}
+
+make_lm_plot <- function(x, y) {
+  combined <- x %>% 
+    bind_cols(y)
+  
+  r2 <- combined %>% 
+    lm(formula = .$original ~ .$reproduced) %>% 
+    rsq::rsq() %>% 
+    round_half_up(digits = 3)
+  
+  combined %>% 
+    ggplot() +
+    aes(original, reproduced) +
+    geom_pointdensity(alpha = .3, show.legend = FALSE) +
+    geom_abline(
+      slope = 1, 
+      intercept = 0, 
+      colour = "white", 
+      size = 1, 
+      linetype = "dashed", 
+      alpha = .7
+    ) +
+    annotate(
+      "label", 
+      x = 1200, 
+      y = 9500, 
+      label = paste("R2 =", r2), 
+      colour = "grey", 
+      family = "Corbel",
+      size = 6,
+      label.size = NA
+    ) +
+    scale_color_viridis_c(
+      limits = c(0, 5), 
+      oob = scales::oob_squish
+    ) +
+    scale_x_continuous(label = scales::label_number(scale = 1E-4)) +
+    scale_y_continuous(label = scales::label_number(scale = 1E-4)) +
+    coord_equal() +
+    theme_minimal() +
+    theme(
+      line = element_line(lineend='round'),
+      text = element_text(family = "Corbel")
+    ) +
+    labs(
+      x = "Original LP7",
+      y = "Reproduced LP7"
+    )
 }

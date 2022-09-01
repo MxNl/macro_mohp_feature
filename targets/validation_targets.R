@@ -49,6 +49,13 @@ validation_targets <-
       )
     ),
     tar_target(
+      waterbodies_plus,
+      waterbodies_add_riverid(
+        water_bodies_validation_intersected,
+        nhdplus_hortonmerge
+      )
+    ),
+    tar_target(
       usmohp_reproduction_data,
       calculate_mohp_metrics_in_grassdb_validation(
         nhdplus_hortonmerge,
@@ -67,7 +74,8 @@ validation_targets <-
     tar_target(
       sampling_points,
       sampling_area %>%
-        st_sample(size = SAMPLING_SIZE)
+        st_sample(size = SAMPLING_SIZE) %>% 
+        st_as_sf()
     ),
     tar_target(
       plot_validation_sampling,
@@ -83,8 +91,11 @@ validation_targets <-
     ),
     tar_target(
       lp7_reproduced,
-      read_stars(FILEPATH_LP7_REPRODUCED, proxy = TRUE) %>%
-        st_warp(lp7_original)
+      read_lp7_reproduced(
+        FILEPATH_LP7_REPRODUCED, 
+        lp7_original,
+        depends_on = usmohp_reproduction_data
+        )
     ),
     tar_target(
       raster_difference,
@@ -109,8 +120,31 @@ validation_targets <-
     ),
     tar_target(
       raster_difference_perc_plot,
-      make_raster_difference_plot(
+      make_raster_difference_perc_plot(
         raster_difference_perc
+      )
+    ),
+    tar_target(
+      raster_values_original,
+      extract_raster_values(
+        lp7_original,
+        sampling_points,
+        "original"
+      )
+    ),
+    tar_target(
+      raster_values_reproduced,
+      extract_raster_values(
+        lp7_reproduced,
+        sampling_points,
+        "reproduced"
+      )
+    ),
+    tar_target(
+      lm_plot,
+      make_lm_plot(
+        raster_values_original,
+        raster_values_reproduced
       )
     )
   )

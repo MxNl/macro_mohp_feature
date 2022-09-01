@@ -11,6 +11,8 @@ options(
 
 tar_option_set(
   packages = c(
+    "rsq",
+    "ggpointdensity",
     "scico",
     "tmap",
     "igraph",
