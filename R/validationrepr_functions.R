@@ -851,7 +851,10 @@ make_lm_plot <- function(x, y) {
     theme_minimal() +
     theme(
       line = element_line(lineend='round'),
-      text = element_text(family = "Corbel")
+      text = element_text(family = "Corbel"),
+      axis.title.x = element_text(vjust = -4),
+      axis.title.y = element_text(vjust = 4),
+      plot.margin = margin(0, 0, 0, 20)
     ) +
     labs(
       x = "Original LP7",
