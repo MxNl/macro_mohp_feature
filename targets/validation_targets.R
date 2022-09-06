@@ -78,7 +78,7 @@ validation_targets <-
         st_as_sf()
     ),
     tar_target(
-      plot_validation_sampling,
+      validation_sampling_plot,
       make_validation_sampling_plot(
         studyarea_validation,
         sampling_area,
@@ -145,6 +145,15 @@ validation_targets <-
       make_lm_plot(
         raster_values_original,
         raster_values_reproduced
+      )
+    ),
+    tar_target(
+      comparison_plot,
+      make_comparison_plot(
+        lp7_original,
+        lp7_reproduced,
+        quantile_breaks,
+        7
       )
     )
   )

@@ -378,58 +378,6 @@ adaptor_studyarea_validation <- function(x) {
     mutate(region_name = "us_validation")
 }
 
-union_studyarea_in_db <- function(river_basins, table_name_destination, crs_target) {
-  
-  river_basins %>%
-    st_make_valid() %>%
-    write_to_table(table_name_destination)
-  
-  table_name_destination_union <- str_c(table_name_destination, "_union")
-  
-  connection <- connect_to_database()
-  
-  query <-
-    glue::glue(
-      "-- Change the storage type
-      ALTER TABLE {table_name_destination}
-      ALTER COLUMN geometry
-      SET STORAGE EXTERNAL;"
-    )
-  
-  DBI::dbExecute(connection, query)
-  
-  query <-
-    glue::glue(
-      "-- Force the column to rewrite
-      UPDATE {table_name_destination}
-      SET geometry = ST_SetSRID(geometry, {crs_target});"
-    )
-  
-  DBI::dbExecute(connection, query)
-  
-  query <-
-    glue::glue(
-      "CREATE TABLE {table_name_destination_union} AS (
-        WITH studyarea_unioned AS (
-	        SELECT
-		  ST_MakePolygon(ST_ExteriorRing((ST_Dump(ST_Union(geometry))).geom)) AS geometry
-	      FROM {table_name_destination}
-	    ) 
-	    SELECT 
-		    *
-	    FROM studyarea_unioned
-      )"
-    )
-  
-  create_table(query, table_name_destination_union)
-  
-  river_basins <- read_sf(connection, table_name_destination_union)
-  
-  DBI::dbDisconnect(connection)
-  
-  river_basins
-}
-
 add_inland_waters_to_rivers_raster_validation <- 
   function(inland_waters, streamorder) {
     if(!is.null(inland_waters)) {
@@ -739,12 +687,35 @@ calculate_mohp_metrics_in_grassdb_validation <-
   }
 
 make_validation_sampling_plot <- function(studyarea_validation, sampling_area, sampling_points) {
-  studyarea_validation %>%
+    studyarea_validation %>%
     ggplot() +
     geom_sf(colour = NA, fill = "grey90") +
     geom_sf(data = sampling_area, colour = NA, fill = "grey60") +
     geom_sf(data = sampling_points %>% slice_sample(prop = 0.5), colour = "#ffcf46", size = 0.5, shape = 16) +
-    theme_minimal()
+    geom_curve(
+      data = data.frame(x = -1214426.15813222, y = 2989370.97235883, xend = -1260843.29606433, yend = 2701574.11938406),
+      mapping = aes(x = x, y = y, xend = xend, yend = yend),
+      curvature = 0L, arrow = arrow(
+        30L, unit(.07L, "inches"),
+        "both", "closed"
+      ),
+      size = 0.8,
+      colour = "darkgrey",
+      inherit.aes = FALSE
+    ) +
+      geom_curve(data = data.frame(x = -1177292.44778652, y = 2859398.20004764, xend = -536735.944323317, yend = 3072924.89741602),
+                 mapping = aes(x = x, y = y, xend = xend, yend = yend),
+                 angle = 123L, curvature = 0.385, arrow = arrow(30L, unit(0L, "inches"),
+                                                                "last", "closed"),
+                 colour = "darkgrey",
+                 inherit.aes = FALSE) +
+      geom_text(data = data.frame(x = -202541.323113007, y = 3165929.9185647, label = "Negative Buffer (~480 km)"),
+                mapping = aes(x = x, y = y, label = label),
+                colour = "darkgrey",
+                family = "Corbel",
+                inherit.aes = FALSE) +
+    theme_void() +
+    theme(text = element_text(family = "Corbel"))
 }
 
 make_raster_difference <- function(x, y, as_percentage = FALSE) {
@@ -780,7 +751,7 @@ make_raster_difference_plot <- function(x) {
 
 make_raster_difference_perc_plot <- function(x) {
   ggplot() +
-    geom_stars(data = x, downsample = 50) +
+    geom_stars(data = x, downsample = 100) +
     scico::scale_fill_scico(
       palette = "broc",
       na.value = NA,
@@ -793,7 +764,7 @@ make_raster_difference_perc_plot <- function(x) {
       legend.position = "top",
       text = element_text(family = "Corbel", size = 10)
     ) +
-    labs(fill = "Difference between original and reproduced LP7") +
+    labs(fill = "Absolute difference between Original LP7 and Reproduced LP7") +
     guides(
       fill = guide_colourbar(
         title.position = "top",
@@ -848,12 +819,15 @@ make_lm_plot <- function(x, y) {
   combined %>% 
     ggplot() +
     aes(original, reproduced) +
-    geom_pointdensity(alpha = .3, show.legend = FALSE) +
+    geom_pointdensity(
+      alpha = .3,
+      show.legend = FALSE
+      ) +
     geom_abline(
       slope = 1, 
       intercept = 0, 
       colour = "white", 
-      size = 1, 
+      size = .7, 
       linetype = "dashed", 
       alpha = .7
     ) +
@@ -864,7 +838,7 @@ make_lm_plot <- function(x, y) {
       label = paste("R2 =", r2), 
       colour = "grey", 
       family = "Corbel",
-      size = 6,
+      size = 5,
       label.size = NA
     ) +
     scale_color_viridis_c(
@@ -883,4 +857,162 @@ make_lm_plot <- function(x, y) {
       x = "Original LP7",
       y = "Reproduced LP7"
     )
+}
+
+make_comparison_plot <- function(x, y, quantiles_breaks, hydrologic_orders, binned_colour_scale = TRUE) {
+    eumohp_measures <- filename_placeholders_values[
+      names(filename_placeholders_values) == "abbreviation_measure"
+    ]
+    
+    selection_suffix <- hydrologic_orders %>% 
+      as.character() %>% 
+      str_c("hydrologicorder", .)
+    
+    single_plots <- list(
+      x,
+      y
+    ) %>% 
+      set_names(c("lp_hydrologicorder7_90m", "lp_hydrologicorder7_90m")) %>% 
+      map(st_downsample, n = 10) %>%
+      tidyselect:::select(dplyr::contains(selection_suffix)) %>%
+      purrr::imap(
+        plot_single_order_validation, 
+        downsample = 1, 
+        quantiles_breaks = quantiles_breaks,
+        binned_colour_scale
+      )
+    
+    single_plots %>%
+      split(f = str_remove(names(single_plots), "hydrologicorder\\d_")) %>%
+      map(.patchwork_measures_validation) %>%
+      patchwork_all_validation()
+}
+
+.patchwork_measures_validation <- function(plot_list) {
+  patch <- plot_list %>%
+    patchwork::wrap_plots(nrow = 1)
+  
+  patch +
+    patchwork::guide_area() +
+    patchwork::plot_layout(
+      design = "
+      AB
+      CC
+      ",
+      ncol = 1, 
+      nrow = 2,
+      guides = "collect",
+      # tag_level = "new",
+      heights = c(10, 1)
+    )
+}
+
+plot_single_order_validation <- function(stars_object, name, downsample = 50, quantiles_breaks, binned_colour_scale) {
+  eumohp_measures <- filename_placeholders_values[
+    names(filename_placeholders_values) == "abbreviation_measure"
+  ]
+  eumohp_measure <- name %>% stringr::word(end = 1, sep = "_")
+  
+  if (eumohp_measure == eumohp_measures[1]) {
+    quantiles_breaks <- quantiles_breaks[[1]] %>% round_half_up(-3)
+  } else if (eumohp_measure == eumohp_measures[2]) {
+    quantiles_breaks <- quantiles_breaks[[2]] %>% round_half_up(-2)
+  } else if (eumohp_measure == eumohp_measures[3]) {
+    quantiles_breaks <- quantiles_breaks[[3]] %>% round_half_up(-3)
+  }
+  
+  if (eumohp_measure == eumohp_measures[2]) {
+    labels <- function(x) {
+      x / 1E4
+    }
+    unit_label <- "[ - ]"
+  } else if (eumohp_measure %in% eumohp_measures[c(1, 3)]) {
+    labels <- function(x) {
+      x / 1E3
+    }
+    unit_label <- "[km]"
+  }
+  
+  p <- ggplot2::ggplot() +
+    stars::geom_stars(
+      data = stars_object,
+      downsample = downsample
+    ) +
+    ggplot2::coord_equal() +
+    ggplot2::theme_void() +
+    ggplot2::theme(
+      text = element_text(family = "Corbel"),
+      legend.position = "top",
+      legend.title = ggplot2::element_text(hjust = .5, size = 9, family = "Corbel")
+    ) +
+    ggplot2::labs(
+      fill = str_glue("{stringr::str_to_upper(eumohp_measure)} {unit_label}")
+    )
+  
+  if (binned_colour_scale) {
+    p <- p +
+      ggplot2::binned_scale("fill",
+                            "measures_binned_quantiles",
+                            ggplot2:::binned_pal(scales::manual_pal(viridis::viridis_pal()(QUANTILE_SCALE_NUMBER_BINS))),
+                            labels = labels,
+                            limits = range(quantiles_breaks),
+                            show.limits = FALSE,
+                            guide = ggplot2::guide_coloursteps(
+                              direction = "horizontal",
+                              barheight = ggplot2::unit(2, units = "mm"),
+                              barwidth = ggplot2::unit(100, units = "mm"),
+                              draw.ulim = TRUE,
+                              title.position = "top",
+                              title.hjust = 0.5,
+                              label.hjust = 0.5,
+                              order = 1
+                            ),
+                            breaks = quantiles_breaks %>% as.vector()
+      )
+  } else if (!binned_colour_scale) {
+    p <- p +
+      ggplot2::scale_fill_viridis_c(na.value = NA,
+                                    labels = labels,
+                                    guide = ggplot2::guide_colourbar(
+                                      direction = "horizontal",
+                                      barheight = ggplot2::unit(2, units = "mm"),
+                                      barwidth = ggplot2::unit(100, units = "mm"),
+                                      draw.ulim = F,
+                                      title.position = "top",
+                                      title.hjust = 0.5,
+                                      label.hjust = 0.5,
+                                      order = 1
+                                    ))
+  }
+}
+
+patchwork_all_validation <- function(plot_list) {
+  n_orders <- plot_list %>% 
+    chuck(1) %>% 
+    magrittr::extract("patches") %>% 
+    magrittr::extract2("patches") %>% 
+    magrittr::extract2("layout") %>% 
+    magrittr::extract2("heights") %>% 
+    length()
+  
+  if (n_orders >= 3) {
+    tag_levels <- c("A", "1")
+  } else {
+    tag_levels <- "A"
+  }
+  
+  plot_list %>%
+    patchwork::wrap_plots(ncol = length(plot_list)) &
+    patchwork::plot_annotation(
+      theme = ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          hjust = .5,
+          size = 12
+        )
+      ),
+      tag_levels = tag_levels
+    ) &
+    theme(
+      plot.tag = element_text(size = 10, family = "Corbel")
+      )
 }
