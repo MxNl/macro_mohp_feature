@@ -348,7 +348,7 @@ For transferring the presented methods to another custom region, equivalent inpu
 
 # Code availability {-}
 
-The code\cite{nolscher_eu-mohp_2021} can be found on Hydroshare ([https://doi.org/10.4211/hs.8ea376970c904c6698fc8cfe392689de](https://doi.org/10.4211/hs.8ea376970c904c6698fc8cfe392689de)) as a static code repository. Due to the procedure of the reviewing process, this static code repository only contains the status of the code before the last reviewing iteration. The final code used for publication can be found in this separate code release on Github ([...](...)).
+The code\cite{nolscher_eu-mohp_2021} can be found on Hydroshare ([https://doi.org/10.4211/hs.8ea376970c904c6698fc8cfe392689de](https://doi.org/10.4211/hs.8ea376970c904c6698fc8cfe392689de)) as a static code repository. Due to the procedure of the reviewing process, this static code repository only contains the status of the code before the last reviewing iteration. The final code used for publication can be found in this separate code release on Github ([https://github.com/MxNl/macro_mohp_feature/releases/tag/v013.1.1.0](https://github.com/MxNl/macro_mohp_feature/releases/tag/v013.1.1.0)).
 The actively developed code can be found in on Github ([https://github.com/MxNl/macro_mohp_feature](https://github.com/MxNl/macro_mohp_feature)). We encourage interested users of this dataset to report errors in the code or to give hints on further methodological or programming improvements through opening an issue in the Github repository or contacting the corresponding author via E-mail.
 
 # Acknowledgements {-}
