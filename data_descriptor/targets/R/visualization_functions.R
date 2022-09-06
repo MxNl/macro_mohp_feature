@@ -302,6 +302,39 @@ make_targets_runtime_table <-
                                     "coastline_plot",
                                     "quantile_breaks_hydrologicorder9",
                                     "dataset_map_hydrologicorder9_plot",
+                                    "nhdplus_lines",
+                                    "nhdplus_coastline",
+                                    "nhdplus_coastline_contiguous",
+                                    "nhdplus_hortonmerge",
+                                    "catchments_contiguous_us",
+                                    "contiguous_us_single_polygon",
+                                    "studyarea_validation",
+                                    "watershed_validation",
+                                    "waterbodies_validation",
+                                    "water_bodies_validation_intersected",
+                                    "water_bodies_validation_intersected",
+                                    "usmohp_reproduction_data",
+                                    "sampling_area",
+                                    "sampling_points",
+                                    "plot_validation_sampling",
+                                    "lp7_original",
+                                    "lp7_reproduced",
+                                    "raster_difference_perc",
+                                    "raster_difference_plot",
+                                    "raster_difference_perc_plot",
+                                    "raster_values_original",
+                                    "raster_values_reproduced",
+                                    "lm_plot",
+                                    "nhdplus_attributes",
+                                    "nhdplus_horton_merge",
+                                    "water_bodies_validation",
+                                    "nhdplus_joined",
+                                    "nhdplus_rivers",
+                                    "lp7reproduced",
+                                    "comparison_plot",
+                                    "raster_difference",
+                                    "waterbodies_plus",
+                                    "validation_sampling_plot",
                                     "technical_report"
       ))
       ) %>% 
@@ -743,6 +776,7 @@ plot_single_order <- function(stars_object, name, downsample = 50, quantiles_bre
     ggplot2::coord_equal() +
     ggplot2::theme_void() +
     ggplot2::theme(
+      text = element_text(family = "Corbel"),
       legend.position = "top",
       legend.title = ggplot2::element_text(hjust = .5, size = 9, family = "Corbel")
     ) +
