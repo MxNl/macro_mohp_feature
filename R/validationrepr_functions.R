@@ -829,7 +829,7 @@ make_lm_plot <- function(x, y) {
       colour = "white", 
       size = .7, 
       linetype = "dashed", 
-      alpha = .7
+      alpha = .5
     ) +
     annotate(
       "label", 
