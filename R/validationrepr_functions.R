@@ -691,15 +691,15 @@ make_validation_sampling_plot <- function(studyarea_validation, sampling_area, s
     ggplot() +
     geom_sf(colour = NA, fill = "grey90") +
     geom_sf(data = sampling_area, colour = NA, fill = "grey60") +
-    geom_sf(data = sampling_points %>% slice_sample(prop = 0.5), colour = "#ffcf46", size = 0.5, shape = 16) +
+    geom_sf(data = sampling_points %>% slice_sample(prop = 0.5), colour = "#ffcf46", size = 0.4, shape = 16) +
     geom_curve(
       data = data.frame(x = -1214426.15813222, y = 2989370.97235883, xend = -1260843.29606433, yend = 2701574.11938406),
       mapping = aes(x = x, y = y, xend = xend, yend = yend),
       curvature = 0L, arrow = arrow(
-        30L, unit(.07L, "inches"),
+        30L, unit(.04L, "inches"),
         "both", "closed"
       ),
-      size = 0.8,
+      size = 0.5,
       colour = "darkgrey",
       inherit.aes = FALSE
     ) +
@@ -708,14 +708,16 @@ make_validation_sampling_plot <- function(studyarea_validation, sampling_area, s
                  angle = 123L, curvature = 0.385, arrow = arrow(30L, unit(0L, "inches"),
                                                                 "last", "closed"),
                  colour = "darkgrey",
+                 size = 0.5,
                  inherit.aes = FALSE) +
       geom_text(data = data.frame(x = -202541.323113007, y = 3165929.9185647, label = "Negative Buffer (~480 km)"),
                 mapping = aes(x = x, y = y, label = label),
                 colour = "darkgrey",
                 family = "Corbel",
+                size = 2.8,
                 inherit.aes = FALSE) +
     theme_void() +
-    theme(text = element_text(family = "Corbel"))
+    theme(text = element_text(family = "Corbel", size = 9))
 }
 
 make_raster_difference <- function(x, y, as_percentage = FALSE) {
@@ -736,15 +738,18 @@ make_raster_difference_plot <- function(x) {
     theme_void() +
     theme(
       legend.position = "top",
-      text = element_text(family = "Corbel", size = 10)
+      text = element_text(family = "Corbel", size = 10),
+      legend.title = ggplot2::element_text(hjust = .5, size = 9, family = "Corbel")
     ) +
-    labs(fill = "Difference between original and reproduced LP7") +
+    labs(fill = "[ - ]") +
     guides(
       fill = guide_colourbar(
-        title.position = "top",
         title.hjust = 0.5,
-        barheight = 0.5,
-        barwidth = 20
+        barheight = ggplot2::unit(2, units = "mm"),
+        barwidth = ggplot2::unit(70, units = "mm"),
+        title.position = "top",
+        label.hjust = 0.5,
+        order = 1
       )
     )
 }
@@ -820,6 +825,7 @@ make_lm_plot <- function(x, y) {
     ggplot() +
     aes(original, reproduced) +
     geom_pointdensity(
+      size = 1,
       alpha = .3,
       show.legend = FALSE
       ) +
@@ -838,7 +844,7 @@ make_lm_plot <- function(x, y) {
       label = paste("R2 =", r2), 
       colour = "grey", 
       family = "Corbel",
-      size = 5,
+      size = 2.8,
       label.size = NA
     ) +
     scale_color_viridis_c(
@@ -851,7 +857,7 @@ make_lm_plot <- function(x, y) {
     theme_minimal() +
     theme(
       line = element_line(lineend='round'),
-      text = element_text(family = "Corbel"),
+      text = element_text(family = "Corbel", size = 9),
       axis.title.x = element_text(vjust = -4),
       axis.title.y = element_text(vjust = 4),
       plot.margin = margin(0, 0, 0, 20)
@@ -871,12 +877,12 @@ make_comparison_plot <- function(x, y, quantiles_breaks, hydrologic_orders, binn
       as.character() %>% 
       str_c("hydrologicorder", .)
     
-    single_plots <- list(
+    list(
       x,
       y
     ) %>% 
       set_names(c("lp_hydrologicorder7_90m", "lp_hydrologicorder7_90m")) %>% 
-      map(st_downsample, n = 10) %>%
+      map(st_downsample, n = 10) %>% #100
       tidyselect:::select(dplyr::contains(selection_suffix)) %>%
       purrr::imap(
         plot_single_order_validation, 
@@ -884,31 +890,26 @@ make_comparison_plot <- function(x, y, quantiles_breaks, hydrologic_orders, binn
         quantiles_breaks = quantiles_breaks,
         binned_colour_scale
       )
-    
-    single_plots %>%
-      split(f = str_remove(names(single_plots), "hydrologicorder\\d_")) %>%
-      map(.patchwork_measures_validation) %>%
-      patchwork_all_validation()
 }
 
-.patchwork_measures_validation <- function(plot_list) {
-  patch <- plot_list %>%
-    patchwork::wrap_plots(nrow = 1)
-  
-  patch +
-    patchwork::guide_area() +
-    patchwork::plot_layout(
-      design = "
-      AB
-      CC
-      ",
-      ncol = 1, 
-      nrow = 2,
-      guides = "collect",
-      # tag_level = "new",
-      heights = c(10, 1)
-    )
-}
+# .patchwork_measures_validation <- function(plot_list) {
+#   patch <- plot_list %>%
+#     patchwork::wrap_plots(nrow = 1)
+#   
+#   patch +
+#     patchwork::guide_area() +
+#     patchwork::plot_layout(
+#       design = "
+#       AB
+#       CC
+#       ",
+#       ncol = 1, 
+#       nrow = 2,
+#       guides = "collect",
+#       # tag_level = "new",
+#       heights = c(10, 1)
+#     )
+# }
 
 plot_single_order_validation <- function(stars_object, name, downsample = 50, quantiles_breaks, binned_colour_scale) {
   eumohp_measures <- filename_placeholders_values[
@@ -949,7 +950,7 @@ plot_single_order_validation <- function(stars_object, name, downsample = 50, qu
       legend.title = ggplot2::element_text(hjust = .5, size = 9, family = "Corbel")
     ) +
     ggplot2::labs(
-      fill = str_glue("{stringr::str_to_upper(eumohp_measure)} {unit_label}")
+      fill = str_glue("{unit_label}")
     )
   
   if (binned_colour_scale) {
@@ -963,7 +964,7 @@ plot_single_order_validation <- function(stars_object, name, downsample = 50, qu
                             guide = ggplot2::guide_coloursteps(
                               direction = "horizontal",
                               barheight = ggplot2::unit(2, units = "mm"),
-                              barwidth = ggplot2::unit(100, units = "mm"),
+                              barwidth = ggplot2::unit(70, units = "mm"),
                               draw.ulim = TRUE,
                               title.position = "top",
                               title.hjust = 0.5,
@@ -999,9 +1000,9 @@ patchwork_all_validation <- function(plot_list) {
     length()
   
   if (n_orders >= 3) {
-    tag_levels <- c("A", "1")
+    tag_levels <- c("a", "1")
   } else {
-    tag_levels <- "A"
+    tag_levels <- "a"
   }
   
   plot_list %>%
@@ -1018,4 +1019,32 @@ patchwork_all_validation <- function(plot_list) {
     theme(
       plot.tag = element_text(size = 10, family = "Corbel")
       )
+}
+
+make_comparison_difference_patchwork <- function(x, y) {
+  (x[[1]] | x[[2]] | y) / (guide_area()) +
+    plot_layout(
+      heights = c(10, 1),
+      guides = "collect",
+      nrow = 2
+    ) +
+    plot_annotation(tag_levels = "a") &
+    theme(
+      plot.title = element_text(face = "bold", size = 12, hjust = 0.5),
+      plot.tag = element_text(size = 10, family = "Corbel"),
+      plot.tag.position = c(0.015, 0.96),
+      legend.position = "bottom",
+      text = element_text(size = 10)
+    )
+}
+
+make_accuracy_patchwork <- function(x, y) {
+  (x | y) +
+    plot_layout() +
+    plot_annotation(tag_levels = "a") &
+    theme(
+      plot.tag = element_text(size = 10, family = "Corbel"),
+      text = element_text(size = 9),
+      plot.tag.position = c(0.015, 1)
+    )
 }

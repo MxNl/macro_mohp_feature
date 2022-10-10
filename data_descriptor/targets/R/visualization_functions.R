@@ -122,7 +122,7 @@ make_dataset_map_overview_plot <-
       feature_name = FEATURE_NAMES[2],
       streamorder = selected_hydrologic_orders[1],
       legend_title = "Lateral position [%]",
-      tag_title = "A", 
+      tag_title = "a",
       guide_range_source = selected_hydrologic_orders,
       spatial_coverage = spatial_coverage
     )
@@ -193,10 +193,10 @@ make_dataset_map_overview_plot <-
 make_input_data_table <- 
   function() {
     tribble(
-      ~'Data layer', ~'Data source', ~'Layers in .gpkg files', ~'Data type', ~'Geometry type', ~Description,
+      ~'Data layer', ~'Data source', ~'Layer in .gpkg files', ~'Data type', ~'Geometry type', ~Description,
       "river network",   "EU-Hydro -- River Network Database", "River_Net_l", "vector", "linestring", "representing stream lines of rivers",
       "surface water bodies",   "EU-Hydro -- River Network Database", "InlandWater", "vector", "polygon", "representing lakes, ponds and wide rivers",
-      "river basins/ study area",   "EU-Hydro -- River Network Database", "_eudem2_basins_h1", "vector", "linestring", "required to set the area for which the EU-MOHP measures are calculated for",
+      "river basins/ study area",   "EU-Hydro -- River Network Database", "_eudem2_basins_h1", "vector", "polygon", "representing the river basins",
       "coastline",   "EU-Hydro -- Coastline", "-", "vector", "linestring", "representing the coastline"
     ) %>% 
       mutate('No' = row_number(), .before = 1)
@@ -546,28 +546,19 @@ make_ridges_per_measure <- function(data) {
       colour = "white",
       alpha = .1,
       scale = 2,
-      # panel_scaling = FALSE,
-      # rel_min_height = 0.01,
       show.legend = FALSE
     ) +
-    # ggridges::geom_density_ridges_gradient(quantile_lines = TRUE, scale = 0.9, alpha = 0.7,
-    #   vline_size = 1, vline_color = "red",
-    #   point_size = 0.4, point_alpha = 1,
-    #   position = ggridges::position_raincloud(adjust_vlines = TRUE),
-    #   show.legend = FALSE) +
     scale_fill_viridis_c() +
     labs(y = "Hydrologic order") +
-    # scale_y_reverse() +
     scale_x_continuous(expand = c(0, 0), guide = guide_axis(check.overlap = TRUE)) +
     scale_y_discrete(expand = expansion(mult = c(0.01, .3))) +
     ggridges::theme_ridges() +
-    # theme_minimal() +
     theme(
       plot.title = element_text(hjust = 0.5, family = "Corbel"),
       axis.title.x = element_text(size = 10, hjust = 0.5),
       axis.text = element_text(family = "Corbel"),
       axis.title.y = element_text(size = 10, family = "Corbel"),
-      text = element_text(family = "Corbel")
+      text = element_text(family = "Corbel", size = 10)
     )
 
   if (data %>% slice_head(n = 1) %>% pull(measure) %>% magrittr::is_in(c("dsd", "sd"))) {
@@ -610,9 +601,13 @@ make_stats_ridges_plot <- function(data) {
     group_by(measure) %>% 
     group_split() %>% 
     map(make_ridges_per_measure) %>% 
-    patchwork::wrap_plots(nrow = 1) +
-    # plot_annotation(title = "Distribution of the calculated measures") &
-    theme(plot.title = element_text(hjust = 0.5, family = "Corbel"))
+    patchwork::wrap_plots(
+      nrow = 1
+    ) +
+    plot_annotation(tag_levels = "a") &
+    theme(
+      plot.tag = element_text(family = "Corbel", size = 10)
+    )
 }
 
 stars_to_values <- function(stars_object, index) {
@@ -721,9 +716,9 @@ patchwork_all <- function(plot_list) {
     length()
   
   if (n_orders >= 3) {
-    tag_levels <- c("A", "1")
+    tag_levels <- c("a", "1")
   } else {
-    tag_levels <- "A"
+    tag_levels <- "a"
   }
   
   plot_list %>%

@@ -155,5 +155,19 @@ validation_targets <-
         quantile_breaks,
         7
       )
+    ),
+    tar_target(
+      comparison_difference_patchwork,
+      make_comparison_difference_patchwork(
+        comparison_plot,
+        raster_difference_plot
+      )
+    ),
+    tar_target(
+      accuracy_patchwork,
+      make_accuracy_patchwork(
+        validation_sampling_plot,
+        lm_plot
+      )
     )
   )

@@ -82,8 +82,8 @@ if(PARALLEL) plan(multisession)
 c(
   import_targets,
   preprocessing_targets,
-  if(!DATA_DESCRIPTOR_ONLY) mohpcalculation_targets,
-  if(!DATA_DESCRIPTOR_ONLY) export_targets,
+  # if(!DATA_DESCRIPTOR_ONLY) mohpcalculation_targets,
+  # if(!DATA_DESCRIPTOR_ONLY) export_targets,
   if(DATA_DESCRIPTOR_ONLY) validation_targets,
   if(DATA_DESCRIPTOR_ONLY) data_descriptor_targets,
   if(DATA_DESCRIPTOR_ONLY) visualizations_data_descriptor_targets
