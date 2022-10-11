@@ -1,4 +1,5 @@
 source("R/constants.R")
+# Consider removing comments.
 # targets::tar_renv(extras = c("styler", "citr", "RefManageR", "bibtex", "showtext", "renv", "rnaturalearthdata", "clipr", "knitr", "pdftools"))
 # tar_watch()
 
