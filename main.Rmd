@@ -112,8 +112,6 @@ tar_read(directory_tree_trimmed)
 
 <!-- *[Background]* -->
 
-<!-- as many as possible is not true I think, that leads to the curse of dimensionality. So it is important to chose only those who are also _very_ important. -->
-
 In recent years, data science tools such as machine learning are increasingly applied to and specifically developed for hydro(geo)logical challenges and research questions \cite{zounemat-kermani_neurocomputing_2020,sit_comprehensive_2020}. In the field of hydrogeology, machine learning has been used successfully for groundwater level prediction and a variety of mapping tasks \cite{desimone_machine-learning_2020, knoll_large_2019, knoll_nation-wide_2020, muller_surrogate_2019, stackelberg_machine_2021, wang_comparison_2016, wunsch_forecasting_2018, wunsch_groundwater_2020, wunsch_deep_2022, wunsch_karst_2022}. Since machine learning models --- with the exception of hybrid- or physics-guided models --- are based purely on data without any knowledge of physical processes, it is important to provide meaningful features (also called predictor or explanatory variables) that affect the target variable so that the machine learning algorithm can model the function between input and target. For surface and near-surface processes, this criterion can be more or less fulfilled by the availability of remote sensing data, whereas for modelling sub-surface processes such as in hydrogeology, this poses a serious challenge.
 
 <!-- *[Motivation/goals]* -->
