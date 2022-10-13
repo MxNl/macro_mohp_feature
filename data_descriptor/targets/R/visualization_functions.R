@@ -335,7 +335,11 @@ make_targets_runtime_table <-
                                     "raster_difference",
                                     "waterbodies_plus",
                                     "validation_sampling_plot",
-                                    "technical_report"
+                                    "technical_report",
+                                    "raster_values_original_reproduced",
+                                    "comparison_difference_patchwork",
+                                    "r2_accuracy",
+                                    "accuracy_patchwork"
       ))
       ) %>% 
       janitor::adorn_totals("row")
@@ -511,7 +515,12 @@ make_dir_tree <-
     fs::dir_tree(
       ".",
       recurse = 1,
-      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|*.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|_targets_packages.R|test_data|test_files|^test|README_files|index*|README.html|readme_hydroshare.*|readme_hydroshare.html",
+      regex = "qgis|junk|*streamorder*|grass_hack_order_test.Rmd|
+      grass_playground.R|playground.R|_dummy.R|data_descriptor|diagramms|
+      *.bib|*.ldf|*.sty|*.pdf|*.Rmd|*.tex|main_files|*.bst|*.cls|*.log|*.md|
+      _targets_packages.R|test_data|test_files|^test|README_files|index*|
+      README.html|readme_hydroshare.*|readme_hydroshare.html|validation_targets.R|
+      validationrepr_functions.R",
       invert = TRUE
     )
   }

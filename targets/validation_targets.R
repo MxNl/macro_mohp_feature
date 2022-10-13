@@ -74,8 +74,7 @@ validation_targets <-
     tar_target(
       sampling_points,
       sampling_area %>%
-        st_sample(size = SAMPLING_SIZE) %>% 
-        st_as_sf()
+        random_sampling_points()
     ),
     tar_target(
       validation_sampling_plot,
@@ -141,10 +140,23 @@ validation_targets <-
       )
     ),
     tar_target(
-      lm_plot,
-      make_lm_plot(
+      raster_values_original_reproduced,
+      bind_cols(
         raster_values_original,
         raster_values_reproduced
+      )
+    ),
+    tar_target(
+      r2_accuracy,
+      r_squared(
+        raster_values_original_reproduced
+      )
+    ),
+    tar_target(
+      lm_plot,
+      make_lm_plot(
+        raster_values_original_reproduced,
+        r2_accuracy
       )
     ),
     tar_target(

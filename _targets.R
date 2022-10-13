@@ -69,12 +69,12 @@ source("R/database_functions.R")
 source("R/postgis_functions.R")
 source("R/grass_functions.R")
 source("R/export_functions.R")
-source("R/validationrepr_functions.R")
 
 source("data_descriptor/targets/R/visualization_functions.R")
 source("data_descriptor/targets/R/eumohpclipr_functions.R")
 source("data_descriptor/targets/R/helper_functions.R")
 source("data_descriptor/targets/R/constants.R")
+source("data_descriptor/targets/R/validationrepr_functions.R")
 
 if(PARALLEL) plan(multisession)
 
@@ -82,8 +82,8 @@ if(PARALLEL) plan(multisession)
 c(
   import_targets,
   preprocessing_targets,
-  # if(!DATA_DESCRIPTOR_ONLY) mohpcalculation_targets,
-  # if(!DATA_DESCRIPTOR_ONLY) export_targets,
+  if(!DATA_DESCRIPTOR_ONLY) mohpcalculation_targets,
+  if(!DATA_DESCRIPTOR_ONLY) export_targets,
   if(DATA_DESCRIPTOR_ONLY) validation_targets,
   if(DATA_DESCRIPTOR_ONLY) data_descriptor_targets,
   if(DATA_DESCRIPTOR_ONLY) visualizations_data_descriptor_targets

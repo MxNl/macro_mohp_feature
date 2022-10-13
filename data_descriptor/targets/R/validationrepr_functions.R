@@ -812,16 +812,23 @@ extract_raster_values <- function(x, y, column_name_extracted) {
     as_tibble()
 }
 
-make_lm_plot <- function(x, y) {
-  combined <- x %>% 
-    bind_cols(y)
-  
-  r2 <- combined %>% 
-    lm(formula = .$original ~ .$reproduced) %>% 
-    rsq::rsq() %>% 
-    round_half_up(digits = 3)
-  
-  combined %>% 
+random_sampling_points <- function(sf_polygon) {
+  set.seed(123)
+  sf_polygon %>% 
+    st_sample(size = SAMPLING_SIZE) %>% 
+    st_as_sf()
+}
+
+r_squared <- function(x) {
+  x %>% 
+  lm(formula = .$original ~ .$reproduced) %>% 
+  rsq::rsq() %>% 
+  round_half_up(digits = 3)
+}
+
+make_lm_plot <- function(x, r_squared) {
+
+  x %>% 
     ggplot() +
     aes(original, reproduced) +
     geom_pointdensity(
@@ -841,7 +848,7 @@ make_lm_plot <- function(x, y) {
       "label", 
       x = 1200, 
       y = 9500, 
-      label = paste("R2 =", r2), 
+      label = paste("R2 =", r_squared), 
       colour = "grey", 
       family = "Corbel",
       size = 2.8,
